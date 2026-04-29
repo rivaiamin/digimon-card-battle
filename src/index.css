@@ -1,0 +1,64 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Outfit:wght@400;600;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+:root {
+  --arena-green: #00ff88;
+  --arena-dark: #050a12;
+}
+
+body {
+  background-color: var(--arena-dark);
+  color: white;
+  overflow: hidden;
+  font-family: var(--font-sans);
+}
+
+/* 3D Perspective Setup */
+.perspective-stage {
+  perspective: 1200px;
+  perspective-origin: 50% 50%;
+}
+
+.arena-surface {
+  transform-style: preserve-3d;
+}
+
+/* Retro Scanline Effect */
+.scanlines {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    rgba(18, 16, 16, 0) 50%,
+    rgba(0, 0, 0, 0.1) 50%
+  );
+  background-size: 100% 4px;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.digital-grid {
+  background-image: 
+    linear-gradient(to right, rgba(0, 255, 136, 0.1) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 255, 136, 0.1) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+.card-shadow {
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+/* PS1 Palette */
+.bg-ps-red { background-color: #ff3c3c; }
+.bg-ps-blue { background-color: #3c9bff; }
+.bg-ps-yellow { background-color: #ffcb00; }
+.text-ps-red { color: #ff3c3c; }
+.text-ps-blue { color: #3c9bff; }
+.text-ps-yellow { color: #ffcb00; }
