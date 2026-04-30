@@ -156,12 +156,12 @@ export const DigimonCard: React.FC<CardProps & { variant?: 'full' | 'mini' }> = 
 
   return (
     <motion.div
-      initial={{ y: 50, opacity: 0, rotateY: isOpponent ? 180 : 0 }}
+      initial={{ y: 50, opacity: 0, rotateY: 0 }}
       animate={{ 
         y: isAttacking ? (isOpponent ? 150 : -150) : 0,
         x: isAttacking ? (isOpponent ? -50 : 50) : 0,
         opacity: 1,
-        rotateY: isOpponent ? 175 : 5, 
+        rotateY: 5, 
         rotateX: 5,
         scale: isAttacking ? 1.2 : 1
       }}
@@ -176,8 +176,8 @@ export const DigimonCard: React.FC<CardProps & { variant?: 'full' | 'mini' }> = 
         repeatType: "reverse"
       }}
       style={{ transformStyle: "preserve-3d" }}
-      className={`relative w-72 h-[480px] rounded-lg shadow-2xl border-[12px]
-        ${isOpponent ? 'border-ps-red/80' : 'border-ps-blue/80'}
+      className={`relative w-72 h-[480px] rounded-lg shadow-2xl border-4
+        ${isOpponent ? 'border-ps-red' : 'border-ps-blue'}
         bg-slate-950 flex flex-col pointer-events-auto`}
     >
       {cardContent}
