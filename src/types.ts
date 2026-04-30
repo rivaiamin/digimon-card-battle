@@ -3,41 +3,50 @@ export interface Attack {
   damage: number;
   type: 'circle' | 'triangle' | 'cross';
   description: string;
+  effect?: string;
 }
 
 export interface DigimonCardData {
   id: string;
   name: string;
-  level: 'Rookie' | 'Champion' | 'Ultimate' | 'Mega';
+  level: 'Rookie' | 'Champion' | 'Ultimate' | 'Mega' | 'Armor';
   type: 'Fire' | 'Ice' | 'Nature' | 'Dark' | 'Rare';
   hp: number;
   maxHp: number;
-  dp: number; // Digivolve Points
+  dp: number; // Current DP if on field (rarely used this way but kept)
+  plusDp: number; // DP gained when discarded
+  evoCost: number; // DP cost to evolve into this card
   attacks: {
     circle: Attack;
     triangle: Attack;
     cross: Attack;
   };
-  effect?: string;
+  supportEffect?: {
+    type: 'atk_buff' | 'hp_heal' | 'change_attack' | 'halve_hp';
+    targetAttack?: 'circle' | 'triangle' | 'cross' | 'all';
+    value: number;
+    description: string;
+  };
   image: string;
 }
 
+export interface PlayerState {
+  active: DigimonCardData | null;
+  hp: number;
+  hand: DigimonCardData[];
+  deck: DigimonCardData[];
+  trash: DigimonCardData[];
+  dp: number;
+  score: number;
+  supportCard: DigimonCardData | null;
+  selectedAttack: 'circle' | 'triangle' | 'cross' | null;
+}
+
 export interface GameState {
-  player: {
-    active: DigimonCardData | null;
-    hp: number;
-    hand: DigimonCardData[];
-    deck: DigimonCardData[];
-    trash: DigimonCardData[];
-    dp: number;
-  };
-  opponent: {
-    active: DigimonCardData | null;
-    hp: number;
-    hand: DigimonCardData[];
-    deck: DigimonCardData[];
-    trash: DigimonCardData[];
-    dp: number;
-  };
-  phase: 'draw' | 'evolution' | 'preparation' | 'battle' | 'end';
+  player: PlayerState;
+  opponent: PlayerState;
+  phase: 'draw' | 'evolution' | 'preparation' | 'support' | 'battle' | 'resolution' | 'victory';
+  turn: number;
+  isPlayerTurn: boolean;
+  message: string;
 }
