@@ -12,11 +12,11 @@ export const AGUMON: DigimonCardData = {
   evoCost: 0,
   image: "A",
   attacks: {
-    circle: { name: "Pepper Breath", damage: 150, type: "circle", description: "Standard." },
-    triangle: { name: "Sharp Claw", damage: 100, type: "triangle", description: "Quick." },
-    cross: { name: "Spitfire", damage: 120, type: "cross", description: "Counter." }
+    circle: { name: "Pepper Breath", damage: 150, type: "circle", description: "Fires a small fireball from the mouth." },
+    triangle: { name: "Sharp Claw", damage: 100, type: "triangle", description: "Slashes with sharp claws." },
+    cross: { name: "Spitfire", damage: 120, type: "cross", description: "Breathes out a continuous stream of fire." }
   },
-  supportEffect: { type: "atk_buff", targetAttack: "circle", value: 100, description: "O Attack +100" }
+  supportEffect: { type: "atk_buff", targetAttack: "circle", value: 100, description: "Boosts Circle attack by 100 damage if the user is a Fire attribute Digimon." }
 };
 
 export const GREYMON: DigimonCardData = {
@@ -31,11 +31,11 @@ export const GREYMON: DigimonCardData = {
   evoCost: 30,
   image: "G",
   attacks: {
-    circle: { name: "Mega Flame", damage: 280, type: "circle", description: "Fire blast." },
-    triangle: { name: "Great Horn", damage: 200, type: "triangle", description: "Headbutt." },
-    cross: { name: "Tail Whip", damage: 180, type: "cross", description: "Wide sweep." }
+    circle: { name: "Mega Flame", damage: 280, type: "circle", description: "Exhales an ultra-high-temperature flame that burns everything to ash." },
+    triangle: { name: "Great Horn", damage: 200, type: "triangle", description: "Charges the opponent with legendary horns." },
+    cross: { name: "Tail Whip", damage: 180, type: "cross", description: "A powerful tail strike that can knock back foes." }
   },
-  supportEffect: { type: "atk_buff", targetAttack: "all", value: 50, description: "All Attacks +50" }
+  supportEffect: { type: "atk_buff", targetAttack: "all", value: 50, description: "Increases all attack power by 50. If opponent is level Rookie, bonus increases to +100." }
 };
 
 export const METALGREYMON: DigimonCardData = {

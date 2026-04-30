@@ -8,6 +8,7 @@ interface CardProps {
   isOpponent?: boolean;
   isAttacking?: boolean;
   delay?: number;
+  onHover?: (data: DigimonCardData | null) => void;
 }
 
 const TypeIcon = ({ type }: { type: string }) => {
@@ -25,7 +26,8 @@ export const DigimonCard: React.FC<CardProps & { variant?: 'full' | 'mini' }> = 
   isOpponent, 
   isAttacking, 
   delay = 0,
-  variant = 'full'
+  variant = 'full',
+  onHover
 }) => {
   const isMini = variant === 'mini';
 
@@ -115,6 +117,8 @@ export const DigimonCard: React.FC<CardProps & { variant?: 'full' | 'mini' }> = 
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         whileHover={{ scale: 1.1, translateY: -10, zIndex: 100 }}
+        onMouseEnter={() => onHover?.(data)}
+        onMouseLeave={() => onHover?.(null)}
         className={`w-24 h-36 bg-slate-950 border-2 rounded-sm shadow-xl relative overflow-hidden flex flex-col cursor-pointer pointer-events-auto
             ${isOpponent ? 'border-ps-red/40' : 'border-ps-blue/40'}`}
       >
@@ -161,6 +165,8 @@ export const DigimonCard: React.FC<CardProps & { variant?: 'full' | 'mini' }> = 
         rotateX: 5,
         scale: isAttacking ? 1.2 : 1
       }}
+      onMouseEnter={() => onHover?.(data)}
+      onMouseLeave={() => onHover?.(null)}
       transition={{ 
         delay, 
         duration: 0.8, 
@@ -172,7 +178,7 @@ export const DigimonCard: React.FC<CardProps & { variant?: 'full' | 'mini' }> = 
       style={{ transformStyle: "preserve-3d" }}
       className={`relative w-72 h-[480px] rounded-lg shadow-2xl border-[12px]
         ${isOpponent ? 'border-ps-red/80' : 'border-ps-blue/80'}
-        bg-slate-950 flex flex-col`}
+        bg-slate-950 flex flex-col pointer-events-auto`}
     >
       {cardContent}
 

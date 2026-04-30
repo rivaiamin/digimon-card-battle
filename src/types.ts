@@ -49,4 +49,5 @@ export interface GameState {
   turn: number;
   isPlayerTurn: boolean;
   message: string;
+  hasDiscarded: boolean;
 }

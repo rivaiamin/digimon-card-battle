@@ -36,11 +36,13 @@ export const Arena: React.FC = () => {
         phase: 'draw',
         turn: 1,
         isPlayerTurn: true,
-        message: "DRAW PHASE"
+        message: "DRAW PHASE",
+        hasDiscarded: false
     });
 
     const [isAnimating, setIsAnimating] = useState(false);
     const [cameraState, setCameraState] = useState<'idle' | 'attack' | 'damage'>('idle');
+    const [hoveredCard, setHoveredCard] = useState<DigimonCardData | null>(null);
 
     // --- PHASE TRANSITIONS ---
 
@@ -59,7 +61,8 @@ export const Arena: React.FC = () => {
                     ...prev, 
                     phase: nextPhaseValue, 
                     message,
-                    turn: prev.turn + 1
+                    turn: prev.turn + 1,
+                    hasDiscarded: false
                 };
             }
 
@@ -82,10 +85,12 @@ export const Arena: React.FC = () => {
 
     const handleDiscardForDP = (cardId: string) => {
         setGameState(prev => {
+            if (prev.hasDiscarded) return prev;
             const card = prev.player.hand.find(c => c.id === cardId);
             if (!card) return prev;
             return {
                 ...prev,
+                hasDiscarded: true,
                 player: {
                     ...prev.player,
                     hand: prev.player.hand.filter(c => c.id !== cardId),
@@ -293,11 +298,12 @@ export const Arena: React.FC = () => {
                             <DigimonCard 
                                 data={{...gameState.player.active, hp: gameState.player.hp}} 
                                 isAttacking={isAnimating && cameraState === 'attack'}
+                                onHover={setHoveredCard}
                             />
                         )}
                         {gameState.player.supportCard && (
                              <div className="absolute -right-32 top-0 opacity-50 rotate-12 scale-75">
-                                 <DigimonCard data={gameState.player.supportCard} variant="mini" />
+                                 <DigimonCard data={gameState.player.supportCard} variant="mini" onHover={setHoveredCard} />
                              </div>
                         )}
                     </div>
@@ -309,6 +315,7 @@ export const Arena: React.FC = () => {
                                 data={{...gameState.opponent.active, hp: gameState.opponent.hp}} 
                                 isOpponent 
                                 isAttacking={isAnimating && cameraState === 'damage'}
+                                onHover={setHoveredCard}
                             />
                         )}
                     </div>
@@ -345,13 +352,15 @@ export const Arena: React.FC = () => {
 
                  {gameState.phase === 'preparation' && (
                      <div className="flex flex-col gap-4">
-                        <div className="bg-black/80 p-2 text-white text-xs border border-ps-yellow uppercase">Preparation: Discard cards to gain DP</div>
+                        <div className="bg-black/80 p-2 text-white text-xs border border-ps-yellow uppercase">
+                            {gameState.hasDiscarded ? "DP Gained. Proceed to Evolution." : "Preparation: Discard ONE card to gain DP"}
+                        </div>
                         <div className="flex gap-2">
                              <button onClick={() => setGameState(s => ({...s, phase: 'evolution', message: "EVOLUTION PHASE"}))} className="pointer-events-auto bg-ps-yellow text-black font-bold p-4 skew-x-[-10deg]"><span className="skew-x-[10deg] block">GO TO EVO</span></button>
-                             {gameState.player.hand.map(c => (
+                             {!gameState.hasDiscarded && gameState.player.hand.map(c => (
                                  <div key={c.id} onClick={() => handleDiscardForDP(c.id)} className="pointer-events-auto cursor-pointer group relative">
-                                     <DigimonCard data={c} variant="mini" />
-                                     <div className="absolute inset-0 bg-ps-red/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-[8px] font-bold">DISCARD (+{c.plusDp})</div>
+                                     <DigimonCard data={c} variant="mini" onHover={setHoveredCard} />
+                                     <div className="absolute inset-0 bg-ps-red/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-[8px] font-bold text-center p-1">DISCARD<br/>(+{c.plusDp} DP)</div>
                                  </div>
                              ))}
                         </div>
@@ -365,7 +374,7 @@ export const Arena: React.FC = () => {
                              <button onClick={() => setGameState(s => ({...s, phase: 'support', message: "SUPPORT PHASE"}))} className="pointer-events-auto bg-slate-800 text-white p-4 skew-x-[-10deg]"><span className="skew-x-[10deg] block">SKIP EVO</span></button>
                              {gameState.player.hand.map(c => (
                                  <div key={c.id} onClick={() => handleEvolution(c.id)} className="pointer-events-auto cursor-pointer">
-                                     <DigimonCard data={c} variant="mini" />
+                                     <DigimonCard data={c} variant="mini" onHover={setHoveredCard} />
                                      {c.evoCost > gameState.player.dp && <div className="text-[10px] text-red-500 font-bold">NO DP</div>}
                                      <div className="text-[10px] bg-ps-blue px-1 text-white">COST: {c.evoCost}</div>
                                  </div>
@@ -381,7 +390,7 @@ export const Arena: React.FC = () => {
                              <button onClick={() => setGameState(s => ({...s, phase: 'battle'}))} className="pointer-events-auto bg-slate-800 text-white p-4">NO SUPPORT</button>
                              {gameState.player.hand.map(c => (
                                  <div key={c.id} onClick={() => handleSupportChoice(c.id)} className="pointer-events-auto cursor-pointer group relative">
-                                     <DigimonCard data={c} variant="mini" />
+                                     <DigimonCard data={c} variant="mini" onHover={setHoveredCard} />
                                      {c.supportEffect && (
                                          <div className="absolute inset-x-0 bottom-full bg-black text-[8px] p-1 border border-white/20 whitespace-nowrap">
                                              {c.supportEffect.description}
@@ -408,6 +417,73 @@ export const Arena: React.FC = () => {
                     ))}
                 </div>
             </div>
+
+            {/* CARD DETAIL OVERLAY */}
+            <AnimatePresence>
+                {hoveredCard && (
+                    <motion.div 
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        className="fixed top-24 left-10 z-[150] w-80 bg-black/95 border-2 border-ps-blue p-4 shadow-[0_0_50px_rgba(60,155,255,0.3)] pointer-events-none"
+                    >
+                        <div className="flex justify-between items-start mb-4 border-b border-ps-blue/30 pb-2">
+                            <div>
+                                <h2 className="text-2xl font-black italic text-white uppercase leading-none">{hoveredCard.name}</h2>
+                                <span className="text-xs font-bold text-ps-blue">{hoveredCard.level.toUpperCase()} / {hoveredCard.type.toUpperCase()}</span>
+                            </div>
+                            <div className="bg-ps-blue/20 p-2 border border-ps-blue/50">
+                                <span className="text-xl font-black text-ps-blue leading-none">{hoveredCard.hp}</span>
+                                <span className="text-[8px] block opacity-50">HP</span>
+                            </div>
+                        </div>
+
+                        {/* SUPPORT EFFECT (HIGH PRIORITY) */}
+                        {hoveredCard.supportEffect && (
+                            <div className="mb-6 bg-ps-blue/10 border border-ps-blue/40 p-3">
+                                <div className="text-[10px] font-black text-ps-blue uppercase mb-1 tracking-widest flex items-center gap-2">
+                                    <div className="w-1.5 h-1.5 bg-ps-blue animate-pulse" />
+                                    Support Effect
+                                </div>
+                                <p className="text-sm font-bold text-white leading-relaxed">
+                                    {hoveredCard.supportEffect.description}
+                                </p>
+                            </div>
+                        )}
+
+                        {/* ATTACK DETAILS */}
+                        <div className="flex flex-col gap-3">
+                            {[
+                                { type: 'circle', color: 'ps-red', data: hoveredCard.attacks.circle },
+                                { type: 'triangle', color: 'ps-blue', data: hoveredCard.attacks.triangle },
+                                { type: 'cross', color: 'ps-yellow', data: hoveredCard.attacks.cross }
+                            ].map((atk) => (
+                                <div key={atk.type} className={`border-l-2 border-${atk.color} pl-3 py-1 bg-${atk.color}/5`}>
+                                    <div className="flex justify-between items-center mb-1">
+                                        <span className={`text-xs font-black text-${atk.color} uppercase`}>{atk.data.name}</span>
+                                        <span className={`text-sm font-black text-${atk.color} italic`}>{atk.data.damage}</span>
+                                    </div>
+                                    <p className="text-[10px] text-white/60 leading-tight">
+                                        {atk.data.description || "Standard damage attack."}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* EVO INFO */}
+                        <div className="mt-6 flex justify-between pt-2 border-t border-white/10 text-[10px] font-bold">
+                            <div className="flex flex-col">
+                                <span className="text-white/40 uppercase">Evo Cost</span>
+                                <span className="text-ps-blue">{hoveredCard.evoCost} DP</span>
+                            </div>
+                            <div className="flex flex-col items-end">
+                                <span className="text-white/40 uppercase">Plus DP</span>
+                                <span className="text-ps-yellow">+{hoveredCard.plusDp}</span>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
             
             {(gameState.player.score >= 3 || gameState.opponent.score >= 3) && (
                 <div className="fixed inset-0 bg-black/90 z-[200] flex items-center justify-center">
