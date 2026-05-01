@@ -32,6 +32,7 @@ export interface DigimonCardData {
 
 export interface PlayerState {
   active: DigimonCardData | null;
+  evolutionStack?: DigimonCardData[];
   hp: number;
   hand: DigimonCardData[];
   deck: DigimonCardData[];
@@ -39,15 +40,19 @@ export interface PlayerState {
   dp: number;
   score: number;
   supportCard: DigimonCardData | null;
+  supportLocked?: boolean;
   selectedAttack: 'circle' | 'triangle' | 'cross' | null;
+  attackLocked?: boolean;
 }
 
 export interface GameState {
   player: PlayerState;
   opponent: PlayerState;
-  phase: 'draw' | 'evolution' | 'preparation' | 'support' | 'battle' | 'resolution' | 'victory';
+  phase: 'waiting' | 'draw' | 'preparation' | 'battle_support' | 'battle_attack' | 'resolution' | 'victory';
   turn: number;
   isPlayerTurn: boolean;
   message: string;
   hasDiscarded: boolean;
+  winnerSessionId?: string;
+  loserReason?: 'points' | 'deck_out' | 'disconnect' | string;
 }

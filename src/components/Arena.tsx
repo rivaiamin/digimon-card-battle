@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { DigimonCard } from "./Card";
 import { BattleHUD } from "./BattleHUD";
-import { INITIAL_DECK, OPPONENT_DECK, SAMPLE_PLAYER_DIGIMON, SAMPLE_OPPONENT_DIGIMON, DEFAULT_CARD_ATTACKS } from "../constants";
+import { DEFAULT_CARD_ATTACKS } from "../constants";
 import { GameState, DigimonCardData, PlayerState } from "../types";
 import { getAllCards } from "../services/cardService";
 import { BattleStateSchema } from "../schema/BattleState";
@@ -11,6 +11,7 @@ import { ColyseusClient017 } from "../services/colyseusClient";
 
 const INITIAL_PLAYER_STATE: PlayerState = {
     active: null,
+    evolutionStack: [],
     hp: 0,
     hand: [],
     deck: [],
@@ -18,11 +19,14 @@ const INITIAL_PLAYER_STATE: PlayerState = {
     dp: 0,
     score: 0,
     supportCard: null,
-    selectedAttack: null
+    supportLocked: false,
+    selectedAttack: null,
+    attackLocked: false
 };
 
 const INITIAL_OPPONENT_STATE: PlayerState = {
     active: null,
+    evolutionStack: [],
     hp: 0,
     hand: [],
     deck: [],
@@ -30,31 +34,54 @@ const INITIAL_OPPONENT_STATE: PlayerState = {
     dp: 0,
     score: 0,
     supportCard: null,
-    selectedAttack: null
+    supportLocked: false,
+    selectedAttack: null,
+    attackLocked: false
+};
+
+const mapSchemaCardToData = (c: any): DigimonCardData => {
+    const attacks = {
+        circle: { ...(c.circle ?? DEFAULT_CARD_ATTACKS.circle), type: 'circle' as const },
+        triangle: { ...(c.triangle ?? DEFAULT_CARD_ATTACKS.triangle), type: 'triangle' as const },
+        cross: { ...(c.cross ?? DEFAULT_CARD_ATTACKS.cross), type: 'cross' as const },
+    };
+    return {
+        id: c.id,
+        name: c.name,
+        level: c.level,
+        type: c.type,
+        hp: c.hp,
+        maxHp: c.maxHp,
+        dp: c.dp ?? 0,
+        plusDp: c.plusDp ?? 0,
+        evoCost: c.evoCost ?? 0,
+        attacks,
+        supportEffect: c.supportEffect ?? undefined,
+        image: c.image ?? "",
+    } as DigimonCardData;
 };
 
 const mapSchemaToPlayerState = (schema: any): PlayerState => {
     if (!schema) return INITIAL_OPPONENT_STATE;
     return {
-        active: schema.active ? {
-            ...schema.active,
-            circle: { ...schema.active.circle },
-            triangle: { ...schema.active.triangle },
-            cross: { ...schema.active.cross }
-        } : null,
+        active: schema.active ? mapSchemaCardToData(schema.active) : null,
+        evolutionStack: Array.from(schema.evolutionStack || []).map((c: any) => mapSchemaCardToData(c)),
         hp: schema.hp,
-        hand: Array.from(schema.hand || []).map((c: any) => ({ ...c })),
-        deck: Array.from(schema.deck || []).map((c: any) => ({ ...c })),
-        trash: Array.from(schema.trash || []).map((c: any) => ({ ...c })),
+        hand: Array.from(schema.hand || []).map((c: any) => mapSchemaCardToData(c)),
+        deck: Array.from(schema.deck || []).map((c: any) => mapSchemaCardToData(c)),
+        trash: Array.from(schema.trash || []).map((c: any) => mapSchemaCardToData(c)),
         dp: schema.dp,
         score: schema.score,
-        supportCard: schema.supportCard ? { ...schema.supportCard } : null,
-        selectedAttack: schema.selectedAttack
+        supportCard: schema.supportCard ? mapSchemaCardToData(schema.supportCard) : null,
+        supportLocked: !!schema.supportLocked,
+        selectedAttack: schema.selectedAttack,
+        attackLocked: !!schema.attackLocked,
     };
 };
 
 export const Arena: React.FC = () => {
     const [room, setRoom] = useState<Room | null>(null);
+    const [clickDebug, setClickDebug] = useState<string>("");
     const [gameState, setGameState] = useState<GameState>({
         player: INITIAL_PLAYER_STATE,
         opponent: INITIAL_OPPONENT_STATE,
@@ -62,7 +89,9 @@ export const Arena: React.FC = () => {
         turn: 1,
         isPlayerTurn: true,
         message: "CONNECTING TO SERVER...",
-        hasDiscarded: false
+        hasDiscarded: false,
+        winnerSessionId: undefined,
+        loserReason: undefined,
     });
 
     const [isAnimating, setIsAnimating] = useState(false);
@@ -97,7 +126,9 @@ export const Arena: React.FC = () => {
                         phase: state.phase as any,
                         turn: state.turn,
                         isPlayerTurn: state.activePlayerSessionId === battleRoom.sessionId,
-                        message: state.message
+                        message: state.message,
+                        winnerSessionId: (state as any).winnerSessionId,
+                        loserReason: (state as any).loserReason,
                     }));
                 });
 
@@ -145,30 +176,36 @@ export const Arena: React.FC = () => {
         loadCards();
     }, []);
 
-    // --- PHASE TRANSITIONS ---
-
-    const nextPhase = useCallback(() => {
-        if (room) room.send("action", { type: "END_PHASE" });
-    }, [room]);
+    // --- SERVER-AUTHORITATIVE ACTIONS ---
 
     const handleDraw = () => {
-        if (room) room.send("action", { type: "DRAW" });
+        const stamp = new Date().toLocaleTimeString();
+        if (!room) {
+            setClickDebug(`[${stamp}] click: no room`);
+            return;
+        }
+        setClickDebug(`[${stamp}] click: sent DRAW (phase=${gameState.phase}, myTurn=${gameState.isPlayerTurn})`);
+        room.send("action", { type: "DRAW" });
     };
 
     const handleDiscardForDP = (cardId: string) => {
-        if (room) room.send("action", { type: "DISCARD_DP", cardId });
+        if (room) room.send("action", { type: "DISCARD_FOR_DP", cardIds: [cardId] });
     };
 
     const handleEvolution = (cardId: string) => {
         if (room) room.send("action", { type: "EVOLVE", cardId });
     };
 
-    const handleSupportChoice = (cardId: string) => {
-        if (room) room.send("action", { type: "SUPPORT", cardId });
+    const handleEndPrep = () => {
+        if (room) room.send("action", { type: "END_PREP" });
+    };
+
+    const handleSupportChoice = (cardId: string | null) => {
+        if (room) room.send("action", { type: "LOCK_SUPPORT", cardId });
     };
 
     const handleAttack = (type: 'circle' | 'triangle' | 'cross') => {
-        if (room) room.send("action", { type: "SELECT_ATTACK", attack: type });
+        if (room) room.send("action", { type: "LOCK_ATTACK", attack: type });
     };
 
     if (gameState.phase === 'waiting') {
@@ -265,12 +302,12 @@ export const Arena: React.FC = () => {
                     maxHp: gameState.opponent.active!.maxHp
                 }}
                 onAttack={handleAttack}
-                disabled={isAnimating || (gameState.phase !== 'battle')}
+                disabled={isAnimating || (gameState.phase !== 'battle_attack') || !!gameState.player.attackLocked}
             />
 
             {/* PHASE CONTROLS (Hand) */}
-            <div className="fixed bottom-4 left-4 z-[60] flex flex-col gap-2 pointer-events-none">
-                 {gameState.phase === 'draw' && (
+            <div className="fixed bottom-4 left-4 z-[1000] flex flex-col gap-2 pointer-events-auto isolate">
+                 {gameState.phase === 'draw' && gameState.isPlayerTurn && (
                      <button 
                         onClick={handleDraw}
                         className="pointer-events-auto bg-ps-blue text-white px-8 py-4 font-black italic border-4 border-white hover:bg-white hover:text-ps-blue"
@@ -279,46 +316,65 @@ export const Arena: React.FC = () => {
                      </button>
                  )}
 
+                 {clickDebug && (
+                    <div className="mt-2 bg-black/80 p-2 text-white/70 text-[10px] border border-white/20 font-mono uppercase pointer-events-none max-w-[320px]">
+                        {clickDebug}
+                    </div>
+                 )}
+                 
+                 {gameState.phase === 'draw' && !gameState.isPlayerTurn && (
+                     <div className="bg-black/80 p-2 text-white/70 text-xs border border-white/20 uppercase pointer-events-none">
+                         Opponent is drawing...
+                     </div>
+                 )}
+
                  {gameState.phase === 'preparation' && (
                      <div className="flex flex-col gap-4">
-                        <div className="bg-black/80 p-2 text-white text-xs border border-ps-yellow uppercase">
-                            {gameState.hasDiscarded ? "DP Gained. Proceed to Evolution." : "Preparation: Discard ONE card to gain DP"}
+                        <div className="bg-black/80 p-2 text-white text-xs border border-ps-yellow uppercase flex items-center justify-between gap-4">
+                            <span>Preparation: Discard cards for DP, then optionally evolve.</span>
+                            {gameState.isPlayerTurn && (
+                                <button
+                                    onClick={handleEndPrep}
+                                    className="pointer-events-auto bg-ps-yellow text-black font-black px-4 py-2 border-2 border-black hover:bg-white"
+                                >
+                                    END PREP
+                                </button>
+                            )}
                         </div>
                         <div className="flex gap-2">
-                             <button onClick={() => setGameState(s => ({...s, phase: 'evolution', message: "EVOLUTION PHASE"}))} className="pointer-events-auto bg-ps-yellow text-black font-bold p-4 skew-x-[-10deg]"><span className="skew-x-[10deg] block">GO TO EVO</span></button>
-                             {!gameState.hasDiscarded && gameState.player.hand.map(c => (
+                             {gameState.player.hand.map(c => (
                                  <div key={c.id} onClick={() => handleDiscardForDP(c.id)} className="pointer-events-auto cursor-pointer group relative">
                                      <DigimonCard data={c} variant="mini" onHover={setHoveredCard} />
                                      <div className="absolute inset-0 bg-ps-red/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-[8px] font-bold text-center p-1">DISCARD<br/>(+{c.plusDp} DP)</div>
                                  </div>
                              ))}
                         </div>
-                     </div>
-                 )}
 
-                 {gameState.phase === 'evolution' && (
-                     <div className="flex flex-col gap-4">
-                        <div className="bg-black/80 p-2 text-white text-xs border border-ps-blue uppercase">Evolution: Pick a Digimon to evolve</div>
-                        <div className="flex gap-2">
-                             <button onClick={() => setGameState(s => ({...s, phase: 'support', message: "SUPPORT PHASE"}))} className="pointer-events-auto bg-slate-800 text-white p-4 skew-x-[-10deg]"><span className="skew-x-[10deg] block">SKIP EVO</span></button>
-                             {gameState.player.hand.map(c => (
-                                 <div key={c.id} onClick={() => handleEvolution(c.id)} className="pointer-events-auto cursor-pointer">
-                                     <DigimonCard data={c} variant="mini" onHover={setHoveredCard} />
-                                     {c.evoCost > gameState.player.dp && <div className="text-[10px] text-red-500 font-bold">NO DP</div>}
-                                     <div className="text-[10px] bg-ps-blue px-1 text-white">COST: {c.evoCost}</div>
-                                 </div>
-                             ))}
+                        <div className="flex flex-col gap-2">
+                            <div className="bg-black/80 p-2 text-white text-xs border border-ps-blue uppercase">Evolution: Pick a Digimon to evolve (DP required)</div>
+                            <div className="flex gap-2">
+                                {gameState.player.hand.map(c => (
+                                    <div key={`evo_${c.id}`} onClick={() => handleEvolution(c.id)} className="pointer-events-auto cursor-pointer">
+                                        <DigimonCard data={c} variant="mini" onHover={setHoveredCard} />
+                                        {c.evoCost > gameState.player.dp && <div className="text-[10px] text-red-500 font-bold">NO DP</div>}
+                                        <div className="text-[10px] bg-ps-blue px-1 text-white">COST: {c.evoCost}</div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                      </div>
                  )}
 
-                 {gameState.phase === 'support' && (
+                 {gameState.phase === 'battle_support' && (
                      <div className="flex flex-col gap-4">
-                        <div className="bg-black/80 p-2 text-white text-xs border border-white">SELECT SUPPORT CARD</div>
+                        <div className="bg-black/80 p-2 text-white text-xs border border-white uppercase flex items-center justify-between gap-4">
+                            <span>Battle: Lock a Support card (or none).</span>
+                            {gameState.player.supportLocked && <span className="text-white/50">LOCKED</span>}
+                        </div>
                         <div className="flex gap-2">
-                             <button onClick={() => setGameState(s => ({...s, phase: 'battle'}))} className="pointer-events-auto bg-slate-800 text-white p-4">NO SUPPORT</button>
+                             <button onClick={() => handleSupportChoice(null)} disabled={!!gameState.player.supportLocked} className="pointer-events-auto bg-slate-800 text-white p-4 disabled:opacity-40">NO SUPPORT</button>
                              {gameState.player.hand.map(c => (
-                                 <div key={c.id} onClick={() => handleSupportChoice(c.id)} className="pointer-events-auto cursor-pointer group relative">
+                                 <div key={c.id} onClick={() => handleSupportChoice(c.id)} className={`pointer-events-auto cursor-pointer group relative ${gameState.player.supportLocked ? 'opacity-40 pointer-events-none' : ''}`}>
                                      <DigimonCard data={c} variant="mini" onHover={setHoveredCard} />
                                      {c.supportEffect && (
                                          <div className="absolute inset-x-0 bottom-full bg-black text-[8px] p-1 border border-white/20 whitespace-nowrap">
@@ -417,12 +473,17 @@ export const Arena: React.FC = () => {
                 )}
             </AnimatePresence>
             
-            {(gameState.player.score >= 3 || gameState.opponent.score >= 3) && (
+            {gameState.phase === 'victory' && (
                 <div className="fixed inset-0 bg-black/90 z-[200] flex items-center justify-center">
                     <div className="text-center">
                         <h1 className="text-8xl font-black text-ps-yellow italic mb-8">
-                            {gameState.player.score >= 3 ? "BATTLE WON" : "BATTLE LOST"}
+                            {(room && gameState.winnerSessionId === (room as any).sessionId) ? "BATTLE WON" : "BATTLE LOST"}
                         </h1>
+                        {gameState.loserReason && (
+                            <div className="text-white/40 text-xs font-mono mb-6 uppercase">
+                                {String(gameState.loserReason).replace("_", " ")}
+                            </div>
+                        )}
                         <button 
                             onClick={() => window.location.reload()}
                             className="bg-ps-yellow px-12 py-4 font-black"

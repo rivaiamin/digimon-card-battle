@@ -6,10 +6,15 @@ import { WebSocketTransport } from "@colyseus/ws-transport";
 import path from "path";
 import { createServer as createViteServer } from "vite";
 import { BattleRoom } from "./src/rooms/BattleRoom";
+import { Encoder } from "@colyseus/schema";
 
 async function startServer() {
   const app = express();
   const PORT = 3000;
+
+  // Our battle state includes full 30-card decks + nested attacks/support; increase buffer to avoid overflow.
+  // If you later hide opponent hands/decks, this can be reduced again.
+  Encoder.BUFFER_SIZE = 512 * 1024; // 512 KB
 
   const server = createServer(app);
   

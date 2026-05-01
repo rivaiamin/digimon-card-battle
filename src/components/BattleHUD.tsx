@@ -296,7 +296,7 @@ export const BattleHUD: React.FC<HUDProps> = ({ player, opponent, onAttack, disa
 
       {/* --- ATTACK COMMAND CONSOLE --- */}
       <AnimatePresence>
-          {state.phase === 'battle' && state.isPlayerTurn && (
+          {state.phase === 'battle_attack' && !state.player.attackLocked && (
               <motion.div 
                   initial={{ opacity: 0, scale: 0.9, x: 50 }}
                   animate={{ opacity: 1, scale: 1, x: 0 }}
