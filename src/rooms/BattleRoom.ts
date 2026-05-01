@@ -1,6 +1,7 @@
 import { Room, type Client } from "@colyseus/core";
 import { BattleStateSchema, PlayerSchema, CardSchema, SupportEffectSchema } from "../schema/BattleState";
 import cardsData from "../data/cards.json";
+import { getFirebaseAdminAuth } from "../server/firebaseAdmin";
 
 export class BattleRoom extends Room<{ state: BattleStateSchema }> {
     private supportChoices = new Map<string, CardSchema | null>();
@@ -9,6 +10,8 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
 
     onCreate(options: any) {
         console.log("[SERVER] BattleRoom created", options);
+        // Matchmaking target: exactly 2 players per match.
+        this.maxClients = 2;
         this.state = new BattleStateSchema();
 
         this.onMessage("action", (client, message) => {
@@ -53,11 +56,31 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         });
     }
 
+    async onAuth(client: Client, options: any) {
+        const idToken = options?.idToken;
+        if (typeof idToken !== "string" || idToken.length < 10) {
+            throw new Error("missing_id_token");
+        }
+
+        const decoded = await getFirebaseAdminAuth().verifyIdToken(idToken);
+        const name =
+            (typeof (decoded as any).name === "string" && (decoded as any).name.trim().length > 0
+                ? (decoded as any).name
+                : null) ??
+            (typeof (decoded as any).email === "string" && (decoded as any).email.trim().length > 0
+                ? (decoded as any).email
+                : null) ??
+            `Player`;
+
+        return { uid: decoded.uid, name };
+    }
+
     onJoin(client: Client, options: any) {
         console.log(`[SERVER] Client joined: ${client.sessionId}`, options);
         const player = new PlayerSchema();
         player.sessionId = client.sessionId;
-        player.name = `Player ${this.state.players.size + 1}`;
+        const authName = (client as any).auth?.name;
+        player.name = typeof authName === "string" && authName.trim().length > 0 ? authName : `Player ${this.state.players.size + 1}`;
         player.hp = 0; // Will be set when active Digimon is chosen
         
         // Deck is assigned when the match starts (needs both players).

@@ -1,5 +1,5 @@
 import { Room } from "colyseus.js";
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { DigimonCard } from "./Card";
 import { BattleHUD } from "./BattleHUD";
@@ -7,7 +7,6 @@ import { DEFAULT_CARD_ATTACKS } from "../constants";
 import { GameState, DigimonCardData, PlayerState } from "../types";
 import { getAllCards } from "../services/cardService";
 import { BattleStateSchema } from "../schema/BattleState";
-import { ColyseusClient017 } from "../services/colyseusClient";
 
 const INITIAL_PLAYER_STATE: PlayerState = {
     active: null,
@@ -79,8 +78,11 @@ const mapSchemaToPlayerState = (schema: any): PlayerState => {
     };
 };
 
-export const Arena: React.FC = () => {
-    const [room, setRoom] = useState<Room | null>(null);
+type ArenaProps = {
+    room: Room<BattleStateSchema>;
+};
+
+export const Arena: React.FC<ArenaProps> = ({ room }) => {
     const [clickDebug, setClickDebug] = useState<string>("");
     const [gameState, setGameState] = useState<GameState>({
         player: INITIAL_PLAYER_STATE,
@@ -99,68 +101,52 @@ export const Arena: React.FC = () => {
     const [hoveredCard, setHoveredCard] = useState<DigimonCardData | null>(null);
 
     useEffect(() => {
-        const protocol = window.location.protocol.replace("http", "ws");
-        const host = window.location.host;
-        const wsUrl = `${protocol}//${host}`;
-        
-        console.log(`[Colyseus] Attempting connection to: ${wsUrl}`);
-        
-        const client = new ColyseusClient017(wsUrl);
+        // Do not call room.leave() here: React StrictMode remounts effects in dev and would
+        // disconnect the player right after joining, causing a blank screen / broken room.
 
-        const connect = async () => {
-            try {
-                console.log("[Colyseus] Calling joinOrCreate...");
-                const battleRoom = await client.joinOrCreate("battle", {}, BattleStateSchema);
-                console.log(`[Colyseus] SUCCESS: Joined room ${battleRoom.roomId} with sessionId ${battleRoom.sessionId}`);
-                setRoom(battleRoom);
-                
-                battleRoom.onStateChange((state: BattleStateSchema) => {
-                    const me = state.players.get(battleRoom.sessionId);
-                    const opponentSessionId = Array.from(state.players.keys()).find(id => id !== battleRoom.sessionId);
-                    const opponent = opponentSessionId ? state.players.get(opponentSessionId) : null;
+        const onStateChange = (state: BattleStateSchema) => {
+            const me = state.players.get(room.sessionId);
+            const opponentSessionId = Array.from(state.players.keys()).find(id => id !== room.sessionId);
+            const opponent = opponentSessionId ? state.players.get(opponentSessionId) : null;
 
-                    setGameState(prev => ({
-                        ...prev,
-                        player: mapSchemaToPlayerState(me),
-                        opponent: mapSchemaToPlayerState(opponent),
-                        phase: state.phase as any,
-                        turn: state.turn,
-                        isPlayerTurn: state.activePlayerSessionId === battleRoom.sessionId,
-                        message: state.message,
-                        winnerSessionId: (state as any).winnerSessionId,
-                        loserReason: (state as any).loserReason,
-                    }));
-                });
-
-                battleRoom.onError((code, message) => {
-                    console.error(`[Colyseus] Room Error: ${code} - ${message}`);
-                    setGameState(prev => ({ ...prev, message: `ROOM ERROR: ${message} (Code: ${code})` }));
-                });
-
-                battleRoom.onLeave((code) => {
-                    console.log(`[Colyseus] Left room: ${code}`);
-                    setGameState(prev => ({ ...prev, phase: 'waiting', message: "DISCONNECTED FROM SERVER" }));
-                });
-
-            } catch (e: any) {
-                console.error("[Colyseus] Join error details:", e);
-                let detail = "Unknown Error";
-                if (e instanceof Error) detail = e.message;
-                else if (typeof e === 'object') detail = JSON.stringify(e);
-                
-                setGameState(prev => ({ ...prev, message: `CONNECTION FAILED: ${detail}` }));
-                
-                // Retry after delay
-                setTimeout(connect, 5000);
-            }
+            setGameState(prev => ({
+                ...prev,
+                player: mapSchemaToPlayerState(me),
+                opponent: mapSchemaToPlayerState(opponent),
+                phase: state.phase as any,
+                turn: state.turn,
+                isPlayerTurn: state.activePlayerSessionId === room.sessionId,
+                message: state.message,
+                winnerSessionId: (state as any).winnerSessionId,
+                loserReason: (state as any).loserReason,
+            }));
         };
 
-        connect();
+        const onError = (code: number, message?: string) => {
+            console.error(`[Colyseus] Room Error: ${code} - ${message}`);
+            setGameState(prev => ({ ...prev, message: `ROOM ERROR: ${message} (Code: ${code})` }));
+        };
+
+        const onLeave = (code: number) => {
+            console.log(`[Colyseus] Left room: ${code}`);
+            setGameState(prev => ({ ...prev, phase: 'waiting', message: "DISCONNECTED FROM SERVER" }));
+        };
+
+        // Apply current server snapshot immediately. The first client can receive all
+        // patches for match start before this effect runs; without a sync read they
+        // would never get onStateChange and stay on "CONNECTING TO SERVER...".
+        onStateChange(room.state);
+
+        room.onStateChange(onStateChange);
+        room.onError(onError);
+        room.onLeave(onLeave);
 
         return () => {
-            if (room) room.leave();
+            room.onStateChange.remove(onStateChange);
+            room.onError.remove(onError);
+            room.onLeave.remove(onLeave);
         };
-    }, []);
+    }, [room]);
 
     useEffect(() => {
         async function loadCards() {
@@ -180,32 +166,28 @@ export const Arena: React.FC = () => {
 
     const handleDraw = () => {
         const stamp = new Date().toLocaleTimeString();
-        if (!room) {
-            setClickDebug(`[${stamp}] click: no room`);
-            return;
-        }
         setClickDebug(`[${stamp}] click: sent DRAW (phase=${gameState.phase}, myTurn=${gameState.isPlayerTurn})`);
         room.send("action", { type: "DRAW" });
     };
 
     const handleDiscardForDP = (cardId: string) => {
-        if (room) room.send("action", { type: "DISCARD_FOR_DP", cardIds: [cardId] });
+        room.send("action", { type: "DISCARD_FOR_DP", cardIds: [cardId] });
     };
 
     const handleEvolution = (cardId: string) => {
-        if (room) room.send("action", { type: "EVOLVE", cardId });
+        room.send("action", { type: "EVOLVE", cardId });
     };
 
     const handleEndPrep = () => {
-        if (room) room.send("action", { type: "END_PREP" });
+        room.send("action", { type: "END_PREP" });
     };
 
     const handleSupportChoice = (cardId: string | null) => {
-        if (room) room.send("action", { type: "LOCK_SUPPORT", cardId });
+        room.send("action", { type: "LOCK_SUPPORT", cardId });
     };
 
     const handleAttack = (type: 'circle' | 'triangle' | 'cross') => {
-        if (room) room.send("action", { type: "LOCK_ATTACK", attack: type });
+        room.send("action", { type: "LOCK_ATTACK", attack: type });
     };
 
     if (gameState.phase === 'waiting') {
@@ -223,6 +205,27 @@ export const Arena: React.FC = () => {
                 </div>
                 <div className="mt-8 text-white/40 text-xs font-mono animate-pulse">
                     ESTABLISHING NEURAL LINK...
+                </div>
+            </div>
+        );
+    }
+
+    // First patches can advance phase before nested player/active fields are decoded; BattleHUD assumes actives exist.
+    if (gameState.phase !== 'victory' && (!gameState.player.active || !gameState.opponent.active)) {
+        return (
+            <div className="w-screen h-screen bg-black flex flex-col items-center justify-center">
+                <div className="relative">
+                    <div className="scanlines z-10" />
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="text-4xl font-black italic text-ps-blue tracking-tighter"
+                    >
+                        {gameState.message || "SYNCING BATTLE STATE..."}
+                    </motion.div>
+                </div>
+                <div className="mt-8 text-white/40 text-xs font-mono animate-pulse">
+                    LOADING FIELD DATA...
                 </div>
             </div>
         );
@@ -477,7 +480,7 @@ export const Arena: React.FC = () => {
                 <div className="fixed inset-0 bg-black/90 z-[200] flex items-center justify-center">
                     <div className="text-center">
                         <h1 className="text-8xl font-black text-ps-yellow italic mb-8">
-                            {(room && gameState.winnerSessionId === (room as any).sessionId) ? "BATTLE WON" : "BATTLE LOST"}
+                            {gameState.winnerSessionId === (room as any).sessionId ? "BATTLE WON" : "BATTLE LOST"}
                         </h1>
                         {gameState.loserReason && (
                             <div className="text-white/40 text-xs font-mono mb-6 uppercase">
