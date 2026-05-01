@@ -1,7 +1,8 @@
 import React from "react";
 import { motion } from "motion/react";
-import { DigimonCardData } from "../types";
 import { Circle, Triangle, X, Zap, Flame, Snowflake, TreePine, Ghost } from "lucide-react";
+import { DEFAULT_CARD_ATTACKS } from "../constants";
+import { DigimonCardData } from "../types";
 
 interface CardProps {
   data: DigimonCardData;
@@ -30,6 +31,7 @@ export const DigimonCard: React.FC<CardProps & { variant?: 'full' | 'mini' }> = 
   onHover
 }) => {
   const isMini = variant === 'mini';
+  const attacks = data.attacks ?? DEFAULT_CARD_ATTACKS;
 
   const cardContent = (
     <>
@@ -95,9 +97,9 @@ export const DigimonCard: React.FC<CardProps & { variant?: 'full' | 'mini' }> = 
       {/* ATTACK PANELS */}
       <div className={`${isMini ? 'h-12 p-1 gap-0.5' : 'h-36 p-4 gap-2'} bg-black/95 flex flex-col border-t-2 border-white/10 font-mono`}>
         {[
-            { icon: Circle, color: 'ps-red', atk: data.attacks.circle },
-            { icon: Triangle, color: 'ps-blue', atk: data.attacks.triangle },
-            { icon: X, color: 'ps-yellow', atk: data.attacks.cross }
+            { icon: Circle, color: 'ps-red', atk: attacks.circle },
+            { icon: Triangle, color: 'ps-blue', atk: attacks.triangle },
+            { icon: X, color: 'ps-yellow', atk: attacks.cross }
         ].map((item, idx) => (
             <div key={idx} className={`flex justify-between items-center ${isMini ? 'px-1' : 'px-3 py-1.5'} bg-${item.color}/5 border-l-2 border-${item.color}`}>
                 <div className="flex items-center gap-1 md:gap-3">
@@ -143,11 +145,11 @@ export const DigimonCard: React.FC<CardProps & { variant?: 'full' | 'mini' }> = 
         <div className="bg-black/95 p-1 flex flex-col gap-0.5">
             <div className="flex justify-between items-center px-1 border-l border-ps-red">
                 <Circle className="w-1.5 h-1.5 text-ps-red fill-current" />
-                <span className="text-[7px] font-bold text-ps-red">{data.attacks.circle.damage}</span>
+                <span className="text-[7px] font-bold text-ps-red">{attacks.circle.damage}</span>
             </div>
             <div className="flex justify-between items-center px-1 border-l border-ps-blue">
                 <Triangle className="w-1.5 h-1.5 text-ps-blue fill-current" />
-                <span className="text-[7px] font-bold text-ps-blue">{data.attacks.triangle.damage}</span>
+                <span className="text-[7px] font-bold text-ps-blue">{attacks.triangle.damage}</span>
             </div>
         </div>
       </motion.div>

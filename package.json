@@ -11,14 +11,15 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
-    "@colyseus/monitor": "^0.15.0",
+    "@colyseus/core": "0.17.42",
+    "@colyseus/monitor": "^0.17.8",
     "@colyseus/schema": "^4.0.21",
-    "@colyseus/ws-transport": "^0.15.0",
+    "@colyseus/ws-transport": "^0.17.13",
     "@google/genai": "^1.29.0",
     "@tailwindcss/vite": "^4.1.14",
     "@vitejs/plugin-react": "^5.0.4",
-    "colyseus": "^0.15.0",
-    "colyseus.js": "^0.15.0",
+    "colyseus": "^0.17.10",
+    "colyseus.js": "^0.16.22",
     "dotenv": "^17.2.3",
     "express": "^4.22.1",
     "firebase": "^12.12.1",
@@ -36,5 +37,12 @@
     "tsx": "^4.21.0",
     "typescript": "~5.8.2",
     "vite": "^6.2.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "@colyseus/core": "0.17.42",
+      "@colyseus/redis-driver": "0.17.7",
+      "@colyseus/redis-presence": "0.17.7"
+    }
   }
 }

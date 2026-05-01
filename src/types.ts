@@ -16,11 +16,11 @@ export interface DigimonCardData {
   dp: number; // Current DP if on field (rarely used this way but kept)
   plusDp: number; // DP gained when discarded
   evoCost: number; // DP cost to evolve into this card
-  attacks: {
+  attacks?: {
     circle: Attack;
     triangle: Attack;
     cross: Attack;
-  };
+  } | null;
   supportEffect?: {
     type: 'atk_buff' | 'hp_heal' | 'change_attack' | 'halve_hp';
     targetAttack?: 'circle' | 'triangle' | 'cross' | 'all';

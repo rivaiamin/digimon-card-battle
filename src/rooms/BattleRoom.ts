@@ -1,11 +1,11 @@
-import { Room, Client } from "colyseus";
+import { Room, type Client } from "@colyseus/core";
 import { BattleStateSchema, PlayerSchema, CardSchema, AttackSchema } from "../schema/BattleState";
 import { INITIAL_DECK } from "../constants";
 
-export class BattleRoom extends Room<BattleStateSchema> {
+export class BattleRoom extends Room<{ state: BattleStateSchema }> {
     onCreate(options: any) {
         console.log("[SERVER] BattleRoom created", options);
-        this.setState(new BattleStateSchema());
+        this.state = new BattleStateSchema();
 
         this.onMessage("action", (client, message) => {
             const player = this.state.players.get(client.sessionId);
@@ -141,8 +141,8 @@ export class BattleRoom extends Room<BattleStateSchema> {
         }
     }
 
-    onLeave(client: Client, consented?: boolean) {
-        console.log(`[SERVER] Client left: ${client.sessionId}, consented: ${consented}`);
+    onLeave(client: Client, code?: number) {
+        console.log(`[SERVER] Client left: ${client.sessionId}, code: ${code}`);
         this.state.players.delete(client.sessionId);
         this.state.message = "A player left the session.";
         this.state.phase = "waiting";

@@ -1,5 +1,12 @@
 import { DigimonCardData } from "./types";
 
+/** When `attacks` is missing (e.g. partial Colyseus state). */
+export const DEFAULT_CARD_ATTACKS: NonNullable<DigimonCardData["attacks"]> = {
+    circle: { name: "—", damage: 0, type: "circle", description: "" },
+    triangle: { name: "—", damage: 0, type: "triangle", description: "" },
+    cross: { name: "—", damage: 0, type: "cross", description: "" },
+};
+
 export const AGUMON: DigimonCardData = {
   id: "agumon",
   name: "AGUMON",

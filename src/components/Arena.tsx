@@ -1,11 +1,13 @@
-import { Client, Room } from "colyseus.js";
+import { Room } from "colyseus.js";
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { DigimonCard } from "./Card";
 import { BattleHUD } from "./BattleHUD";
-import { INITIAL_DECK, OPPONENT_DECK, SAMPLE_PLAYER_DIGIMON, SAMPLE_OPPONENT_DIGIMON } from "../constants";
+import { INITIAL_DECK, OPPONENT_DECK, SAMPLE_PLAYER_DIGIMON, SAMPLE_OPPONENT_DIGIMON, DEFAULT_CARD_ATTACKS } from "../constants";
 import { GameState, DigimonCardData, PlayerState } from "../types";
 import { getAllCards } from "../services/cardService";
+import { BattleStateSchema } from "../schema/BattleState";
+import { ColyseusClient017 } from "../services/colyseusClient";
 
 const INITIAL_PLAYER_STATE: PlayerState = {
     active: null,
@@ -74,16 +76,16 @@ export const Arena: React.FC = () => {
         
         console.log(`[Colyseus] Attempting connection to: ${wsUrl}`);
         
-        const client = new Client(wsUrl);
+        const client = new ColyseusClient017(wsUrl);
 
         const connect = async () => {
             try {
                 console.log("[Colyseus] Calling joinOrCreate...");
-                const battleRoom = await client.joinOrCreate("battle");
+                const battleRoom = await client.joinOrCreate("battle", {}, BattleStateSchema);
                 console.log(`[Colyseus] SUCCESS: Joined room ${battleRoom.roomId} with sessionId ${battleRoom.sessionId}`);
                 setRoom(battleRoom);
                 
-                battleRoom.onStateChange((state) => {
+                battleRoom.onStateChange((state: BattleStateSchema) => {
                     const me = state.players.get(battleRoom.sessionId);
                     const opponentSessionId = Array.from(state.players.keys()).find(id => id !== battleRoom.sessionId);
                     const opponent = opponentSessionId ? state.players.get(opponentSessionId) : null;
@@ -380,11 +382,13 @@ export const Arena: React.FC = () => {
 
                         {/* ATTACK DETAILS */}
                         <div className="flex flex-col gap-3">
-                            {[
-                                { type: 'circle', color: 'ps-red', data: hoveredCard.attacks.circle },
-                                { type: 'triangle', color: 'ps-blue', data: hoveredCard.attacks.triangle },
-                                { type: 'cross', color: 'ps-yellow', data: hoveredCard.attacks.cross }
-                            ].map((atk) => (
+                            {(() => {
+                                const h = hoveredCard.attacks ?? DEFAULT_CARD_ATTACKS;
+                                return [
+                                    { type: 'circle' as const, color: 'ps-red', data: h.circle },
+                                    { type: 'triangle' as const, color: 'ps-blue', data: h.triangle },
+                                    { type: 'cross' as const, color: 'ps-yellow', data: h.cross }
+                                ].map((atk) => (
                                 <div key={atk.type} className={`border-l-2 border-${atk.color} pl-3 py-1 bg-${atk.color}/5`}>
                                     <div className="flex justify-between items-center mb-1">
                                         <span className={`text-xs font-black text-${atk.color} uppercase`}>{atk.data.name}</span>
@@ -394,7 +398,8 @@ export const Arena: React.FC = () => {
                                         {atk.data.description || "Standard damage attack."}
                                     </p>
                                 </div>
-                            ))}
+                            ));
+                            })()}
                         </div>
 
                         {/* EVO INFO */}

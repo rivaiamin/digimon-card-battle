@@ -46,10 +46,9 @@ async function startServer() {
   }
 
   try {
-    server.listen(PORT, "0.0.0.0", () => {
-      console.log(`[SERVER] Running on http://localhost:${PORT}`);
-      console.log(`[SERVER] Colyseus Monitor: http://localhost:${PORT}/colyseus`);
-    });
+    await gameServer.listen(PORT, "0.0.0.0");
+    console.log(`[SERVER] Running on http://localhost:${PORT}`);
+    console.log(`[SERVER] Colyseus Monitor: http://localhost:${PORT}/colyseus`);
   } catch (error) {
     console.error("[SERVER] Failed to start:", error);
   }
