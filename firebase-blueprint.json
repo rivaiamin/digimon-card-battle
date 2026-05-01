@@ -1,0 +1,58 @@
+{
+  "entities": {
+    "card": {
+      "title": "Digimon Card",
+      "description": "Represents a single card in the game with its stats and effects.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the card" },
+        "name": { "type": "string", "description": "Name of the Digimon" },
+        "level": { "type": "string", "enum": ["Rookie", "Champion", "Ultimate", "Mega", "Armor"], "description": "Evolution level" },
+        "type": { "type": "string", "enum": ["Fire", "Ice", "Nature", "Dark", "Rare"], "description": "Elemental type" },
+        "hp": { "type": "number", "description": "Current HP" },
+        "maxHp": { "type": "number", "description": "Maximum HP" },
+        "plusDp": { "type": "number", "description": "DP gained when discarded" },
+        "evoCost": { "type": "number", "description": "DP cost to evolve" },
+        "image": { "type": "string", "description": "Image key or URL" },
+        "attacks": {
+          "type": "object",
+          "properties": {
+            "circle": { "$ref": "#/entities/attack" },
+            "triangle": { "$ref": "#/entities/attack" },
+            "cross": { "$ref": "#/entities/attack" }
+          },
+          "required": ["circle", "triangle", "cross"]
+        },
+        "supportEffect": {
+          "type": "object",
+          "properties": {
+            "type": { "type": "string", "enum": ["atk_buff", "hp_heal", "change_attack", "halve_hp"] },
+            "targetAttack": { "type": "string", "enum": ["circle", "triangle", "cross", "all"] },
+            "value": { "type": "number" },
+            "description": { "type": "string" }
+          }
+        }
+      },
+      "required": ["id", "name", "level", "type", "hp", "maxHp", "plusDp", "evoCost", "attacks"]
+    },
+    "attack": {
+      "title": "Attack",
+      "description": "Represents an attack on a card.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "damage": { "type": "number" },
+        "type": { "type": "string", "enum": ["circle", "triangle", "cross"] },
+        "description": { "type": "string" },
+        "effect": { "type": "string" }
+      },
+      "required": ["name", "damage", "type", "description"]
+    }
+  },
+  "firestore": {
+    "/cards/{cardId}": {
+      "schema": "card",
+      "description": "Collection of all available cards in the game."
+    }
+  }
+}

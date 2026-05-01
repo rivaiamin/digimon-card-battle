@@ -4,6 +4,7 @@ import { DigimonCard } from "./Card";
 import { BattleHUD } from "./BattleHUD";
 import { INITIAL_DECK, OPPONENT_DECK, SAMPLE_PLAYER_DIGIMON, SAMPLE_OPPONENT_DIGIMON } from "../constants";
 import { GameState, DigimonCardData, PlayerState } from "../types";
+import { getAllCards } from "../services/cardService";
 
 const INITIAL_PLAYER_STATE: PlayerState = {
     active: { ...SAMPLE_PLAYER_DIGIMON },
@@ -43,6 +44,22 @@ export const Arena: React.FC = () => {
     const [isAnimating, setIsAnimating] = useState(false);
     const [cameraState, setCameraState] = useState<'idle' | 'attack' | 'damage'>('idle');
     const [hoveredCard, setHoveredCard] = useState<DigimonCardData | null>(null);
+
+    useEffect(() => {
+        async function loadCards() {
+            try {
+                const dbCards = await getAllCards();
+                if (dbCards.length > 0) {
+                    console.log(`Loaded ${dbCards.length} cards from database.`);
+                    // Optionally update the initial deck with database cards
+                    // For now we'll just keep the existing structure but we could replace the deck here
+                }
+            } catch (e) {
+                console.error("Failed to load cards from DB, using fallback.", e);
+            }
+        }
+        loadCards();
+    }, []);
 
     // --- PHASE TRANSITIONS ---
 

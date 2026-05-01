@@ -1,0 +1,327 @@
+[
+  {
+    "id": "001",
+    "name": "Agumon",
+    "level": "Rookie",
+    "type": "Fire",
+    "hp": 380,
+    "maxHp": 380,
+    "plusDp": 10,
+    "evoCost": 0,
+    "image": "https://api.dicebear.com/7.x/identicon/svg?seed=Agumon&backgroundColor=ff3c3c",
+    "attacks": {
+      "circle": { "name": "Pepper Breath", "damage": 150, "type": "circle", "description": "Fireball." },
+      "triangle": { "name": "Sharp Claw", "damage": 100, "type": "triangle", "description": "Slash." },
+      "cross": { "name": "Spitfire", "damage": 120, "type": "cross", "description": "Continuous fire." }
+    },
+    "supportEffect": { "type": "atk_buff", "targetAttack": "circle", "value": 100, "description": "Boosts Circle attack by 100 damage if the user is a Fire attribute Digimon." }
+  },
+  {
+    "id": "002",
+    "name": "Greymon",
+    "level": "Champion",
+    "type": "Fire",
+    "hp": 650,
+    "maxHp": 650,
+    "plusDp": 20,
+    "evoCost": 30,
+    "image": "https://api.dicebear.com/7.x/identicon/svg?seed=Greymon&backgroundColor=ff3c3c",
+    "attacks": {
+      "circle": { "name": "Mega Flame", "damage": 280, "type": "circle", "description": "High-temp flame." },
+      "triangle": { "name": "Great Horn", "damage": 200, "type": "triangle", "description": "Horn charge." },
+      "cross": { "name": "Tail Whip", "damage": 180, "type": "cross", "description": "Tail strike." }
+    },
+    "supportEffect": { "type": "atk_buff", "targetAttack": "all", "value": 50, "description": "Increases all attack power by 50." }
+  },
+  {
+    "id": "003",
+    "name": "MetalGreymon",
+    "level": "Ultimate",
+    "type": "Fire",
+    "hp": 950,
+    "maxHp": 950,
+    "plusDp": 30,
+    "evoCost": 50,
+    "image": "https://api.dicebear.com/7.x/identicon/svg?seed=MetalGreymon&backgroundColor=ff3c3c",
+    "attacks": {
+      "circle": { "name": "Giga Destroyer", "damage": 450, "type": "circle", "description": "Nuclear missile." },
+      "triangle": { "name": "Metal Slash", "damage": 320, "type": "triangle", "description": "Metal claw." },
+      "cross": { "name": "Tera Destroyer", "damage": 280, "type": "cross", "description": "Impact fire." }
+    }
+  },
+  {
+    "id": "004",
+    "name": "WarGreymon",
+    "level": "Mega",
+    "type": "Fire",
+    "hp": 1200,
+    "maxHp": 1200,
+    "plusDp": 40,
+    "evoCost": 80,
+    "image": "https://api.dicebear.com/7.x/identicon/svg?seed=WarGreymon&backgroundColor=ff3c3c",
+    "attacks": {
+      "circle": { "name": "Gaia Force", "damage": 600, "type": "circle", "description": "Energy blast." },
+      "triangle": { "name": "Great Tornado", "damage": 450, "type": "triangle", "description": "Spinning drill." },
+      "cross": { "name": "Brave Shield", "damage": 300, "type": "cross", "description": "Defensive bash." }
+    }
+  },
+  {
+    "id": "005",
+    "name": "Biyomon",
+    "level": "Rookie",
+    "type": "Fire",
+    "hp": 340,
+    "maxHp": 340,
+    "plusDp": 10,
+    "evoCost": 0,
+    "image": "https://api.dicebear.com/7.x/identicon/svg?seed=Biyomon&backgroundColor=ff3c3c",
+    "attacks": {
+      "circle": { "name": "Spiral Twister", "damage": 120, "type": "circle", "description": "Spiral fire." },
+      "triangle": { "name": "Pecking Attack", "damage": 100, "type": "triangle", "description": "Swift peck." },
+      "cross": { "name": "Charm Fly", "damage": 80, "type": "cross", "description": "Stray heat." }
+    },
+    "supportEffect": { "type": "hp_heal", "value": 100, "description": "Heal 100 HP" }
+  },
+  {
+    "id": "006",
+    "name": "Birdramon",
+    "level": "Champion",
+    "type": "Fire",
+    "hp": 600,
+    "maxHp": 600,
+    "plusDp": 20,
+    "evoCost": 30,
+    "image": "https://api.dicebear.com/7.x/identicon/svg?seed=Birdramon&backgroundColor=ff3c3c",
+    "attacks": {
+      "circle": { "name": "Meteor Wing", "damage": 250, "type": "circle", "description": "Fire feathers." },
+      "triangle": { "name": "Fire Flap", "damage": 190, "type": "triangle", "description": "Air slash." },
+      "cross": { "name": "Mach Glide", "damage": 150, "type": "cross", "description": "Brave strike." }
+    }
+  },
+  {
+    "id": "116",
+    "name": "Gabumon",
+    "level": "Rookie",
+    "type": "Ice",
+    "hp": 360,
+    "maxHp": 360,
+    "plusDp": 10,
+    "evoCost": 0,
+    "image": "https://api.dicebear.com/7.x/identicon/svg?seed=Gabumon&backgroundColor=3c9bff",
+    "attacks": {
+      "circle": { "name": "Blue Blaster", "damage": 140, "type": "circle", "description": "Cold fire." },
+      "triangle": { "name": "Horn Attack", "damage": 100, "type": "triangle", "description": "Skull bash." },
+      "cross": { "name": "Petit Fire", "damage": 90, "type": "cross", "description": "Spit fire." }
+    }
+  },
+  {
+    "id": "117",
+    "name": "Garurumon",
+    "level": "Champion",
+    "type": "Ice",
+    "hp": 640,
+    "maxHp": 640,
+    "plusDp": 20,
+    "evoCost": 30,
+    "image": "https://api.dicebear.com/7.x/identicon/svg?seed=Garurumon&backgroundColor=3c9bff",
+    "attacks": {
+      "circle": { "name": "Howling Blaster", "damage": 270, "type": "circle", "description": "Blue fire breath." },
+      "triangle": { "name": "Slamming Attack", "damage": 190, "type": "triangle", "description": "Body slam." },
+      "cross": { "name": "Freeze Fang", "damage": 160, "type": "cross", "description": "Icy bite." }
+    }
+  },
+  {
+    "id": "118",
+    "name": "WereGarurumon",
+    "level": "Ultimate",
+    "type": "Ice",
+    "hp": 900,
+    "maxHp": 900,
+    "plusDp": 30,
+    "evoCost": 50,
+    "image": "https://api.dicebear.com/7.x/identicon/svg?seed=WereGarurumon&backgroundColor=3c9bff",
+    "attacks": {
+      "circle": { "name": "Wolf Claw", "damage": 420, "type": "circle", "description": "Sharp claws." },
+      "triangle": { "name": "Garuru Kick", "damage": 310, "type": "triangle", "description": "Powerful kick." },
+      "cross": { "name": "Baldy Blow", "damage": 250, "type": "cross", "description": "Uppercut." }
+    }
+  },
+  {
+    "id": "119",
+    "name": "MetalGarurumon",
+    "level": "Mega",
+    "type": "Ice",
+    "hp": 1150,
+    "maxHp": 1150,
+    "plusDp": 40,
+    "evoCost": 80,
+    "image": "https://api.dicebear.com/7.x/identicon/svg?seed=MetalGarurumon&backgroundColor=3c9bff",
+    "attacks": {
+      "circle": { "name": "Cocytus Breath", "damage": 580, "type": "circle", "description": "Absolute zero breath." },
+      "triangle": { "name": "Grace Cross Freezer", "damage": 430, "type": "triangle", "description": "Missile barrage." },
+      "cross": { "name": "Garuru Tomahawk", "damage": 290, "type": "cross", "description": "Chest missile." }
+    }
+  },
+  {
+    "id": "077",
+    "name": "Tentomon",
+    "level": "Rookie",
+    "type": "Nature",
+    "hp": 350,
+    "maxHp": 350,
+    "plusDp": 10,
+    "evoCost": 0,
+    "image": "https://api.dicebear.com/7.x/identicon/svg?seed=Tentomon&backgroundColor=4ade80",
+    "attacks": {
+      "circle": { "name": "Super Shocker", "damage": 140, "type": "circle", "description": "Electric bolt." },
+      "triangle": { "name": "Horn Attack", "damage": 110, "type": "triangle", "description": "Headbutt." },
+      "cross": { "name": "Talon Twist", "damage": 90, "type": "cross", "description": "Claw spin." }
+    },
+    "supportEffect": { "type": "hp_heal", "value": 150, "description": "Recover 150 HP" }
+  },
+  {
+    "id": "078",
+    "name": "Kabuterimon",
+    "level": "Champion",
+    "type": "Nature",
+    "hp": 600,
+    "maxHp": 600,
+    "plusDp": 20,
+    "evoCost": 30,
+    "image": "https://api.dicebear.com/7.x/identicon/svg?seed=Kabuterimon&backgroundColor=4ade80",
+    "attacks": {
+      "circle": { "name": "Mega Blaster", "damage": 260, "type": "circle", "description": "Electric orb." },
+      "triangle": { "name": "Beetle Horn", "damage": 190, "type": "triangle", "description": "Horn slash." },
+      "cross": { "name": "Insect Breath", "damage": 150, "type": "cross", "description": "Nature blast." }
+    }
+  },
+  {
+    "id": "231",
+    "name": "DemiDevimon",
+    "level": "Rookie",
+    "type": "Dark",
+    "hp": 300,
+    "maxHp": 300,
+    "plusDp": 10,
+    "evoCost": 0,
+    "image": "https://api.dicebear.com/7.x/identicon/svg?seed=DemiDevimon&backgroundColor=9333ea",
+    "attacks": {
+      "circle": { "name": "Demi Dart", "damage": 130, "type": "circle", "description": "Needle jab." },
+      "triangle": { "name": "Evil Whisper", "damage": 90, "type": "triangle", "description": "Curse breath." },
+      "cross": { "name": "Bat Flutter", "damage": 70, "type": "cross", "description": "Quick wing strike." }
+    },
+    "supportEffect": { "type": "halve_hp", "value": 0, "description": "Halve opponent's current HP" }
+  },
+  {
+    "id": "301",
+    "name": "Flamedramon",
+    "level": "Armor",
+    "type": "Fire",
+    "hp": 680,
+    "maxHp": 680,
+    "plusDp": 20,
+    "evoCost": 20,
+    "image": "https://api.dicebear.com/7.x/identicon/svg?seed=Flamedramon&backgroundColor=ff3c3c",
+    "attacks": {
+      "circle": { "name": "Fire Rocket", "damage": 300, "type": "circle", "description": "Fire dash." },
+      "triangle": { "name": "Flame Shot", "damage": 220, "type": "triangle", "description": "Fire ball." },
+      "cross": { "name": "Knuckle Fire", "damage": 180, "type": "cross", "description": "Fire punch." }
+    }
+  },
+  {
+    "id": "302",
+    "name": "Submarimon",
+    "level": "Armor",
+    "type": "Ice",
+    "hp": 700,
+    "maxHp": 700,
+    "plusDp": 20,
+    "evoCost": 20,
+    "image": "https://api.dicebear.com/7.x/identicon/svg?seed=Submarimon&backgroundColor=3c9bff",
+    "attacks": {
+      "circle": { "name": "Oxygen Homing", "damage": 290, "type": "circle", "description": "Torpedo." },
+      "triangle": { "name": "Submarine Attack", "damage": 210, "type": "triangle", "description": "Ram." },
+      "cross": { "name": "Aqua Blast", "damage": 170, "type": "cross", "description": "Water jet." }
+    }
+  },
+  {
+    "id": "232",
+    "name": "Devimon",
+    "level": "Champion",
+    "type": "Dark",
+    "hp": 580,
+    "maxHp": 580,
+    "plusDp": 20,
+    "evoCost": 30,
+    "image": "https://api.dicebear.com/7.x/identicon/svg?seed=Devimon&backgroundColor=9333ea",
+    "attacks": {
+      "circle": { "name": "Death Claw", "damage": 260, "type": "circle", "description": "Evil claw grab." },
+      "triangle": { "name": "Evil Wing", "damage": 180, "type": "triangle", "description": "Shadow flight." },
+      "cross": { "name": "Hell Contract", "damage": 140, "type": "cross", "description": "Dark pact." }
+    }
+  },
+  {
+    "id": "233",
+    "name": "Myotismon",
+    "level": "Ultimate",
+    "type": "Dark",
+    "hp": 900,
+    "maxHp": 900,
+    "plusDp": 30,
+    "evoCost": 50,
+    "image": "https://api.dicebear.com/7.x/identicon/svg?seed=Myotismon&backgroundColor=9333ea",
+    "attacks": {
+      "circle": { "name": "Gris-Lyz March", "damage": 430, "type": "circle", "description": "Bat swarm." },
+      "triangle": { "name": "Crimson Lightning", "damage": 330, "type": "triangle", "description": "Dark whip." },
+      "cross": { "name": "Nightmare Claw", "damage": 260, "type": "cross", "description": "Ghostly strike." }
+    }
+  },
+  {
+    "id": "234",
+    "name": "Piedmon",
+    "level": "Mega",
+    "type": "Dark",
+    "hp": 1100,
+    "maxHp": 1100,
+    "plusDp": 40,
+    "evoCost": 80,
+    "image": "https://api.dicebear.com/7.x/identicon/svg?seed=Piedmon&backgroundColor=9333ea",
+    "attacks": {
+      "circle": { "name": "Trump Sword", "damage": 550, "type": "circle", "description": "Fly swords." },
+      "triangle": { "name": "Clown Trick", "damage": 420, "type": "triangle", "description": "Magic box." },
+      "cross": { "name": "Ending Spell", "damage": 300, "type": "cross", "description": "Final breath." }
+    }
+  },
+  {
+    "id": "079",
+    "name": "MegaKabuterimon",
+    "level": "Ultimate",
+    "type": "Nature",
+    "hp": 920,
+    "maxHp": 920,
+    "plusDp": 30,
+    "evoCost": 50,
+    "image": "https://api.dicebear.com/7.x/identicon/svg?seed=MegaKabuterimon&backgroundColor=4ade80",
+    "attacks": {
+      "circle": { "name": "Horn Buster", "damage": 440, "type": "circle", "description": "Electric horn." },
+      "triangle": { "name": "Wild Scratch", "damage": 320, "type": "triangle", "description": "Claw bash." },
+      "cross": { "name": "Beetle Bomber", "damage": 260, "type": "cross", "description": "Tackle." }
+    }
+  },
+  {
+    "id": "080",
+    "name": "HerculesKabuterimon",
+    "level": "Mega",
+    "type": "Nature",
+    "hp": 1180,
+    "maxHp": 1180,
+    "plusDp": 40,
+    "evoCost": 80,
+    "image": "https://api.dicebear.com/7.x/identicon/svg?seed=HerculesKabuterimon&backgroundColor=4ade80",
+    "attacks": {
+      "circle": { "name": "Giga Blaster", "damage": 590, "type": "circle", "description": "Ultimate thunder." },
+      "triangle": { "name": "High Voltage", "damage": 440, "type": "triangle", "description": "Field charge." },
+      "cross": { "name": "Scissors Arm", "damage": 310, "type": "cross", "description": "Double pinch." }
+    }
+  }
+]

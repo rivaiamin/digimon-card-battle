@@ -1,0 +1,51 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function isValidCard(data) {
+      return data.keys().hasAll(['id', 'name', 'level', 'type', 'hp', 'maxHp', 'plusDp', 'evoCost', 'attacks'])
+        && data.id is string && data.id.size() <= 10
+        && data.name is string && data.name.size() <= 40
+        && data.level in ['Rookie', 'Champion', 'Ultimate', 'Mega', 'Armor']
+        && data.type in ['Fire', 'Ice', 'Nature', 'Dark', 'Rare']
+        && data.hp is number && data.hp >= 0 && data.hp <= 5000
+        && data.maxHp is number && data.maxHp >= 0 && data.maxHp <= 5000
+        && data.evoCost is number && data.evoCost >= 0
+        && data.attacks is map
+        && data.attacks.circle.name is string
+        && data.attacks.triangle.name is string
+        && data.attacks.cross.name is string;
+    }
+
+    // Card collection rules
+    match /cards/{cardId} {
+      // Players can read all available cards
+      allow get, list: if true;
+      
+      // Only authorized users can modify the database (e.g. via a management tool)
+      // For now, only allows creation if it matches the schema and is signed in
+      allow create: if isSignedIn() && isValidId(cardId) && isValidCard(incoming());
+      
+      // Disallow updates to existing cards for now to maintain data integrity
+      allow update: if false;
+      allow delete: if false;
+    }
+  }
+}
