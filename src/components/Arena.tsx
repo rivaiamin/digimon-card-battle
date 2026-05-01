@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
+import { Client, Room } from "colyseus.js";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { DigimonCard } from "./Card";
 import { BattleHUD } from "./BattleHUD";
@@ -7,22 +8,10 @@ import { GameState, DigimonCardData, PlayerState } from "../types";
 import { getAllCards } from "../services/cardService";
 
 const INITIAL_PLAYER_STATE: PlayerState = {
-    active: { ...SAMPLE_PLAYER_DIGIMON },
-    hp: SAMPLE_PLAYER_DIGIMON.hp,
-    hand: INITIAL_DECK.slice(0, 4),
-    deck: INITIAL_DECK.slice(4),
-    trash: [],
-    dp: 10,
-    score: 0,
-    supportCard: null,
-    selectedAttack: null
-};
-
-const INITIAL_OPPONENT_STATE: PlayerState = {
-    active: { ...SAMPLE_OPPONENT_DIGIMON },
-    hp: SAMPLE_OPPONENT_DIGIMON.hp,
-    hand: OPPONENT_DECK.slice(0, 4),
-    deck: OPPONENT_DECK.slice(4),
+    active: null,
+    hp: 0,
+    hand: [],
+    deck: [],
     trash: [],
     dp: 0,
     score: 0,
@@ -30,14 +19,47 @@ const INITIAL_OPPONENT_STATE: PlayerState = {
     selectedAttack: null
 };
 
+const INITIAL_OPPONENT_STATE: PlayerState = {
+    active: null,
+    hp: 0,
+    hand: [],
+    deck: [],
+    trash: [],
+    dp: 0,
+    score: 0,
+    supportCard: null,
+    selectedAttack: null
+};
+
+const mapSchemaToPlayerState = (schema: any): PlayerState => {
+    if (!schema) return INITIAL_OPPONENT_STATE;
+    return {
+        active: schema.active ? {
+            ...schema.active,
+            circle: { ...schema.active.circle },
+            triangle: { ...schema.active.triangle },
+            cross: { ...schema.active.cross }
+        } : null,
+        hp: schema.hp,
+        hand: Array.from(schema.hand || []).map((c: any) => ({ ...c })),
+        deck: Array.from(schema.deck || []).map((c: any) => ({ ...c })),
+        trash: Array.from(schema.trash || []).map((c: any) => ({ ...c })),
+        dp: schema.dp,
+        score: schema.score,
+        supportCard: schema.supportCard ? { ...schema.supportCard } : null,
+        selectedAttack: schema.selectedAttack
+    };
+};
+
 export const Arena: React.FC = () => {
+    const [room, setRoom] = useState<Room | null>(null);
     const [gameState, setGameState] = useState<GameState>({
         player: INITIAL_PLAYER_STATE,
         opponent: INITIAL_OPPONENT_STATE,
-        phase: 'draw',
+        phase: 'waiting',
         turn: 1,
         isPlayerTurn: true,
-        message: "DRAW PHASE",
+        message: "CONNECTING TO SERVER...",
         hasDiscarded: false
     });
 
@@ -46,13 +68,73 @@ export const Arena: React.FC = () => {
     const [hoveredCard, setHoveredCard] = useState<DigimonCardData | null>(null);
 
     useEffect(() => {
+        const protocol = window.location.protocol.replace("http", "ws");
+        const host = window.location.host;
+        const wsUrl = `${protocol}//${host}`;
+        
+        console.log(`[Colyseus] Attempting connection to: ${wsUrl}`);
+        
+        const client = new Client(wsUrl);
+
+        const connect = async () => {
+            try {
+                console.log("[Colyseus] Calling joinOrCreate...");
+                const battleRoom = await client.joinOrCreate("battle");
+                console.log(`[Colyseus] SUCCESS: Joined room ${battleRoom.roomId} with sessionId ${battleRoom.sessionId}`);
+                setRoom(battleRoom);
+                
+                battleRoom.onStateChange((state) => {
+                    const me = state.players.get(battleRoom.sessionId);
+                    const opponentSessionId = Array.from(state.players.keys()).find(id => id !== battleRoom.sessionId);
+                    const opponent = opponentSessionId ? state.players.get(opponentSessionId) : null;
+
+                    setGameState(prev => ({
+                        ...prev,
+                        player: mapSchemaToPlayerState(me),
+                        opponent: mapSchemaToPlayerState(opponent),
+                        phase: state.phase as any,
+                        turn: state.turn,
+                        isPlayerTurn: state.activePlayerSessionId === battleRoom.sessionId,
+                        message: state.message
+                    }));
+                });
+
+                battleRoom.onError((code, message) => {
+                    console.error(`[Colyseus] Room Error: ${code} - ${message}`);
+                    setGameState(prev => ({ ...prev, message: `ROOM ERROR: ${message} (Code: ${code})` }));
+                });
+
+                battleRoom.onLeave((code) => {
+                    console.log(`[Colyseus] Left room: ${code}`);
+                    setGameState(prev => ({ ...prev, phase: 'waiting', message: "DISCONNECTED FROM SERVER" }));
+                });
+
+            } catch (e: any) {
+                console.error("[Colyseus] Join error details:", e);
+                let detail = "Unknown Error";
+                if (e instanceof Error) detail = e.message;
+                else if (typeof e === 'object') detail = JSON.stringify(e);
+                
+                setGameState(prev => ({ ...prev, message: `CONNECTION FAILED: ${detail}` }));
+                
+                // Retry after delay
+                setTimeout(connect, 5000);
+            }
+        };
+
+        connect();
+
+        return () => {
+            if (room) room.leave();
+        };
+    }, []);
+
+    useEffect(() => {
         async function loadCards() {
             try {
                 const dbCards = await getAllCards();
                 if (dbCards.length > 0) {
                     console.log(`Loaded ${dbCards.length} cards from database.`);
-                    // Optionally update the initial deck with database cards
-                    // For now we'll just keep the existing structure but we could replace the deck here
                 }
             } catch (e) {
                 console.error("Failed to load cards from DB, using fallback.", e);
@@ -64,220 +146,48 @@ export const Arena: React.FC = () => {
     // --- PHASE TRANSITIONS ---
 
     const nextPhase = useCallback(() => {
-        setGameState(prev => {
-            const phases: GameState['phase'][] = ['draw', 'evolution', 'preparation', 'support', 'battle', 'resolution'];
-            const currentIndex = phases.indexOf(prev.phase);
-            const nextIndex = (currentIndex + 1) % phases.length;
-            const nextPhaseValue = phases[nextIndex];
-
-            // Handle Phase specific logic on transition
-            let message = nextPhaseValue.toUpperCase() + " PHASE";
-            
-            if (nextPhaseValue === 'draw') {
-                return { 
-                    ...prev, 
-                    phase: nextPhaseValue, 
-                    message,
-                    turn: prev.turn + 1,
-                    hasDiscarded: false
-                };
-            }
-
-            return { ...prev, phase: nextPhaseValue, message };
-        });
-    }, []);
+        if (room) room.send("action", { type: "END_PHASE" });
+    }, [room]);
 
     const handleDraw = () => {
-        setGameState(prev => {
-            const player = { ...prev.player };
-            const needed = 6 - player.hand.length;
-            if (needed > 0) {
-                const drawn = player.deck.slice(0, needed);
-                player.hand = [...player.hand, ...drawn];
-                player.deck = player.deck.slice(needed);
-            }
-            return { ...prev, player, phase: 'preparation', message: "PREPARATION Phase" };
-        });
+        if (room) room.send("action", { type: "DRAW" });
     };
 
     const handleDiscardForDP = (cardId: string) => {
-        setGameState(prev => {
-            if (prev.hasDiscarded) return prev;
-            const card = prev.player.hand.find(c => c.id === cardId);
-            if (!card) return prev;
-            return {
-                ...prev,
-                hasDiscarded: true,
-                player: {
-                    ...prev.player,
-                    hand: prev.player.hand.filter(c => c.id !== cardId),
-                    trash: [...prev.player.trash, card],
-                    dp: prev.player.dp + card.plusDp
-                }
-            };
-        });
+        if (room) room.send("action", { type: "DISCARD_DP", cardId });
     };
 
     const handleEvolution = (cardId: string) => {
-        setGameState(prev => {
-            const card = prev.player.hand.find(c => c.id === cardId);
-            if (!card) return prev;
-
-            // Evolution Rule:
-            // 1. Same Type (except for Armor or special cases, but here user said "only digimon with the same element")
-            // 2. Progression: Rookie -> Champion -> Ultimate -> Mega
-            const levelsRank: Record<string, number> = { 'Rookie': 1, 'Champion': 2, 'Ultimate': 3, 'Mega': 4, 'Armor': 2 };
-            const currentLevelRank = levelsRank[prev.player.active!.level] || 0;
-            const nextLevelRank = levelsRank[card.level] || 0;
-
-            const isSameType = card.type === prev.player.active!.type;
-            const isNextStep = nextLevelRank === currentLevelRank + 1;
-            const canAfford = prev.player.dp >= card.evoCost;
-
-            if (isSameType && isNextStep && canAfford) {
-                return {
-                    ...prev,
-                    player: {
-                        ...prev.player,
-                        active: card,
-                        hp: card.maxHp,
-                        hand: prev.player.hand.filter(c => c.id !== cardId),
-                        trash: [...prev.player.trash, prev.player.active!],
-                        dp: prev.player.dp - card.evoCost
-                    },
-                    phase: 'support',
-                    message: `${card.name} DIGIVOLVED!`
-                };
-            } else {
-                let failReason = "";
-                if (!isSameType) failReason = "TYPE MISMATCH";
-                else if (!isNextStep) failReason = "INVALID LEVEL";
-                else if (!canAfford) failReason = "NOT ENOUGH DP";
-                
-                return {
-                    ...prev,
-                    message: `EVO FAILED: ${failReason}`
-                };
-            }
-        });
+        if (room) room.send("action", { type: "EVOLVE", cardId });
     };
 
     const handleSupportChoice = (cardId: string) => {
-        setGameState(prev => {
-            const card = prev.player.hand.find(c => c.id === cardId);
-            if (!card) return prev;
-            return {
-                ...prev,
-                player: {
-                    ...prev.player,
-                    supportCard: card,
-                    hand: prev.player.hand.filter(c => c.id !== cardId)
-                },
-                phase: 'battle',
-                message: "SELECT ATTACK"
-            };
-        });
+        if (room) room.send("action", { type: "SUPPORT", cardId });
     };
 
     const handleAttack = (type: 'circle' | 'triangle' | 'cross') => {
-        setGameState(prev => ({
-            ...prev,
-            player: { ...prev.player, selectedAttack: type },
-            message: "RESOLVING BATTLE..."
-        }));
-        resolveBattle(type);
+        if (room) room.send("action", { type: "SELECT_ATTACK", attack: type });
     };
 
-    const resolveBattle = (playerAttackType: 'circle' | 'triangle' | 'cross') => {
-        setIsAnimating(true);
-        setCameraState('attack');
-
-        // CPU Logic: Picks random attack and potentially a support card
-        const opponentAttackType = ['circle', 'triangle', 'cross'][Math.floor(Math.random() * 3)] as 'circle' | 'triangle' | 'cross';
-        
-        setGameState(prev => {
-            const p = { ...prev.player };
-            const o = { ...prev.opponent };
-            
-            // Opponent simple AI: Use a support card if available in hand (50% chance)
-            if (o.hand.length > 0 && Math.random() > 0.5) {
-                o.supportCard = o.hand[Math.floor(Math.random() * o.hand.length)];
-                o.hand = o.hand.filter(c => c.id !== o.supportCard?.id);
-            }
-
-            let pAtk = p.active!.attacks[playerAttackType].damage;
-            let oAtk = o.active!.attacks[opponentAttackType].damage;
-
-            // Apply Player Support
-            if (p.supportCard?.supportEffect) {
-                const effect = p.supportCard.supportEffect;
-                if (effect.type === 'atk_buff') {
-                    if (effect.targetAttack === 'all' || effect.targetAttack === playerAttackType) {
-                        pAtk += effect.value;
-                    }
-                }
-                if (effect.type === 'hp_heal') {
-                    p.hp = Math.min(p.active!.maxHp, p.hp + effect.value);
-                }
-                if (effect.type === 'halve_hp') {
-                    o.hp = Math.floor(o.hp / 2);
-                }
-            }
-
-            // Apply Opponent Support
-            if (o.supportCard?.supportEffect) {
-                const effect = o.supportCard.supportEffect;
-                if (effect.type === 'atk_buff') {
-                    if (effect.targetAttack === 'all' || effect.targetAttack === opponentAttackType) {
-                        oAtk += effect.value;
-                    }
-                }
-                if (effect.type === 'hp_heal') {
-                    o.hp = Math.min(o.active!.maxHp, o.hp + effect.value);
-                }
-            }
-
-            // Resolution logic with delay
-            setTimeout(() => {
-                setGameState(current => {
-                    const nextP = { ...current.player };
-                    const nextO = { ...current.opponent };
-
-                    // We re-calculate damage here or use captured values
-                    // For simplicity in this functional update, I'll apply the damage now
-                    nextO.hp = Math.max(0, nextO.hp - pAtk);
-                    nextP.hp = Math.max(0, nextP.hp - oAtk);
-
-                    let message = "BATTLE RESOLVED";
-
-                    if (nextO.hp === 0) {
-                        nextP.score += 1;
-                        message = "OPPONENT DEFEATED!";
-                        nextO.active = { ...SAMPLE_OPPONENT_DIGIMON };
-                        nextO.hp = nextO.active.maxHp;
-                    }
-                    if (nextP.hp === 0) {
-                        nextO.score += 1;
-                        message = "PLAYER DEFEATED!";
-                        nextP.active = { ...SAMPLE_PLAYER_DIGIMON };
-                        nextP.hp = nextP.active.maxHp;
-                    }
-
-                    return {
-                        ...current,
-                        player: { ...nextP, supportCard: null, selectedAttack: null },
-                        opponent: { ...nextO, supportCard: null, selectedAttack: null },
-                        phase: 'draw',
-                        message: message + ` [T${current.turn + 1}]`
-                    };
-                });
-                setIsAnimating(false);
-                setCameraState('idle');
-            }, 1500);
-
-            return { ...prev, player: p, opponent: o };
-        });
-    };
+    if (gameState.phase === 'waiting') {
+        return (
+            <div className="w-screen h-screen bg-black flex flex-col items-center justify-center">
+                <div className="relative">
+                    <div className="scanlines z-10" />
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="text-4xl font-black italic text-ps-blue tracking-tighter"
+                    >
+                        {gameState.message}
+                    </motion.div>
+                </div>
+                <div className="mt-8 text-white/40 text-xs font-mono animate-pulse">
+                    ESTABLISHING NEURAL LINK...
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="relative w-screen h-screen overflow-hidden bg-black flex items-center justify-center perspective-stage">
