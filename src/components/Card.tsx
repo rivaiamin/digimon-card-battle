@@ -2,6 +2,7 @@ import React from "react";
 import { motion } from "motion/react";
 import { Circle, Triangle, X, Zap, Flame, Snowflake, TreePine, Ghost } from "lucide-react";
 import { DEFAULT_CARD_ATTACKS } from "../constants";
+import { cardImageSrc } from "../lib/cardImageSrc";
 import { DigimonCardData } from "../types";
 
 interface CardProps {
@@ -67,7 +68,7 @@ export const DigimonCard: React.FC<CardProps & { variant?: 'full' | 'mini' }> = 
                 
                 <div className="w-full h-full relative group">
                     <img 
-                      src={`https://api.dicebear.com/7.x/identicon/svg?seed=${data.name}&backgroundColor=${data.type === 'Fire' ? 'ff3c3c' : '3c9bff'}`} 
+                      src={cardImageSrc(data)} 
                       alt={data.name}
                       className="w-full h-full object-cover opacity-80 mix-blend-screen"
                       referrerPolicy="no-referrer"
@@ -134,7 +135,7 @@ export const DigimonCard: React.FC<CardProps & { variant?: 'full' | 'mini' }> = 
         </div>
         <div className="flex-1 relative bg-neutral-900 flex items-center justify-center">
             <img 
-                src={`https://api.dicebear.com/7.x/identicon/svg?seed=${data.name}&backgroundColor=${data.type === 'Fire' ? 'ff3c3c' : '3c9bff'}`} 
+                src={cardImageSrc(data)} 
                 alt={data.name}
                 className="w-full h-full object-cover opacity-60"
             />

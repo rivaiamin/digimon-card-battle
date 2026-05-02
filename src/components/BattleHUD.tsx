@@ -1,5 +1,6 @@
 import React from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { cardImageSrc } from "../lib/cardImageSrc";
 import { DigimonCardData, GameState } from "../types";
 import { DigimonCard } from "./Card";
 import { Circle, Triangle, X, Swords } from "lucide-react";
@@ -89,7 +90,7 @@ export const BattleHUD: React.FC<HUDProps> = ({ player, opponent, onAttack, disa
                             <div className="absolute inset-0 bg-ps-red/5" />
                             <div className="absolute inset-0 scanline opacity-40 z-10" />
                             <img 
-                                src={`https://api.dicebear.com/7.x/identicon/svg?seed=${opponent.active.name}&backgroundColor=${opponent.active.type === 'Fire' ? 'ff3c3c' : '3c9bff'}`} 
+                                src={cardImageSrc(opponent.active)} 
                                 alt="Scan"
                                 className="w-full h-full object-cover opacity-70 mix-blend-screen scale-110"
                                 referrerPolicy="no-referrer"
@@ -227,7 +228,7 @@ export const BattleHUD: React.FC<HUDProps> = ({ player, opponent, onAttack, disa
                         <div className="absolute inset-0 bg-ps-blue/5" />
                         <div className="absolute inset-0 scanline opacity-40 z-10" />
                         <img 
-                            src={`https://api.dicebear.com/7.x/identicon/svg?seed=${player.active.name}&backgroundColor=${player.active.type === 'Fire' ? 'ff3c3c' : '3c9bff'}`} 
+                            src={cardImageSrc(player.active)} 
                             alt="Scan"
                             className="w-full h-full object-cover opacity-70 mix-blend-screen scale-110"
                             referrerPolicy="no-referrer"

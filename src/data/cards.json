@@ -8,7 +8,7 @@
     "maxHp": 380,
     "plusDp": 10,
     "evoCost": 0,
-    "image": "https://api.dicebear.com/7.x/identicon/svg?seed=Agumon&backgroundColor=ff3c3c",
+    "image": "https://digi-api.com/images/digimon/w/Agumon.png",
     "attacks": {
       "circle": { "name": "Pepper Breath", "damage": 150, "type": "circle", "description": "Fireball." },
       "triangle": { "name": "Sharp Claw", "damage": 100, "type": "triangle", "description": "Slash." },
@@ -25,7 +25,7 @@
     "maxHp": 650,
     "plusDp": 20,
     "evoCost": 30,
-    "image": "https://api.dicebear.com/7.x/identicon/svg?seed=Greymon&backgroundColor=ff3c3c",
+    "image": "https://digi-api.com/images/digimon/w/Greymon.png",
     "attacks": {
       "circle": { "name": "Mega Flame", "damage": 280, "type": "circle", "description": "High-temp flame." },
       "triangle": { "name": "Great Horn", "damage": 200, "type": "triangle", "description": "Horn charge." },
@@ -42,7 +42,7 @@
     "maxHp": 950,
     "plusDp": 30,
     "evoCost": 50,
-    "image": "https://api.dicebear.com/7.x/identicon/svg?seed=MetalGreymon&backgroundColor=ff3c3c",
+    "image": "https://digi-api.com/images/digimon/w/Metal_Greymon.png",
     "attacks": {
       "circle": { "name": "Giga Destroyer", "damage": 450, "type": "circle", "description": "Nuclear missile." },
       "triangle": { "name": "Metal Slash", "damage": 320, "type": "triangle", "description": "Metal claw." },
@@ -58,7 +58,7 @@
     "maxHp": 1200,
     "plusDp": 40,
     "evoCost": 80,
-    "image": "https://api.dicebear.com/7.x/identicon/svg?seed=WarGreymon&backgroundColor=ff3c3c",
+    "image": "https://digi-api.com/images/digimon/w/War_Greymon.png",
     "attacks": {
       "circle": { "name": "Gaia Force", "damage": 600, "type": "circle", "description": "Energy blast." },
       "triangle": { "name": "Great Tornado", "damage": 450, "type": "triangle", "description": "Spinning drill." },
@@ -74,7 +74,7 @@
     "maxHp": 340,
     "plusDp": 10,
     "evoCost": 0,
-    "image": "https://api.dicebear.com/7.x/identicon/svg?seed=Biyomon&backgroundColor=ff3c3c",
+    "image": "https://digi-api.com/images/digimon/w/Piyomon.png",
     "attacks": {
       "circle": { "name": "Spiral Twister", "damage": 120, "type": "circle", "description": "Spiral fire." },
       "triangle": { "name": "Pecking Attack", "damage": 100, "type": "triangle", "description": "Swift peck." },
@@ -91,7 +91,7 @@
     "maxHp": 600,
     "plusDp": 20,
     "evoCost": 30,
-    "image": "https://api.dicebear.com/7.x/identicon/svg?seed=Birdramon&backgroundColor=ff3c3c",
+    "image": "https://digi-api.com/images/digimon/w/Birdramon.png",
     "attacks": {
       "circle": { "name": "Meteor Wing", "damage": 250, "type": "circle", "description": "Fire feathers." },
       "triangle": { "name": "Fire Flap", "damage": 190, "type": "triangle", "description": "Air slash." },
@@ -107,7 +107,7 @@
     "maxHp": 360,
     "plusDp": 10,
     "evoCost": 0,
-    "image": "https://api.dicebear.com/7.x/identicon/svg?seed=Gabumon&backgroundColor=3c9bff",
+    "image": "https://digi-api.com/images/digimon/w/Gabumon.png",
     "attacks": {
       "circle": { "name": "Blue Blaster", "damage": 140, "type": "circle", "description": "Cold fire." },
       "triangle": { "name": "Horn Attack", "damage": 100, "type": "triangle", "description": "Skull bash." },
@@ -123,7 +123,7 @@
     "maxHp": 640,
     "plusDp": 20,
     "evoCost": 30,
-    "image": "https://api.dicebear.com/7.x/identicon/svg?seed=Garurumon&backgroundColor=3c9bff",
+    "image": "https://digi-api.com/images/digimon/w/Garurumon.png",
     "attacks": {
       "circle": { "name": "Howling Blaster", "damage": 270, "type": "circle", "description": "Blue fire breath." },
       "triangle": { "name": "Slamming Attack", "damage": 190, "type": "triangle", "description": "Body slam." },
@@ -139,7 +139,7 @@
     "maxHp": 900,
     "plusDp": 30,
     "evoCost": 50,
-    "image": "https://api.dicebear.com/7.x/identicon/svg?seed=WereGarurumon&backgroundColor=3c9bff",
+    "image": "https://digi-api.com/images/digimon/w/Were_Garurumon.png",
     "attacks": {
       "circle": { "name": "Wolf Claw", "damage": 420, "type": "circle", "description": "Sharp claws." },
       "triangle": { "name": "Garuru Kick", "damage": 310, "type": "triangle", "description": "Powerful kick." },
@@ -155,7 +155,7 @@
     "maxHp": 1150,
     "plusDp": 40,
     "evoCost": 80,
-    "image": "https://api.dicebear.com/7.x/identicon/svg?seed=MetalGarurumon&backgroundColor=3c9bff",
+    "image": "https://digi-api.com/images/digimon/w/Metal_Garurumon.png",
     "attacks": {
       "circle": { "name": "Cocytus Breath", "damage": 580, "type": "circle", "description": "Absolute zero breath." },
       "triangle": { "name": "Grace Cross Freezer", "damage": 430, "type": "triangle", "description": "Missile barrage." },
@@ -171,7 +171,7 @@
     "maxHp": 350,
     "plusDp": 10,
     "evoCost": 0,
-    "image": "https://api.dicebear.com/7.x/identicon/svg?seed=Tentomon&backgroundColor=4ade80",
+    "image": "https://digi-api.com/images/digimon/w/Tentomon.png",
     "attacks": {
       "circle": { "name": "Super Shocker", "damage": 140, "type": "circle", "description": "Electric bolt." },
       "triangle": { "name": "Horn Attack", "damage": 110, "type": "triangle", "description": "Headbutt." },
@@ -188,7 +188,7 @@
     "maxHp": 600,
     "plusDp": 20,
     "evoCost": 30,
-    "image": "https://api.dicebear.com/7.x/identicon/svg?seed=Kabuterimon&backgroundColor=4ade80",
+    "image": "https://digi-api.com/images/digimon/w/Kabuterimon.png",
     "attacks": {
       "circle": { "name": "Mega Blaster", "damage": 260, "type": "circle", "description": "Electric orb." },
       "triangle": { "name": "Beetle Horn", "damage": 190, "type": "triangle", "description": "Horn slash." },
@@ -204,7 +204,7 @@
     "maxHp": 300,
     "plusDp": 10,
     "evoCost": 0,
-    "image": "https://api.dicebear.com/7.x/identicon/svg?seed=DemiDevimon&backgroundColor=9333ea",
+    "image": "https://digi-api.com/images/digimon/w/Pico_Devimon.png",
     "attacks": {
       "circle": { "name": "Demi Dart", "damage": 130, "type": "circle", "description": "Needle jab." },
       "triangle": { "name": "Evil Whisper", "damage": 90, "type": "triangle", "description": "Curse breath." },
@@ -221,7 +221,7 @@
     "maxHp": 680,
     "plusDp": 20,
     "evoCost": 20,
-    "image": "https://api.dicebear.com/7.x/identicon/svg?seed=Flamedramon&backgroundColor=ff3c3c",
+    "image": "https://digi-api.com/images/digimon/w/Fladramon.png",
     "attacks": {
       "circle": { "name": "Fire Rocket", "damage": 300, "type": "circle", "description": "Fire dash." },
       "triangle": { "name": "Flame Shot", "damage": 220, "type": "triangle", "description": "Fire ball." },
@@ -237,7 +237,7 @@
     "maxHp": 700,
     "plusDp": 20,
     "evoCost": 20,
-    "image": "https://api.dicebear.com/7.x/identicon/svg?seed=Submarimon&backgroundColor=3c9bff",
+    "image": "https://digi-api.com/images/digimon/w/Submarimon.png",
     "attacks": {
       "circle": { "name": "Oxygen Homing", "damage": 290, "type": "circle", "description": "Torpedo." },
       "triangle": { "name": "Submarine Attack", "damage": 210, "type": "triangle", "description": "Ram." },
@@ -253,7 +253,7 @@
     "maxHp": 580,
     "plusDp": 20,
     "evoCost": 30,
-    "image": "https://api.dicebear.com/7.x/identicon/svg?seed=Devimon&backgroundColor=9333ea",
+    "image": "https://digi-api.com/images/digimon/w/Devimon.png",
     "attacks": {
       "circle": { "name": "Death Claw", "damage": 260, "type": "circle", "description": "Evil claw grab." },
       "triangle": { "name": "Evil Wing", "damage": 180, "type": "triangle", "description": "Shadow flight." },
@@ -269,7 +269,7 @@
     "maxHp": 900,
     "plusDp": 30,
     "evoCost": 50,
-    "image": "https://api.dicebear.com/7.x/identicon/svg?seed=Myotismon&backgroundColor=9333ea",
+    "image": "https://digi-api.com/images/digimon/w/Vamdemon.png",
     "attacks": {
       "circle": { "name": "Gris-Lyz March", "damage": 430, "type": "circle", "description": "Bat swarm." },
       "triangle": { "name": "Crimson Lightning", "damage": 330, "type": "triangle", "description": "Dark whip." },
@@ -285,7 +285,7 @@
     "maxHp": 1100,
     "plusDp": 40,
     "evoCost": 80,
-    "image": "https://api.dicebear.com/7.x/identicon/svg?seed=Piedmon&backgroundColor=9333ea",
+    "image": "https://digi-api.com/images/digimon/w/Piemon.png",
     "attacks": {
       "circle": { "name": "Trump Sword", "damage": 550, "type": "circle", "description": "Fly swords." },
       "triangle": { "name": "Clown Trick", "damage": 420, "type": "triangle", "description": "Magic box." },
@@ -301,7 +301,7 @@
     "maxHp": 920,
     "plusDp": 30,
     "evoCost": 50,
-    "image": "https://api.dicebear.com/7.x/identicon/svg?seed=MegaKabuterimon&backgroundColor=4ade80",
+    "image": "https://digi-api.com/images/digimon/w/Atlur_Kabuterimon_(Red).png",
     "attacks": {
       "circle": { "name": "Horn Buster", "damage": 440, "type": "circle", "description": "Electric horn." },
       "triangle": { "name": "Wild Scratch", "damage": 320, "type": "triangle", "description": "Claw bash." },
@@ -317,7 +317,7 @@
     "maxHp": 1180,
     "plusDp": 40,
     "evoCost": 80,
-    "image": "https://api.dicebear.com/7.x/identicon/svg?seed=HerculesKabuterimon&backgroundColor=4ade80",
+    "image": "https://digi-api.com/images/digimon/w/Herakle_Kabuterimon.png",
     "attacks": {
       "circle": { "name": "Giga Blaster", "damage": 590, "type": "circle", "description": "Ultimate thunder." },
       "triangle": { "name": "High Voltage", "damage": 440, "type": "triangle", "description": "Field charge." },
