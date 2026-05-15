@@ -11,6 +11,7 @@ interface CardProps {
   isOpponent?: boolean;
   isAttacking?: boolean;
   isHit?: boolean;
+  isKo?: boolean;
   delay?: number;
   onHover?: (data: DigimonCardData | null) => void;
 }
@@ -30,6 +31,7 @@ export const DigimonCard: React.FC<CardProps & { variant?: 'full' | 'mini' }> = 
   isOpponent, 
   isAttacking,
   isHit = false,
+  isKo = false,
   delay = 0,
   variant = 'full',
   onHover
@@ -173,11 +175,12 @@ export const DigimonCard: React.FC<CardProps & { variant?: 'full' | 'mini' }> = 
       animate={{ 
         y: isAttacking ? (isOpponent ? 120 : -120) : 0,
         x: isHit ? knockbackX : isAttacking ? (isOpponent ? -40 : 40) : 0,
-        opacity: 1,
         rotate: isHit ? knockbackRot : 0,
         rotateY: 5, 
         rotateX: 5,
-        scale: isAttacking ? 1.15 : isHit ? 0.96 : 1
+        scale: isAttacking ? 1.15 : isHit ? 0.96 : isKo ? 0.85 : 1,
+        opacity: isKo ? 0.35 : 1,
+        filter: isKo ? "grayscale(1) brightness(0.6)" : "none",
       }}
       onMouseEnter={() => {
         audio.playUiHover();

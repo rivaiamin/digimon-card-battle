@@ -110,6 +110,13 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
     const displayPlayerHp = vfx.displayPlayerHp ?? gameState.player.hp;
     const displayOpponentHp = vfx.displayOpponentHp ?? gameState.opponent.hp;
 
+    const playerActive =
+        (vfx.isAnimating ? vfx.frozenField?.playerActive : null) ??
+        gameState.player.active;
+    const opponentActive =
+        (vfx.isAnimating ? vfx.frozenField?.opponentActive : null) ??
+        gameState.opponent.active;
+
     useEffect(() => {
         // Do not call room.leave() here: React StrictMode remounts effects in dev and would
         // disconnect the player right after joining, causing a blank screen / broken room.
@@ -234,7 +241,12 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
         gameState.phase === 'battle_attack' ||
         gameState.phase === 'resolution';
 
-    if (gameState.phase !== 'victory' && needsBattleActives && (!gameState.player.active || !gameState.opponent.active)) {
+    if (
+        gameState.phase !== 'victory' &&
+        needsBattleActives &&
+        !vfx.isAnimating &&
+        (!gameState.player.active || !gameState.opponent.active)
+    ) {
         return (
             <div className="w-screen h-screen bg-black flex flex-col items-center justify-center">
                 <div className="relative">
@@ -311,11 +323,12 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                 <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-center gap-64 h-96 items-center">
                     {/* Player Area */}
                     <div className="relative" style={{ transform: "rotateX(-45deg)" }}>
-                        {gameState.player.active && (
+                        {playerActive && (
                             <DigimonCard 
-                                data={{...gameState.player.active, hp: displayPlayerHp}} 
+                                data={{...playerActive, hp: displayPlayerHp}} 
                                 isAttacking={vfx.playerAttacking}
                                 isHit={vfx.playerHit}
+                                isKo={vfx.phase === "settle" && vfx.playerKo}
                                 onHover={setHoveredCard}
                             />
                         )}
@@ -328,12 +341,13 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
 
                     {/* Opponent Area */}
                     <div className="relative" style={{ transform: "rotateX(-45deg)" }}>
-                        {gameState.opponent.active && (
+                        {opponentActive && (
                             <DigimonCard 
-                                data={{...gameState.opponent.active, hp: displayOpponentHp}} 
+                                data={{...opponentActive, hp: displayOpponentHp}} 
                                 isOpponent 
                                 isAttacking={vfx.opponentAttacking}
                                 isHit={vfx.opponentHit}
+                                isKo={vfx.phase === "settle" && vfx.opponentKo}
                                 onHover={setHoveredCard}
                             />
                         )}
@@ -345,14 +359,14 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
             <BattleHUD 
                 state={gameState}
                 player={{
-                    active: gameState.player.active,
+                    active: playerActive,
                     hp: displayPlayerHp,
-                    maxHp: gameState.player.active?.maxHp ?? 0
+                    maxHp: playerActive?.maxHp ?? gameState.player.active?.maxHp ?? 0
                 }}
                 opponent={{
-                    active: gameState.opponent.active,
+                    active: opponentActive,
                     hp: displayOpponentHp,
-                    maxHp: gameState.opponent.active?.maxHp ?? 0
+                    maxHp: opponentActive?.maxHp ?? gameState.opponent.active?.maxHp ?? 0
                 }}
                 onAttack={handleAttack}
                 disabled={vfx.isAnimating || (gameState.phase !== 'battle_attack') || !!gameState.player.attackLocked}
@@ -556,7 +570,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                 )}
             </AnimatePresence>
             
-            {gameState.phase === 'victory' && (
+            {gameState.phase === 'victory' && !vfx.isAnimating && (
                 <div className="fixed inset-0 bg-black/90 z-[200] flex items-center justify-center">
                     <div className="text-center">
                         <h1 className="text-8xl font-black text-ps-yellow italic mb-8">

@@ -12,28 +12,16 @@ const LEVEL_RANK: Record<string, number> = {
 
 type Snapshot = {
   phase: GameState["phase"];
-  playerHp: number;
-  opponentHp: number;
-  playerMaxHp: number;
   playerActiveId: string | null;
   playerActiveLevel: string | null;
-  opponentActiveId: string | null;
-  playerSelectedAttack: GameState["player"]["selectedAttack"];
-  opponentSelectedAttack: GameState["opponent"]["selectedAttack"];
   winnerSessionId?: string;
 };
 
 function snapshot(state: GameState): Snapshot {
   return {
     phase: state.phase,
-    playerHp: state.player.hp,
-    opponentHp: state.opponent.hp,
-    playerMaxHp: state.player.active?.maxHp ?? 0,
     playerActiveId: state.player.active?.id ?? null,
     playerActiveLevel: state.player.active?.level ?? null,
-    opponentActiveId: state.opponent.active?.id ?? null,
-    playerSelectedAttack: state.player.selectedAttack,
-    opponentSelectedAttack: state.opponent.selectedAttack,
     winnerSessionId: state.winnerSessionId,
   };
 }
@@ -97,33 +85,6 @@ export function useBattleAudio(gameState: GameState, sessionId: string) {
         }
         default:
           break;
-      }
-    }
-
-    if (next.phase === "resolution" && prev.phase === "battle_attack") {
-      const dmgToOpponent = prev.opponentHp - next.opponentHp;
-      const dmgToPlayer = prev.playerHp - next.playerHp;
-
-      if (
-        next.playerSelectedAttack === "cross" ||
-        next.opponentSelectedAttack === "cross"
-      ) {
-        audio.playSfx("counter", { tag: "tag_sfx_combat", spatial: "center" });
-      }
-
-      if (dmgToOpponent > 0) {
-        audio.playCombatHit(
-          dmgToOpponent,
-          "enemy",
-          gameState.player.active?.type
-        );
-      }
-      if (dmgToPlayer > 0) {
-        audio.playCombatHit(
-          dmgToPlayer,
-          "player",
-          gameState.opponent.active?.type
-        );
       }
     }
 

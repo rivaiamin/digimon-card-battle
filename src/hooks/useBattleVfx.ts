@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useAudio } from "../context/AudioProvider";
+import {
+  combatSnapshot,
+  computeCombatDamage,
+  type CombatSnapshot,
+} from "../lib/combatResolution";
 import { HEAVY_DAMAGE_THRESHOLD } from "../lib/audio/sfxPresets";
-import type { GameState } from "../types";
+import type { DigimonCardData, GameState } from "../types";
 
 export type BattleVfxPhase = "idle" | "lunge" | "impact" | "settle";
 export type CameraState = "idle" | "attack" | "damage";
@@ -10,6 +16,11 @@ export type DamagePopup = {
   target: "player" | "opponent";
   amount: number;
   isHeavy: boolean;
+};
+
+export type FrozenField = {
+  playerActive: DigimonCardData | null;
+  opponentActive: DigimonCardData | null;
 };
 
 export type BattleVfx = {
@@ -22,14 +33,18 @@ export type BattleVfx = {
   opponentHit: boolean;
   displayPlayerHp: number | null;
   displayOpponentHp: number | null;
+  frozenField: FrozenField | null;
   flashColor: string | null;
   popups: DamagePopup[];
   isCounter: boolean;
+  playerKo: boolean;
+  opponentKo: boolean;
 };
 
 const LUNGE_MS = 380;
 const IMPACT_HOLD_MS = 320;
 const SETTLE_MS = 520;
+const KO_SETTLE_EXTRA_MS = 280;
 
 const INITIAL: BattleVfx = {
   phase: "idle",
@@ -41,28 +56,13 @@ const INITIAL: BattleVfx = {
   opponentHit: false,
   displayPlayerHp: null,
   displayOpponentHp: null,
+  frozenField: null,
   flashColor: null,
   popups: [],
   isCounter: false,
+  playerKo: false,
+  opponentKo: false,
 };
-
-type Snapshot = {
-  phase: GameState["phase"];
-  playerHp: number;
-  opponentHp: number;
-  playerAttack: GameState["player"]["selectedAttack"];
-  opponentAttack: GameState["opponent"]["selectedAttack"];
-};
-
-function snapshot(state: GameState): Snapshot {
-  return {
-    phase: state.phase,
-    playerHp: state.player.hp,
-    opponentHp: state.opponent.hp,
-    playerAttack: state.player.selectedAttack,
-    opponentAttack: state.opponent.selectedAttack,
-  };
-}
 
 function flashForHits(
   dmgToPlayer: number,
@@ -78,19 +78,42 @@ function flashForHits(
   return isHeavy ? "rgba(255,60,60,0.5)" : "rgba(255,60,60,0.28)";
 }
 
-function shouldTriggerCombatVfx(prev: Snapshot, next: Snapshot): boolean {
-  const leavingAttack =
-    prev.phase === "battle_attack" &&
-    (next.phase === "resolution" || next.phase === "draw" || next.phase === "victory");
-  const resolutionToNext =
-    prev.phase === "resolution" &&
-    (next.phase === "draw" || next.phase === "preparation" || next.phase === "victory");
-  return leavingAttack || resolutionToNext;
+function playCombatSfx(
+  audio: ReturnType<typeof useAudio>,
+  prev: CombatSnapshot,
+  damage: { toPlayer: number; toOpponent: number; playerKo: boolean; opponentKo: boolean },
+  isCounter: boolean
+) {
+  if (isCounter) {
+    audio.playSfx("counter", { tag: "tag_sfx_combat", spatial: "center" });
+  }
+
+  if (damage.toOpponent > 0) {
+    audio.playCombatHit(
+      damage.toOpponent,
+      "enemy",
+      prev.playerActive?.type
+    );
+  }
+  if (damage.toPlayer > 0) {
+    audio.playCombatHit(
+      damage.toPlayer,
+      "player",
+      prev.opponentActive?.type
+    );
+  }
+
+  if (damage.playerKo || damage.opponentKo) {
+    setTimeout(() => {
+      audio.playSfx("thud", { tag: "tag_sfx_combat", spatial: "center" });
+    }, 200);
+  }
 }
 
 export function useBattleVfx(gameState: GameState): BattleVfx {
+  const audio = useAudio();
   const [vfx, setVfx] = useState<BattleVfx>(INITIAL);
-  const prevRef = useRef<Snapshot | null>(null);
+  const prevRef = useRef<CombatSnapshot | null>(null);
   const runningRef = useRef(false);
   const lastTriggerKeyRef = useRef<string | null>(null);
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -114,51 +137,61 @@ export function useBattleVfx(gameState: GameState): BattleVfx {
 
   useEffect(() => {
     const prev = prevRef.current;
-    const next = snapshot(gameState);
+    const next = combatSnapshot(gameState);
     prevRef.current = next;
 
     if (!prev) return;
 
-    const dmgToOpponent = Math.max(0, prev.opponentHp - next.opponentHp);
-    const dmgToPlayer = Math.max(0, prev.playerHp - next.playerHp);
-    const hasDamage = dmgToOpponent > 0 || dmgToPlayer > 0;
+    const damage = computeCombatDamage(prev, next);
+    if (!damage || runningRef.current) return;
 
-    if (!shouldTriggerCombatVfx(prev, next) || !hasDamage || runningRef.current) {
-      return;
-    }
+    const triggerKey = [
+      prev.playerHp,
+      prev.opponentHp,
+      next.playerHp,
+      next.opponentHp,
+      prev.playerActive?.id ?? "none",
+      next.playerActive?.id ?? "none",
+      prev.opponentActive?.id ?? "none",
+      next.opponentActive?.id ?? "none",
+    ].join("|");
 
-    const triggerKey = `${prev.playerHp}-${prev.opponentHp}->${next.playerHp}-${next.opponentHp}`;
-    if (lastTriggerKeyRef.current === triggerKey) {
-      return;
-    }
+    if (lastTriggerKeyRef.current === triggerKey) return;
     lastTriggerKeyRef.current = triggerKey;
 
+    const { toPlayer, toOpponent, playerKo, opponentKo } = damage;
     runningRef.current = true;
     clearTimers();
 
     const isCounter =
       next.playerAttack === "cross" || next.opponentAttack === "cross";
     const isHeavy =
-      dmgToOpponent >= HEAVY_DAMAGE_THRESHOLD ||
-      dmgToPlayer >= HEAVY_DAMAGE_THRESHOLD;
-    const flashColor = flashForHits(dmgToPlayer, dmgToOpponent, isHeavy);
+      toOpponent >= HEAVY_DAMAGE_THRESHOLD ||
+      toPlayer >= HEAVY_DAMAGE_THRESHOLD;
+    const flashColor = flashForHits(toPlayer, toOpponent, isHeavy);
+    const hasKo = playerKo || opponentKo;
+
+    const frozenField: FrozenField = {
+      playerActive: prev.playerActive,
+      opponentActive: prev.opponentActive,
+    };
 
     const popupSeed = Date.now();
     const popups: DamagePopup[] = [];
-    if (dmgToOpponent > 0) {
+    if (toOpponent > 0) {
       popups.push({
         id: `${popupSeed}-opp`,
         target: "opponent",
-        amount: dmgToOpponent,
-        isHeavy: dmgToOpponent >= HEAVY_DAMAGE_THRESHOLD,
+        amount: toOpponent,
+        isHeavy: toOpponent >= HEAVY_DAMAGE_THRESHOLD,
       });
     }
-    if (dmgToPlayer > 0) {
+    if (toPlayer > 0) {
       popups.push({
         id: `${popupSeed}-plr`,
         target: "player",
-        amount: dmgToPlayer,
-        isHeavy: dmgToPlayer >= HEAVY_DAMAGE_THRESHOLD,
+        amount: toPlayer,
+        isHeavy: toPlayer >= HEAVY_DAMAGE_THRESHOLD,
       });
     }
 
@@ -166,26 +199,31 @@ export function useBattleVfx(gameState: GameState): BattleVfx {
       phase: "lunge",
       isAnimating: true,
       cameraState: "attack",
-      playerAttacking: dmgToOpponent > 0,
-      opponentAttacking: dmgToPlayer > 0,
+      playerAttacking: toOpponent > 0,
+      opponentAttacking: toPlayer > 0,
       playerHit: false,
       opponentHit: false,
       displayPlayerHp: prev.playerHp,
       displayOpponentHp: prev.opponentHp,
+      frozenField,
       flashColor: null,
       popups: [],
       isCounter,
+      playerKo,
+      opponentKo,
     });
 
     schedule(() => {
+      playCombatSfx(audio, prev, damage, isCounter);
+
       setVfx((s) => ({
         ...s,
         phase: "impact",
         cameraState: "damage",
         playerAttacking: false,
         opponentAttacking: false,
-        playerHit: dmgToPlayer > 0,
-        opponentHit: dmgToOpponent > 0,
+        playerHit: toPlayer > 0,
+        opponentHit: toOpponent > 0,
         flashColor,
         popups,
       }));
@@ -199,15 +237,26 @@ export function useBattleVfx(gameState: GameState): BattleVfx {
         playerHit: false,
         opponentHit: false,
         flashColor: null,
-        displayPlayerHp: null,
-        displayOpponentHp: null,
+        displayPlayerHp: playerKo ? 0 : null,
+        displayOpponentHp: opponentKo ? 0 : null,
       }));
     }, LUNGE_MS + IMPACT_HOLD_MS);
 
+    const totalMs =
+      LUNGE_MS + IMPACT_HOLD_MS + SETTLE_MS + (hasKo ? KO_SETTLE_EXTRA_MS : 0);
+
+    schedule(() => {
+      setVfx((s) => ({
+        ...s,
+        displayPlayerHp: null,
+        displayOpponentHp: null,
+      }));
+    }, totalMs - 80);
+
     schedule(() => {
       resetVfx();
-    }, LUNGE_MS + IMPACT_HOLD_MS + SETTLE_MS);
-  }, [gameState, clearTimers, resetVfx, schedule]);
+    }, totalMs);
+  }, [gameState, clearTimers, resetVfx, schedule, audio]);
 
   useEffect(() => {
     if (gameState.phase === "waiting") {

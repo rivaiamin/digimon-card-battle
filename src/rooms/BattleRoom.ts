@@ -26,8 +26,14 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
                     if (!isMyTurn || this.state.phase !== "draw") return;
                     this.drawToSixOrLose(player);
                     if ((this.state.phase as string) === "victory") return;
+                    if (!this.getActive(player) && !this.hasRookieInHand(player)) {
+                        this.endGame(player.sessionId, "deck_out");
+                        return;
+                    }
                     this.state.phase = "preparation";
-                    this.state.message = "Preparation Phase";
+                    this.state.message = this.getActive(player)
+                        ? "Preparation Phase"
+                        : "Deploy a Rookie from your hand";
                     break;
                 case "DISCARD_FOR_DP":
                     if (!isMyTurn || this.state.phase !== "preparation") return;
@@ -45,7 +51,12 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
                     break;
                 case "END_PREP":
                     if (!isMyTurn || this.state.phase !== "preparation") return;
-                    if (!this.getActive(player)) return;
+                    if (!this.getActive(player)) {
+                        if (!this.hasRookieInHand(player)) {
+                            this.endGame(player.sessionId, "deck_out");
+                        }
+                        return;
+                    }
                     this.endPrepOrPassTurn(player);
                     break;
                 case "LOCK_SUPPORT":
@@ -308,25 +319,8 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         this.beginSupportPlacement();
     }
 
-    private deployRookieOrLose(player: PlayerSchema) {
-        // Ensure the player has an active rookie; draw until found.
-        const findInHand = () => player.hand.find(c => c.level === "Rookie") ?? null;
-        let rookie = findInHand();
-        while (!rookie) {
-            if (player.deck.length <= 0) {
-                this.endGame(player.sessionId, "deck_out");
-                return;
-            }
-            player.hand.push(player.deck.shift()!);
-            rookie = findInHand();
-        }
-        // Remove rookie from hand to field
-        const idx = player.hand.findIndex(c => c.id === rookie!.id);
-        if (idx !== -1) player.hand.splice(idx, 1);
-        player.evolutionStack.clear();
-        player.evolutionStack.push(rookie!);
-        player.active = rookie!;
-        player.hp = rookie!.maxHp;
+    private hasRookieInHand(player: PlayerSchema): boolean {
+        return player.hand.some(c => c.level === "Rookie");
     }
 
     private beginSupportPlacement() {
@@ -476,11 +470,10 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         if (!aKO && !bKO) return;
 
         if (aKO && bKO) {
-            // Double KO: trash both stacks, redeploy both rookies
+            // Double KO: trash both stacks; each player redeploys manually on their next prep phase
             this.trashEvolutionStack(pA);
             this.trashEvolutionStack(pB);
-            this.deployRookieOrLose(pA);
-            this.deployRookieOrLose(pB);
+            this.state.message = "Double KO — deploy a Rookie on your next turn";
             return;
         }
 
@@ -489,7 +482,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         winner.score += 1;
 
         this.trashEvolutionStack(loser);
-        this.deployRookieOrLose(loser);
+        this.state.message = "KO — deploy a Rookie from your hand";
 
         if (winner.score >= 3) {
             this.endGame(loser.sessionId, "points");
