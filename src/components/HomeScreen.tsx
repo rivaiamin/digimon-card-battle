@@ -1,4 +1,5 @@
 import React from "react";
+import { AppIcon } from "./AppIcon";
 import { useAudio } from "../context/AudioProvider";
 
 type Props = {
@@ -19,6 +20,12 @@ export function HomeScreen({ onJoinMatch }: Props) {
       <div className="w-full max-w-xl px-6">
         <div className="digital-grid rounded-2xl border border-white/10 bg-black/60 p-8 shadow-[0_0_60px_rgba(60,155,255,0.15)]">
           <div className="text-center">
+            <div className="flex justify-center mb-5">
+              <AppIcon
+                size={88}
+                className="drop-shadow-[0_0_28px_rgba(60,155,255,0.55)]"
+              />
+            </div>
             <div className="text-5xl font-black italic tracking-tighter text-ps-blue">
               DIGIMON BATTLE
             </div>

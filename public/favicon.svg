@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Digimon Battle">
+  <defs>
+    <linearGradient id="arena" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3c9bff"/>
+      <stop offset="100%" stop-color="#00ff88"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="0.6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="32" height="32" rx="7" fill="#050a12"/>
+  <path d="M0 10h32M0 22h32M10 0v32M22 0v32" stroke="#00ff88" stroke-opacity="0.14" stroke-width="0.4"/>
+  <path
+    d="M16 2.5 27.5 9v14L16 29.5 4.5 23V9Z"
+    fill="none"
+    stroke="url(#arena)"
+    stroke-width="1.6"
+    filter="url(#glow)"
+  />
+  <path d="M10.5 19 16 11l5.5 4.5L16 24Z" fill="#3c9bff"/>
+  <path d="M12.5 21 18 13l5.5 4.5L18 26Z" fill="#ff3c3c" opacity="0.92"/>
+  <circle cx="16" cy="7.5" r="2.1" fill="#ff3c3c"/>
+  <path d="M23.2 10.8 26.4 16l-6.2 1.2 3-6.4Z" fill="#3c9bff"/>
+  <path d="M13.2 25.2 18.8 20.6M18.8 25.2 13.2 20.6" stroke="#ffcb00" stroke-width="1.7" stroke-linecap="round"/>
+  <circle cx="16" cy="17" r="1.4" fill="#ffcb00"/>
+</svg>
