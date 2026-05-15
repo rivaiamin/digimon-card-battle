@@ -9,6 +9,9 @@ import { getAllCards } from "../services/cardService";
 import { BattleStateSchema } from "../schema/BattleState";
 import { useAudio } from "../context/AudioProvider";
 import { useBattleAudio } from "../hooks/useBattleAudio";
+import { useBattleVfx } from "../hooks/useBattleVfx";
+import { ImpactFlash } from "./battle/ImpactFlash";
+import { DamagePopups } from "./battle/DamagePopups";
 
 const INITIAL_PLAYER_STATE: PlayerState = {
     active: null,
@@ -99,11 +102,13 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
         loserReason: undefined,
     });
 
-    const [isAnimating, setIsAnimating] = useState(false);
-    const [cameraState, setCameraState] = useState<'idle' | 'attack' | 'damage'>('idle');
     const [hoveredCard, setHoveredCard] = useState<DigimonCardData | null>(null);
 
     useBattleAudio(gameState, room.sessionId);
+    const vfx = useBattleVfx(gameState);
+
+    const displayPlayerHp = vfx.displayPlayerHp ?? gameState.player.hp;
+    const displayOpponentHp = vfx.displayOpponentHp ?? gameState.opponent.hp;
 
     useEffect(() => {
         // Do not call room.leave() here: React StrictMode remounts effects in dev and would
@@ -268,13 +273,38 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
             </div>
 
             {/* ARENA FLOOR */}
+            <ImpactFlash color={vfx.flashColor} />
+            <DamagePopups popups={vfx.popups} />
+
+            <AnimatePresence>
+                {vfx.isCounter && vfx.phase === "impact" && (
+                    <motion.div
+                        initial={{ x: "-120%", opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        exit={{ x: "120%", opacity: 0 }}
+                        transition={{ duration: 0.28, ease: "easeOut" }}
+                        className="fixed top-[18%] left-0 w-full z-[88] pointer-events-none flex justify-center"
+                    >
+                        <motion.div className="bg-ps-blue/90 border-y-4 border-white px-16 py-2 skew-x-[-18deg] shadow-[0_0_40px_rgba(60,155,255,0.6)]">
+                            <span className="block skew-x-[18deg] text-5xl font-black italic text-white tracking-tighter">
+                                COUNTER!
+                            </span>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             <motion.div 
                 animate={{ 
-                    rotateX: cameraState === 'attack' ? 30 : 45,
-                    translateZ: cameraState === 'attack' ? 150 : 0,
-                    scale: cameraState === 'attack' ? 1.3 : 1.1
+                    rotateX: vfx.cameraState === 'attack' ? 28 : vfx.cameraState === 'damage' ? 38 : 45,
+                    translateZ: vfx.cameraState === 'attack' ? 140 : vfx.cameraState === 'damage' ? 80 : 0,
+                    scale: vfx.cameraState === 'attack' ? 1.28 : vfx.cameraState === 'damage' ? 1.18 : 1.1,
+                    x: vfx.phase === "impact" ? [0, -6, 6, -4, 4, 0] : 0,
                 }}
-                transition={{ duration: 0.8 }}
+                transition={{
+                    duration: vfx.phase === "impact" ? 0.28 : vfx.isAnimating ? 0.35 : 0.8,
+                    ease: vfx.phase === "impact" ? "easeOut" : "easeInOut",
+                }}
                 className="relative w-[200vw] h-[200vh] bg-neutral-950 flex items-center justify-center arena-surface digital-grid"
             >
                 {/* 3D Battle Elements */}
@@ -283,8 +313,9 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                     <div className="relative" style={{ transform: "rotateX(-45deg)" }}>
                         {gameState.player.active && (
                             <DigimonCard 
-                                data={{...gameState.player.active, hp: gameState.player.hp}} 
-                                isAttacking={isAnimating && cameraState === 'attack'}
+                                data={{...gameState.player.active, hp: displayPlayerHp}} 
+                                isAttacking={vfx.playerAttacking}
+                                isHit={vfx.playerHit}
                                 onHover={setHoveredCard}
                             />
                         )}
@@ -299,9 +330,10 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                     <div className="relative" style={{ transform: "rotateX(-45deg)" }}>
                         {gameState.opponent.active && (
                             <DigimonCard 
-                                data={{...gameState.opponent.active, hp: gameState.opponent.hp}} 
+                                data={{...gameState.opponent.active, hp: displayOpponentHp}} 
                                 isOpponent 
-                                isAttacking={isAnimating && cameraState === 'damage'}
+                                isAttacking={vfx.opponentAttacking}
+                                isHit={vfx.opponentHit}
                                 onHover={setHoveredCard}
                             />
                         )}
@@ -314,16 +346,16 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                 state={gameState}
                 player={{
                     active: gameState.player.active,
-                    hp: gameState.player.hp,
+                    hp: displayPlayerHp,
                     maxHp: gameState.player.active?.maxHp ?? 0
                 }}
                 opponent={{
                     active: gameState.opponent.active,
-                    hp: gameState.opponent.hp,
+                    hp: displayOpponentHp,
                     maxHp: gameState.opponent.active?.maxHp ?? 0
                 }}
                 onAttack={handleAttack}
-                disabled={isAnimating || (gameState.phase !== 'battle_attack') || !!gameState.player.attackLocked}
+                disabled={vfx.isAnimating || (gameState.phase !== 'battle_attack') || !!gameState.player.attackLocked}
             />
 
             {/* PHASE CONTROLS (Hand) */}

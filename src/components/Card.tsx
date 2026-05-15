@@ -10,6 +10,7 @@ interface CardProps {
   data: DigimonCardData;
   isOpponent?: boolean;
   isAttacking?: boolean;
+  isHit?: boolean;
   delay?: number;
   onHover?: (data: DigimonCardData | null) => void;
 }
@@ -27,7 +28,8 @@ const TypeIcon = ({ type }: { type: string }) => {
 export const DigimonCard: React.FC<CardProps & { variant?: 'full' | 'mini' }> = ({ 
   data, 
   isOpponent, 
-  isAttacking, 
+  isAttacking,
+  isHit = false,
   delay = 0,
   variant = 'full',
   onHover
@@ -162,16 +164,20 @@ export const DigimonCard: React.FC<CardProps & { variant?: 'full' | 'mini' }> = 
     );
   }
 
+  const knockbackX = isOpponent ? 56 : -56;
+  const knockbackRot = isOpponent ? 8 : -8;
+
   return (
     <motion.div
       initial={{ y: 50, opacity: 0, rotateY: 0 }}
       animate={{ 
-        y: isAttacking ? (isOpponent ? 150 : -150) : 0,
-        x: isAttacking ? (isOpponent ? -50 : 50) : 0,
+        y: isAttacking ? (isOpponent ? 120 : -120) : 0,
+        x: isHit ? knockbackX : isAttacking ? (isOpponent ? -40 : 40) : 0,
         opacity: 1,
+        rotate: isHit ? knockbackRot : 0,
         rotateY: 5, 
         rotateX: 5,
-        scale: isAttacking ? 1.2 : 1
+        scale: isAttacking ? 1.15 : isHit ? 0.96 : 1
       }}
       onMouseEnter={() => {
         audio.playUiHover();
@@ -180,9 +186,10 @@ export const DigimonCard: React.FC<CardProps & { variant?: 'full' | 'mini' }> = 
       onMouseLeave={() => onHover?.(null)}
       transition={{ 
         delay, 
-        duration: 0.8, 
+        duration: isHit ? 0.25 : 0.55, 
         type: "spring", 
-        stiffness: 100,
+        stiffness: isHit ? 380 : 120,
+        damping: isHit ? 16 : 20,
         repeat: isAttacking ? 1 : 0,
         repeatType: "reverse"
       }}
