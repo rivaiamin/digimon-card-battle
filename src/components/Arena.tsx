@@ -174,6 +174,10 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
         room.send("action", { type: "DISCARD_FOR_DP", cardIds: [cardId] });
     };
 
+    const handleDeployRookie = (cardId: string) => {
+        room.send("action", { type: "DEPLOY_ROOKIE", cardId });
+    };
+
     const handleEvolution = (cardId: string) => {
         room.send("action", { type: "EVOLVE", cardId });
     };
@@ -210,8 +214,12 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
         );
     }
 
-    // First patches can advance phase before nested player/active fields are decoded; BattleHUD assumes actives exist.
-    if (gameState.phase !== 'victory' && (!gameState.player.active || !gameState.opponent.active)) {
+    const needsBattleActives =
+        gameState.phase === 'battle_support' ||
+        gameState.phase === 'battle_attack' ||
+        gameState.phase === 'resolution';
+
+    if (gameState.phase !== 'victory' && needsBattleActives && (!gameState.player.active || !gameState.opponent.active)) {
         return (
             <div className="w-screen h-screen bg-black flex flex-col items-center justify-center">
                 <div className="relative">
@@ -295,14 +303,14 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
             <BattleHUD 
                 state={gameState}
                 player={{
-                    active: gameState.player.active!,
+                    active: gameState.player.active,
                     hp: gameState.player.hp,
-                    maxHp: gameState.player.active!.maxHp
+                    maxHp: gameState.player.active?.maxHp ?? 0
                 }}
                 opponent={{
-                    active: gameState.opponent.active!,
+                    active: gameState.opponent.active,
                     hp: gameState.opponent.hp,
-                    maxHp: gameState.opponent.active!.maxHp
+                    maxHp: gameState.opponent.active?.maxHp ?? 0
                 }}
                 onAttack={handleAttack}
                 disabled={isAnimating || (gameState.phase !== 'battle_attack') || !!gameState.player.attackLocked}
@@ -334,16 +342,44 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                  {gameState.phase === 'preparation' && (
                      <div className="flex flex-col gap-4">
                         <div className="bg-black/80 p-2 text-white text-xs border border-ps-yellow uppercase flex items-center justify-between gap-4">
-                            <span>Preparation: Discard cards for DP, then optionally evolve.</span>
+                            <span>
+                                {!gameState.player.active
+                                    ? "Deploy a Rookie Digimon from your hand (0 cost), then manage DP and evolution."
+                                    : "Preparation: Discard cards for DP, then optionally evolve."}
+                            </span>
                             {gameState.isPlayerTurn && (
                                 <button
                                     onClick={handleEndPrep}
-                                    className="pointer-events-auto bg-ps-yellow text-black font-black px-4 py-2 border-2 border-black hover:bg-white"
+                                    disabled={!gameState.player.active}
+                                    className="pointer-events-auto bg-ps-yellow text-black font-black px-4 py-2 border-2 border-black hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed"
                                 >
                                     END PREP
                                 </button>
                             )}
                         </div>
+
+                        {!gameState.player.active && gameState.isPlayerTurn && (
+                            <div className="flex flex-col gap-2">
+                                <div className="bg-black/80 p-2 text-white text-xs border border-ps-green uppercase">
+                                    Deploy Digimon: Choose a Rookie from your hand
+                                </div>
+                                <div className="flex gap-2 flex-wrap">
+                                    {gameState.player.hand.filter(c => c.level === 'Rookie').map(c => (
+                                        <div
+                                            key={`deploy_${c.id}`}
+                                            onClick={() => handleDeployRookie(c.id)}
+                                            className="pointer-events-auto cursor-pointer ring-2 ring-ps-green ring-offset-2 ring-offset-black rounded"
+                                        >
+                                            <DigimonCard data={c} variant="mini" onHover={setHoveredCard} />
+                                            <div className="text-[10px] bg-ps-green px-1 text-black font-black text-center">DEPLOY</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {gameState.player.active && (
+                        <>
                         <div className="flex gap-2">
                              {gameState.player.hand.map(c => (
                                  <div key={c.id} onClick={() => handleDiscardForDP(c.id)} className="pointer-events-auto cursor-pointer group relative">
@@ -365,6 +401,8 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                                 ))}
                             </div>
                         </div>
+                        </>
+                        )}
                      </div>
                  )}
 

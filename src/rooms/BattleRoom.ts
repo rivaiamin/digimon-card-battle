@@ -33,6 +33,11 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
                     if (!isMyTurn || this.state.phase !== "preparation") return;
                     this.discardForDp(player, Array.isArray(message.cardIds) ? message.cardIds : []);
                     break;
+                case "DEPLOY_ROOKIE":
+                    if (!isMyTurn || this.state.phase !== "preparation") return;
+                    if (typeof message.cardId !== "string") return;
+                    this.deployRookie(player, message.cardId);
+                    break;
                 case "EVOLVE":
                     if (!isMyTurn || this.state.phase !== "preparation") return;
                     if (typeof message.cardId !== "string") return;
@@ -40,7 +45,8 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
                     break;
                 case "END_PREP":
                     if (!isMyTurn || this.state.phase !== "preparation") return;
-                    this.beginSupportPlacement();
+                    if (!this.getActive(player)) return;
+                    this.endPrepOrPassTurn(player);
                     break;
                 case "LOCK_SUPPORT":
                     if (this.state.phase !== "battle_support") return;
@@ -108,7 +114,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         this.state.activePlayerSessionId = sessions[0];
         this.state.turn = 1;
 
-        // Build and shuffle 30-card decks, then deploy initial rookies.
+        // Build and shuffle 30-card decks. Rookies are deployed manually after the first draw.
         sessions.forEach((sessionId, playerIndex) => {
             const p = this.state.players.get(sessionId)!;
             p.deck.clear();
@@ -127,8 +133,6 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             const deck = this.buildDeck30(playerIndex);
             this.shuffle(deck);
             deck.forEach(c => p.deck.push(c));
-
-            this.deployRookieOrLose(p);
         });
 
         if (this.state.phase !== "victory") {
@@ -273,6 +277,35 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
 
     private getActive(player: PlayerSchema): CardSchema | null {
         return player.active ?? null;
+    }
+
+    private getOpponent(player: PlayerSchema): PlayerSchema | null {
+        const opponentSessionId = Array.from(this.state.players.keys()).find(id => id !== player.sessionId);
+        return opponentSessionId ? this.state.players.get(opponentSessionId) ?? null : null;
+    }
+
+    private deployRookie(player: PlayerSchema, cardId: string) {
+        if (this.getActive(player)) return;
+        const idx = player.hand.findIndex(c => c.id === cardId);
+        if (idx === -1) return;
+        const rookie = player.hand[idx];
+        if (rookie.level !== "Rookie") return;
+
+        player.hand.splice(idx, 1);
+        player.evolutionStack.clear();
+        player.evolutionStack.push(rookie);
+        player.active = rookie;
+        player.hp = rookie.maxHp;
+        this.state.message = "Preparation Phase";
+    }
+
+    private endPrepOrPassTurn(player: PlayerSchema) {
+        const opponent = this.getOpponent(player);
+        if (!opponent?.active) {
+            this.endTurn();
+            return;
+        }
+        this.beginSupportPlacement();
     }
 
     private deployRookieOrLose(player: PlayerSchema) {

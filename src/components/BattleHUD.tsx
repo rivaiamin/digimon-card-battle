@@ -7,12 +7,12 @@ import { Circle, Triangle, X, Swords } from "lucide-react";
 
 interface HUDProps {
   player: {
-    active: DigimonCardData;
+    active: DigimonCardData | null;
     hp: number;
     maxHp: number;
   };
   opponent: {
-    active: DigimonCardData;
+    active: DigimonCardData | null;
     hp: number;
     maxHp: number;
   };
@@ -89,12 +89,18 @@ export const BattleHUD: React.FC<HUDProps> = ({ player, opponent, onAttack, disa
                         <div className="relative aspect-square bg-slate-900 border-2 border-ps-red/40 overflow-hidden shadow-[0_0_15px_rgba(255,60,60,0.2)]">
                             <div className="absolute inset-0 bg-ps-red/5" />
                             <div className="absolute inset-0 scanline opacity-40 z-10" />
+                            {opponent.active ? (
                             <img 
                                 src={cardImageSrc(opponent.active)} 
                                 alt="Scan"
                                 className="w-full h-full object-cover opacity-70 mix-blend-screen scale-110"
                                 referrerPolicy="no-referrer"
                             />
+                            ) : (
+                            <div className="w-full h-full flex items-center justify-center text-[8px] text-ps-red/50 font-black uppercase tracking-widest">
+                                No Signal
+                            </div>
+                            )}
                             {/* Hostile Reticle */}
                             <div className="absolute inset-0 flex items-center justify-center z-20">
                                 <div className="w-12 h-12 border border-ps-red/30 rounded-full animate-ping opacity-50" />
@@ -121,10 +127,14 @@ export const BattleHUD: React.FC<HUDProps> = ({ player, opponent, onAttack, disa
                         <div className="flex justify-between items-baseline mb-2">
                             <div className="flex flex-col">
                                 <span className="text-[10px] font-black text-ps-red leading-none tracking-widest opacity-60">TARGET_ID</span>
-                                <span className="text-2xl font-black italic tracking-tighter text-white uppercase leading-none">{opponent.active.name}</span>
+                                <span className="text-2xl font-black italic tracking-tighter text-white uppercase leading-none">
+                                    {opponent.active?.name ?? "NO_SIGNAL"}
+                                </span>
                             </div>
                             <div className="px-1.5 bg-ps-red/20 border border-ps-red/40 rounded-sm">
-                                <span className="text-xs font-black text-ps-red">{opponent.active.level.toUpperCase()}</span>
+                                <span className="text-xs font-black text-ps-red">
+                                    {opponent.active?.level.toUpperCase() ?? "—"}
+                                </span>
                             </div>
                         </div>
 
@@ -132,11 +142,15 @@ export const BattleHUD: React.FC<HUDProps> = ({ player, opponent, onAttack, disa
                         <div className="grid grid-cols-2 gap-2 mb-3 bg-white/5 p-2 border border-white/10 font-mono">
                             <div className="flex flex-col">
                                 <span className="text-[7px] text-white/30 uppercase tracking-tighter">Attribute_Type</span>
-                                <span className="text-[8px] font-bold text-ps-red uppercase italic">{opponent.active.type}</span>
+                                <span className="text-[8px] font-bold text-ps-red uppercase italic">{opponent.active?.type ?? "—"}</span>
                             </div>
                             <div className="flex flex-col items-end">
                                 <span className="text-[7px] text-white/30 uppercase tracking-tighter">Target_Vitals / HP</span>
-                                <span className="text-sm font-black text-white italic">{opponent.hp} <span className="text-[10px] opacity-30">/ {opponent.active.maxHp}</span></span>
+                                <span className="text-sm font-black text-white italic">
+                                    {opponent.active ? (
+                                        <>{opponent.hp} <span className="text-[10px] opacity-30">/ {opponent.active.maxHp}</span></>
+                                    ) : "—"}
+                                </span>
                             </div>
                         </div>
 
@@ -144,7 +158,7 @@ export const BattleHUD: React.FC<HUDProps> = ({ player, opponent, onAttack, disa
                         <div className="h-2 bg-slate-900 border border-ps-red/20 rounded-sm overflow-hidden mt-auto mb-1">
                             <motion.div 
                                 initial={{ width: "100%" }}
-                                animate={{ width: `${(opponent.hp/opponent.active.maxHp)*100}%` }}
+                                animate={{ width: `${opponent.active && opponent.active.maxHp > 0 ? (opponent.hp / opponent.active.maxHp) * 100 : 0}%` }}
                                 className="h-full bg-ps-red shadow-[0_0_15px_#ff3c3c]" 
                             />
                             <div className="absolute inset-0 flex justify-between pointer-events-none opacity-20">
@@ -209,16 +223,22 @@ export const BattleHUD: React.FC<HUDProps> = ({ player, opponent, onAttack, disa
             <div className="absolute top-1 left-4 flex gap-4">
                 <div className="flex items-center gap-1">
                     <div className="w-1 h-1 bg-ps-blue animate-pulse" />
-                    <span className="text-[6px] text-ps-blue/80 tracking-widest font-black uppercase">Channel_A / Linked</span>
+                    <span className="text-[6px] text-ps-blue/80 tracking-widest font-black uppercase">
+                        {player.active ? "Channel_A / Linked" : "Channel_A / Standby"}
+                    </span>
                 </div>
                 <div className="flex items-center gap-1">
                     <div className="w-1 h-1 bg-green-500" />
-                    <span className="text-[6px] text-green-500/80 tracking-widest font-black uppercase">Signal_Strength / 100%</span>
+                    <span className="text-[6px] text-green-500/80 tracking-widest font-black uppercase">
+                        {player.active ? "Signal_Strength / 100%" : "Signal_Strength / 0%"}
+                    </span>
                 </div>
             </div>
             
             <div className="absolute bottom-1 right-4 flex items-center gap-2">
-                <span className="text-[6px] text-ps-blue/40 font-black tracking-widest uppercase">Drive_Unit_01 // SECURE_SYNC</span>
+                <span className="text-[6px] text-ps-blue/40 font-black tracking-widest uppercase">
+                    {player.active ? "Drive_Unit_01 // SECURE_SYNC" : "AWAITING_DEPLOYMENT"}
+                </span>
             </div>
             
             <div className="flex gap-4 h-full mt-2 mb-2">
@@ -227,12 +247,18 @@ export const BattleHUD: React.FC<HUDProps> = ({ player, opponent, onAttack, disa
                     <div className="relative aspect-square bg-slate-900 border-2 border-ps-blue/40 overflow-hidden shadow-[0_0_15px_rgba(60,155,255,0.2)]">
                         <div className="absolute inset-0 bg-ps-blue/5" />
                         <div className="absolute inset-0 scanline opacity-40 z-10" />
+                        {player.active ? (
                         <img 
                             src={cardImageSrc(player.active)} 
                             alt="Scan"
                             className="w-full h-full object-cover opacity-70 mix-blend-screen scale-110"
                             referrerPolicy="no-referrer"
                         />
+                        ) : (
+                        <div className="w-full h-full flex items-center justify-center text-[8px] text-ps-blue/50 font-black uppercase tracking-widest text-center px-1">
+                            Deploy Rookie
+                        </div>
+                        )}
                         <div className="absolute inset-0 pointer-events-none z-20">
                             <div className="absolute top-2 left-2 w-3 h-3 border-t border-l border-ps-blue/50" />
                             <div className="absolute top-2 right-2 w-3 h-3 border-t border-r border-ps-blue/50" />
@@ -247,35 +273,43 @@ export const BattleHUD: React.FC<HUDProps> = ({ player, opponent, onAttack, disa
                     <div className="flex justify-between items-baseline mb-2">
                         <div className="flex flex-col">
                             <span className="text-[10px] font-black text-ps-blue leading-none tracking-widest opacity-60 uppercase">Active_Unit</span>
-                            <span className="text-2xl font-black italic tracking-tighter text-white uppercase leading-none">{player.active.name}</span>
+                            <span className="text-2xl font-black italic tracking-tighter text-white uppercase leading-none">
+                                {player.active?.name ?? "NO_UNIT"}
+                            </span>
                         </div>
                         <div className="bg-ps-blue/20 px-2 py-0.5 border border-ps-blue/40 rounded-sm">
-                            <span className="text-xs font-black text-ps-blue">{player.active.level.toUpperCase()}</span>
+                            <span className="text-xs font-black text-ps-blue">{player.active?.level.toUpperCase() ?? "—"}</span>
                         </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-2 mb-3 bg-white/5 p-2 border border-white/10">
                         <div className="flex flex-col">
                             <span className="text-[7px] text-white/30 uppercase tracking-tighter">Attribute_Type</span>
-                            <span className="text-[8px] font-bold text-ps-blue uppercase italic">{player.active.type}</span>
+                            <span className="text-[8px] font-bold text-ps-blue uppercase italic">{player.active?.type ?? "—"}</span>
                         </div>
                         <div className="flex flex-col items-end">
                             <span className="text-[7px] text-white/30 uppercase tracking-tighter">Vital_Sign / HP</span>
-                            <span className="text-sm font-black text-white italic">{player.hp} <span className="text-[10px] opacity-30">/ {player.active.maxHp}</span></span>
+                            <span className="text-sm font-black text-white italic">
+                                {player.active ? (
+                                    <>{player.hp} <span className="text-[10px] opacity-30">/ {player.active.maxHp}</span></>
+                                ) : "—"}
+                            </span>
                         </div>
                     </div>
 
                     <div className="relative h-2 bg-slate-900 border border-ps-blue/20 rounded-sm overflow-hidden mt-auto mb-1">
                         <motion.div 
                             initial={{ width: "100%" }}
-                            animate={{ width: `${(player.hp/player.active.maxHp)*100}%` }}
+                            animate={{ width: `${player.active && player.active.maxHp > 0 ? (player.hp / player.active.maxHp) * 100 : 0}%` }}
                             className="h-full bg-ps-blue shadow-[0_0_15px_#3c9bff]" 
                         />
                         <div className="absolute inset-0 flex justify-between pointer-events-none opacity-20">
                             {[...Array(10)].map((_, i) => <div key={i} className="w-px h-full bg-white" />)}
                         </div>
                     </div>
-                    <div className="text-[6px] text-ps-blue font-bold text-right tracking-[0.2em]">ALL_SYSTEMS_OPERATIONAL</div>
+                    <div className="text-[6px] text-ps-blue font-bold text-right tracking-[0.2em]">
+                        {player.active ? "ALL_SYSTEMS_OPERATIONAL" : "AWAITING_ROOKIE_DEPLOY"}
+                    </div>
                 </div>
             </div>
         </motion.div>
@@ -297,7 +331,7 @@ export const BattleHUD: React.FC<HUDProps> = ({ player, opponent, onAttack, disa
 
       {/* --- ATTACK COMMAND CONSOLE --- */}
       <AnimatePresence>
-          {state.phase === 'battle_attack' && !state.player.attackLocked && (
+          {state.phase === 'battle_attack' && !state.player.attackLocked && player.active && (
               <motion.div 
                   initial={{ opacity: 0, scale: 0.9, x: 50 }}
                   animate={{ opacity: 1, scale: 1, x: 0 }}
