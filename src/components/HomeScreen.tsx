@@ -1,10 +1,17 @@
 import React from "react";
+import { useAudio } from "../context/AudioProvider";
 
 type Props = {
   onJoinMatch: () => void;
 };
 
 export function HomeScreen({ onJoinMatch }: Props) {
+  const audio = useAudio();
+
+  const join = () => {
+    audio.playSfx("menu_click");
+    onJoinMatch();
+  };
   return (
     <div className="relative w-screen h-screen bg-black overflow-hidden flex items-center justify-center">
       <div className="scanlines" />
@@ -22,7 +29,8 @@ export function HomeScreen({ onJoinMatch }: Props) {
 
           <div className="mt-10 flex flex-col gap-3">
             <button
-              onClick={onJoinMatch}
+              onClick={join}
+              onMouseEnter={() => audio.playUiHover()}
               className="bg-ps-yellow text-black px-8 py-4 font-black italic border-4 border-black hover:bg-white"
             >
               JOIN MATCH

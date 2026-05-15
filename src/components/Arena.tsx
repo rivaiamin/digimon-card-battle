@@ -7,6 +7,8 @@ import { DEFAULT_CARD_ATTACKS } from "../constants";
 import { GameState, DigimonCardData, PlayerState } from "../types";
 import { getAllCards } from "../services/cardService";
 import { BattleStateSchema } from "../schema/BattleState";
+import { useAudio } from "../context/AudioProvider";
+import { useBattleAudio } from "../hooks/useBattleAudio";
 
 const INITIAL_PLAYER_STATE: PlayerState = {
     active: null,
@@ -83,6 +85,7 @@ type ArenaProps = {
 };
 
 export const Arena: React.FC<ArenaProps> = ({ room }) => {
+    const audio = useAudio();
     const [clickDebug, setClickDebug] = useState<string>("");
     const [gameState, setGameState] = useState<GameState>({
         player: INITIAL_PLAYER_STATE,
@@ -99,6 +102,8 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
     const [isAnimating, setIsAnimating] = useState(false);
     const [cameraState, setCameraState] = useState<'idle' | 'attack' | 'damage'>('idle');
     const [hoveredCard, setHoveredCard] = useState<DigimonCardData | null>(null);
+
+    useBattleAudio(gameState, room.sessionId);
 
     useEffect(() => {
         // Do not call room.leave() here: React StrictMode remounts effects in dev and would
@@ -165,12 +170,14 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
     // --- SERVER-AUTHORITATIVE ACTIONS ---
 
     const handleDraw = () => {
+        audio.playSfx("chime");
         const stamp = new Date().toLocaleTimeString();
         setClickDebug(`[${stamp}] click: sent DRAW (phase=${gameState.phase}, myTurn=${gameState.isPlayerTurn})`);
         room.send("action", { type: "DRAW" });
     };
 
     const handleDiscardForDP = (cardId: string) => {
+        audio.playSfx("thud", { spatial: "player" });
         room.send("action", { type: "DISCARD_FOR_DP", cardIds: [cardId] });
     };
 
@@ -183,14 +190,17 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
     };
 
     const handleEndPrep = () => {
+        audio.playSfx("menu_click");
         room.send("action", { type: "END_PREP" });
     };
 
     const handleSupportChoice = (cardId: string | null) => {
+        audio.playSfx("thud", { spatial: "player" });
         room.send("action", { type: "LOCK_SUPPORT", cardId });
     };
 
     const handleAttack = (type: 'circle' | 'triangle' | 'cross') => {
+        audio.playSfx("tick");
         room.send("action", { type: "LOCK_ATTACK", attack: type });
     };
 

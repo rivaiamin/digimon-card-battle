@@ -4,6 +4,7 @@ import { Circle, Triangle, X, Zap, Flame, Snowflake, TreePine, Ghost } from "luc
 import { DEFAULT_CARD_ATTACKS } from "../constants";
 import { cardImageSrc } from "../lib/cardImageSrc";
 import { DigimonCardData } from "../types";
+import { useAudio } from "../context/AudioProvider";
 
 interface CardProps {
   data: DigimonCardData;
@@ -33,6 +34,7 @@ export const DigimonCard: React.FC<CardProps & { variant?: 'full' | 'mini' }> = 
 }) => {
   const isMini = variant === 'mini';
   const attacks = data.attacks ?? DEFAULT_CARD_ATTACKS;
+  const audio = useAudio();
 
   const cardContent = (
     <>
@@ -120,7 +122,10 @@ export const DigimonCard: React.FC<CardProps & { variant?: 'full' | 'mini' }> = 
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         whileHover={{ scale: 1.1, translateY: -10, zIndex: 100 }}
-        onMouseEnter={() => onHover?.(data)}
+        onMouseEnter={() => {
+          audio.playUiHover();
+          onHover?.(data);
+        }}
         onMouseLeave={() => onHover?.(null)}
         className={`w-24 h-36 bg-slate-950 border-2 rounded-sm shadow-xl relative overflow-hidden flex flex-col cursor-pointer pointer-events-auto
             ${isOpponent ? 'border-ps-red/40' : 'border-ps-blue/40'}`}
@@ -168,7 +173,10 @@ export const DigimonCard: React.FC<CardProps & { variant?: 'full' | 'mini' }> = 
         rotateX: 5,
         scale: isAttacking ? 1.2 : 1
       }}
-      onMouseEnter={() => onHover?.(data)}
+      onMouseEnter={() => {
+        audio.playUiHover();
+        onHover?.(data);
+      }}
       onMouseLeave={() => onHover?.(null)}
       transition={{ 
         delay, 

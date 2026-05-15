@@ -4,13 +4,16 @@
  */
 
 import { Arena } from "./components/Arena";
+import { AudioSettings } from "./components/AudioSettings";
 import { HomeScreen } from "./components/HomeScreen";
+import { useAudio } from "./context/AudioProvider";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { joinRandomBattle } from "./services/matchmaking";
 import type { Room } from "colyseus.js";
 import type { BattleStateSchema } from "./schema/BattleState";
 
 export default function App() {
+  const audio = useAudio();
   const [screen, setScreen] = useState<"home" | "queueing" | "game">("home");
   const [room, setRoom] = useState<Room<BattleStateSchema> | null>(null);
   const joinAttemptIdRef = useRef(0);
@@ -44,6 +47,7 @@ export default function App() {
 
     const tryEnterGame = () => {
       if (room.state.players.size >= 2) {
+        audio.playSfx("chime");
         setScreen("game");
       }
     };
@@ -54,7 +58,7 @@ export default function App() {
     return () => {
       room.onStateChange.remove(tryEnterGame);
     };
-  }, [screen, room]);
+  }, [screen, room, audio]);
 
   const handleCancel = useCallback(() => {
     joinAttemptIdRef.current += 1;
@@ -65,6 +69,7 @@ export default function App() {
 
   return (
     <div className="w-full h-screen">
+      <AudioSettings className="fixed top-4 right-4 z-[500]" />
       {screen === "home" && <HomeScreen onJoinMatch={handleJoin} />}
 
       {screen === "queueing" && (
