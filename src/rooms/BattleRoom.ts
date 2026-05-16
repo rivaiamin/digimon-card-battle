@@ -3,6 +3,9 @@ import { BattleStateSchema, PlayerSchema, CardSchema, SupportEffectSchema } from
 import cardsData from "../data/cards.json";
 import { getFirebaseAdminAuth } from "../server/firebaseAdmin";
 
+/** Set `DEBUG_BATTLE_ROOM=0` when starting the server to silence draw/deck-out traces. */
+const DEBUG_BATTLE_ROOM = process.env.DEBUG_BATTLE_ROOM !== "0";
+
 export class BattleRoom extends Room<{ state: BattleStateSchema }> {
     private supportChoices = new Map<string, CardSchema | null>();
     private attackChoices = new Map<string, "circle" | "triangle" | "cross" | null>();
@@ -22,19 +25,64 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             const isMyTurn = this.state.activePlayerSessionId === client.sessionId;
 
             switch (message.type) {
-                case "DRAW":
+                case "DRAW": {
                     if (!isMyTurn || this.state.phase !== "draw") return;
-                    this.drawToSixOrLose(player);
+                    this.logDrawSnapshot("DRAW before drawUpToSix", player);
+                    this.drawUpToSix(player);
+                    this.logDrawSnapshot("DRAW after drawUpToSix", player);
                     if ((this.state.phase as string) === "victory") return;
-                    if (!this.getActive(player) && !this.hasRookieInHand(player)) {
-                        this.endGame(player.sessionId, "deck_out");
-                        return;
+
+                    const deckEmpty = player.deck.length <= 0;
+                    const belowSix = player.hand.length < 6;
+                    const hasActive = !!this.getActive(player);
+                    const rookieInHand = this.hasRookieInHand(player);
+                    let dugDeckForRookie = false;
+
+                    this.debugDraw("DRAW branch check", {
+                        sessionId: player.sessionId.slice(0, 8),
+                        hasActive,
+                        rookieInHand,
+                        hand: player.hand.length,
+                        deck: player.deck.length,
+                        belowSix,
+                        deckEmpty,
+                        turn: this.state.turn,
+                    });
+
+                    if (this.getActive(player)) {
+                        // Active Digimon: must reach a full hand of 6 or it's deck out.
+                        if (belowSix && deckEmpty) {
+                            this.debugDraw("DECK_OUT active player: hand < 6 and deck empty", {
+                                sessionId: player.sessionId.slice(0, 8),
+                            });
+                            this.endGame(player.sessionId, "deck_out");
+                            return;
+                        }
+                    } else {
+                        // No active: opening hand must include a Rookie, or dig through the deck.
+                        if (!this.hasRookieInHand(player)) {
+                            if (!this.tryRecoverRookieFromDeck(player)) {
+                                this.debugDraw("DECK_OUT tryRecoverRookieFromDeck failed (no active, no Rookie after dig)", {
+                                    sessionId: player.sessionId.slice(0, 8),
+                                    handAfter: player.hand.length,
+                                    deckAfter: player.deck.length,
+                                });
+                                this.endGame(player.sessionId, "deck_out");
+                                return;
+                            }
+                            dugDeckForRookie = true;
+                            this.logDrawSnapshot("DRAW after rookie recovery", player);
+                        }
                     }
+
                     this.state.phase = "preparation";
-                    this.state.message = this.getActive(player)
-                        ? "Preparation Phase"
-                        : "Deploy a Rookie from your hand";
+                    this.state.message = dugDeckForRookie
+                        ? "Deck dig — deploy a Rookie from your hand"
+                        : this.getActive(player)
+                          ? "Preparation Phase"
+                          : "Deploy a Rookie from your hand";
                     break;
+                }
                 case "DISCARD_FOR_DP":
                     if (!isMyTurn || this.state.phase !== "preparation") return;
                     this.discardForDp(player, Array.isArray(message.cardIds) ? message.cardIds : []);
@@ -53,7 +101,20 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
                     if (!isMyTurn || this.state.phase !== "preparation") return;
                     if (!this.getActive(player)) {
                         if (!this.hasRookieInHand(player)) {
-                            this.endGame(player.sessionId, "deck_out");
+                            this.debugDraw("END_PREP: no active, no rookie — tryRecoverRookieFromDeck", {
+                                sessionId: player.sessionId.slice(0, 8),
+                                hand: player.hand.length,
+                                deck: player.deck.length,
+                            });
+                            if (!this.tryRecoverRookieFromDeck(player)) {
+                                this.debugDraw("DECK_OUT END_PREP recovery failed", {
+                                    sessionId: player.sessionId.slice(0, 8),
+                                });
+                                this.endGame(player.sessionId, "deck_out");
+                            } else {
+                                this.state.message = "Deck dig — deploy a Rookie from your hand";
+                                this.logDrawSnapshot("END_PREP after recovery", player);
+                            }
                         }
                         return;
                     }
@@ -234,14 +295,33 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
     // Phase logic (GDD)
     // ----------------------------
 
-    private drawToSixOrLose(player: PlayerSchema) {
+    /** Draw phase: fill hand to 6 when possible. Does not end the game if the deck runs out. */
+    private drawUpToSix(player: PlayerSchema) {
+        const beforeHand = player.hand.length;
+        const beforeDeck = player.deck.length;
         const needed = Math.max(0, 6 - player.hand.length);
+        let drawn = 0;
         for (let i = 0; i < needed; i++) {
             if (player.deck.length <= 0) {
-                this.endGame(player.sessionId, "deck_out");
-                return;
+                this.debugDraw("drawUpToSix: deck exhausted mid-draw", {
+                    drawn,
+                    needed,
+                    hand: player.hand.length,
+                });
+                break;
             }
             player.hand.push(player.deck.shift()!);
+            drawn++;
+        }
+        if (drawn > 0 || needed > 0) {
+            this.debugDraw("drawUpToSix summary", {
+                needed,
+                drawn,
+                handBefore: beforeHand,
+                handAfter: player.hand.length,
+                deckBefore: beforeDeck,
+                deckAfter: player.deck.length,
+            });
         }
     }
 
@@ -300,7 +380,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         const idx = player.hand.findIndex(c => c.id === cardId);
         if (idx === -1) return;
         const rookie = player.hand[idx];
-        if (rookie.level !== "Rookie") return;
+        if (!this.isRookieLevel(rookie.level)) return;
 
         player.hand.splice(idx, 1);
         player.evolutionStack.clear();
@@ -319,8 +399,55 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         this.beginSupportPlacement();
     }
 
+    private isRookieLevel(level: string): boolean {
+        return String(level).trim().toLowerCase() === "rookie";
+    }
+
     private hasRookieInHand(player: PlayerSchema): boolean {
-        return player.hand.some(c => c.level === "Rookie");
+        return player.hand.some(c => this.isRookieLevel(c.level));
+    }
+
+    /**
+     * No active Digimon and no Rookie in hand: discard the whole hand, then reveal from the deck
+     * (top-first) until a Rookie is drawn — non-Rookies go to trash. Returns false if the deck
+     * empties before any Rookie (deck out).
+     */
+    private tryRecoverRookieFromDeck(player: PlayerSchema): boolean {
+        const handToTrash = player.hand.length;
+        const deckStart = player.deck.length;
+        while (player.hand.length > 0) {
+            const card = player.hand[0];
+            player.hand.splice(0, 1);
+            player.trash.push(card);
+        }
+        const revealedLevels: string[] = [];
+        let rookieFound: string | null = null;
+        while (player.deck.length > 0) {
+            const card = player.deck.shift()!;
+            const lvl = String(card.level);
+            revealedLevels.push(lvl);
+            if (this.isRookieLevel(card.level)) {
+                player.hand.push(card);
+                rookieFound = `${card.name} (${card.id})`;
+                this.debugDraw("tryRecoverRookieFromDeck: success", {
+                    sessionId: player.sessionId.slice(0, 8),
+                    handTrashed: handToTrash,
+                    deckStart,
+                    dugCount: revealedLevels.length,
+                    rookieFound,
+                    firstLevels: revealedLevels.slice(0, 12),
+                });
+                return true;
+            }
+            player.trash.push(card);
+        }
+        this.debugDraw("tryRecoverRookieFromDeck: failed (deck empty, no Rookie)", {
+            sessionId: player.sessionId.slice(0, 8),
+            handTrashed: handToTrash,
+            deckStart,
+            levelsSeen: revealedLevels,
+        });
+        return false;
     }
 
     private beginSupportPlacement() {
@@ -513,10 +640,44 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
     }
 
     private endGame(loserSessionId: string, reason: "points" | "deck_out" | "disconnect") {
+        if (reason === "deck_out" && DEBUG_BATTLE_ROOM) {
+            const loser = this.state.players.get(loserSessionId);
+            console.log("[BattleRoom:draw] endGame deck_out", {
+                loserSessionId: loserSessionId.slice(0, 8),
+                loserHand: loser?.hand.length,
+                loserDeck: loser?.deck.length,
+                loserHasActive: !!loser?.active,
+                turn: this.state.turn,
+                phaseBefore: this.state.phase,
+            });
+        }
         const winnerSessionId = Array.from(this.state.players.keys()).find(id => id !== loserSessionId) ?? "";
         this.state.phase = "victory";
         this.state.winnerSessionId = winnerSessionId;
         this.state.loserReason = reason;
         this.state.message = reason === "deck_out" ? "Deck Out!" : "Match Over";
+    }
+
+    private debugDraw(message: string, data?: Record<string, unknown>) {
+        if (!DEBUG_BATTLE_ROOM) return;
+        if (data !== undefined) console.log(`[BattleRoom:draw] ${message}`, data);
+        else console.log(`[BattleRoom:draw] ${message}`);
+    }
+
+    private logDrawSnapshot(label: string, player: PlayerSchema) {
+        if (!DEBUG_BATTLE_ROOM) return;
+        const levels: string[] = [];
+        for (let i = 0; i < player.hand.length; i++) {
+            levels.push(String(player.hand[i]?.level ?? ""));
+        }
+        console.log(`[BattleRoom:draw] ${label}`, {
+            sessionId: player.sessionId.slice(0, 8),
+            hand: player.hand.length,
+            deck: player.deck.length,
+            trash: player.trash.length,
+            hasActive: !!player.active,
+            activeLevel: player.active?.level ?? null,
+            handLevels: levels,
+        });
     }
 }
