@@ -12,6 +12,7 @@ import { useBattleAudio } from "../hooks/useBattleAudio";
 import { useBattleVfx } from "../hooks/useBattleVfx";
 import { ImpactFlash } from "./battle/ImpactFlash";
 import { DamagePopups } from "./battle/DamagePopups";
+import { SupportZone } from "./battle/SupportZone";
 
 const INITIAL_PLAYER_STATE: PlayerState = {
     active: null,
@@ -60,7 +61,16 @@ const mapSchemaCardToData = (c: any): DigimonCardData => {
         plusDp: c.plusDp ?? 0,
         evoCost: c.evoCost ?? 0,
         attacks,
-        supportEffect: c.supportEffect ?? undefined,
+        supportEffect: c.supportEffect
+            ? {
+                  type: c.supportEffect.type,
+                  targetAttack: c.supportEffect.targetAttack || undefined,
+                  value: c.supportEffect.value ?? 0,
+                  description: c.supportEffect.description ?? "",
+                  requireType: c.supportEffect.requireType || undefined,
+                  priority: c.supportEffect.priority || undefined,
+              }
+            : undefined,
         image: c.image ?? "",
     } as DigimonCardData;
 };
@@ -103,6 +113,8 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
     });
 
     const [hoveredCard, setHoveredCard] = useState<DigimonCardData | null>(null);
+    /** Face-down preview of own support until server reveal syncs. */
+    const [committedSupport, setCommittedSupport] = useState<DigimonCardData | null>(null);
 
     useBattleAudio(gameState, room.sessionId);
     const vfx = useBattleVfx(gameState);
@@ -208,8 +220,20 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
 
     const handleSupportChoice = (cardId: string | null) => {
         audio.playSfx("thud", { spatial: "player" });
+        if (cardId) {
+            const card = gameState.player.hand.find(c => c.id === cardId) ?? null;
+            setCommittedSupport(card);
+        } else {
+            setCommittedSupport(null);
+        }
         room.send("action", { type: "LOCK_SUPPORT", cardId });
     };
+
+    useEffect(() => {
+        if (gameState.phase !== "battle_support" && gameState.phase !== "battle_reveal") {
+            setCommittedSupport(null);
+        }
+    }, [gameState.phase]);
 
     const handleAttack = (type: 'circle' | 'triangle' | 'cross') => {
         audio.playSfx("tick");
@@ -238,6 +262,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
 
     const needsBattleActives =
         gameState.phase === 'battle_support' ||
+        gameState.phase === 'battle_reveal' ||
         gameState.phase === 'battle_attack' ||
         gameState.phase === 'resolution';
 
@@ -332,11 +357,14 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                                 onHover={setHoveredCard}
                             />
                         )}
-                        {gameState.player.supportCard && (
-                             <div className="absolute -right-32 top-0 opacity-50 rotate-12 scale-75">
-                                 <DigimonCard data={gameState.player.supportCard} variant="mini" onHover={setHoveredCard} />
-                             </div>
-                        )}
+                        <SupportZone
+                            side="player"
+                            phase={gameState.phase}
+                            supportCard={gameState.player.supportCard}
+                            supportLocked={!!gameState.player.supportLocked}
+                            committedFaceDown={committedSupport}
+                            onHover={setHoveredCard}
+                        />
                     </div>
 
                     {/* Opponent Area */}
@@ -351,6 +379,13 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                                 onHover={setHoveredCard}
                             />
                         )}
+                        <SupportZone
+                            side="opponent"
+                            phase={gameState.phase}
+                            supportCard={gameState.opponent.supportCard}
+                            supportLocked={!!gameState.opponent.supportLocked}
+                            onHover={setHoveredCard}
+                        />
                     </div>
                 </div>
             </motion.div>
@@ -369,7 +404,12 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                     maxHp: opponentActive?.maxHp ?? gameState.opponent.active?.maxHp ?? 0
                 }}
                 onAttack={handleAttack}
-                disabled={vfx.isAnimating || (gameState.phase !== 'battle_attack') || !!gameState.player.attackLocked}
+                disabled={
+                    vfx.isAnimating ||
+                    gameState.phase === 'battle_reveal' ||
+                    gameState.phase !== 'battle_attack' ||
+                    !!gameState.player.attackLocked
+                }
             />
 
             {/* PHASE CONTROLS (Hand) */}
@@ -462,11 +502,17 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                      </div>
                  )}
 
-                 {gameState.phase === 'battle_support' && (
+                 {(gameState.phase === 'battle_support' || gameState.phase === 'battle_reveal') && (
                      <div className="flex flex-col gap-4">
                         <div className="bg-black/80 p-2 text-white text-xs border border-white uppercase flex items-center justify-between gap-4">
-                            <span>Battle: Lock a Support card (or none).</span>
-                            {gameState.player.supportLocked && <span className="text-white/50">LOCKED</span>}
+                            <span>
+                                {gameState.phase === 'battle_reveal'
+                                    ? 'Revealing support...'
+                                    : 'Battle: Lock a Support card (or none).'}
+                            </span>
+                            {gameState.player.supportLocked && gameState.phase === 'battle_support' && (
+                                <span className="text-white/50">LOCKED</span>
+                            )}
                         </div>
                         <div className="flex gap-2">
                              <button onClick={() => handleSupportChoice(null)} disabled={!!gameState.player.supportLocked} className="pointer-events-auto bg-slate-800 text-white p-4 disabled:opacity-40">NO SUPPORT</button>

@@ -2,14 +2,26 @@ import { Room, type Client } from "@colyseus/core";
 import { BattleStateSchema, PlayerSchema, CardSchema, SupportEffectSchema } from "../schema/BattleState";
 import cardsData from "../data/cards.json";
 import { getFirebaseAdminAuth } from "../server/firebaseAdmin";
+import {
+    createSupportBattleContext,
+    getEffectiveAttackDamage,
+    parseSupportId,
+    resolveSupportPhase,
+    type AttackType,
+    type SupportBattleContext,
+} from "../lib/supportResolver";
 
 /** Set `DEBUG_BATTLE_ROOM=0` when starting the server to silence draw/deck-out traces. */
 const DEBUG_BATTLE_ROOM = process.env.DEBUG_BATTLE_ROOM !== "0";
 
 export class BattleRoom extends Room<{ state: BattleStateSchema }> {
     private supportChoices = new Map<string, CardSchema | null>();
-    private attackChoices = new Map<string, "circle" | "triangle" | "cross" | null>();
-    private attackBonus = new Map<string, { circle: number; triangle: number; cross: number }>();
+    private attackChoices = new Map<string, AttackType | null>();
+    private supportCtx: SupportBattleContext = createSupportBattleContext();
+    private revealTimer: ReturnType<typeof this.clock.setTimeout> | null = null;
+
+    /** Pause on reveal so clients can play flip / hologram FX before effects resolve. */
+    private static readonly REVEAL_MS = 1600;
 
     onCreate(options: any) {
         console.log("[SERVER] BattleRoom created", options);
@@ -245,12 +257,17 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         card.cross.type = "cross";
         card.cross.description = String(attacks.cross?.description ?? "");
 
-        if (raw.supportEffect) {
+        const parsedFromId =
+            typeof raw.support_id === "string" ? parseSupportId(raw.support_id) : null;
+        const rawEffect = raw.supportEffect ?? parsedFromId;
+        if (rawEffect) {
             const se = new SupportEffectSchema();
-            se.type = String(raw.supportEffect.type ?? "");
-            se.targetAttack = String(raw.supportEffect.targetAttack ?? "");
-            se.value = Number(raw.supportEffect.value ?? 0);
-            se.description = String(raw.supportEffect.description ?? "");
+            se.type = String(rawEffect.type ?? "");
+            se.targetAttack = String(rawEffect.targetAttack ?? "");
+            se.value = Number(rawEffect.value ?? 0);
+            se.description = String(rawEffect.description ?? "");
+            se.requireType = String((rawEffect as { requireType?: string }).requireType ?? "");
+            se.priority = Number((rawEffect as { priority?: number }).priority ?? 0);
             card.supportEffect = se;
         } else {
             card.supportEffect = null;
@@ -454,9 +471,13 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         this.state.phase = "battle_support";
         this.state.message = "Battle Phase: Place Support";
 
+        if (this.revealTimer) {
+            this.revealTimer.clear();
+            this.revealTimer = null;
+        }
         this.supportChoices.clear();
         this.attackChoices.clear();
-        this.attackBonus.clear();
+        this.supportCtx = createSupportBattleContext();
         this.state.players.forEach(p => {
             p.supportCard = null; // not revealed yet
             p.supportLocked = false;
@@ -492,54 +513,40 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         const p2 = this.state.players.get(sessions[1])!;
         if (!p1.supportLocked || !p2.supportLocked) return;
 
-        this.state.phase = "battle_reveal";
-        this.state.message = "Support Reveal";
-
-        // Reveal simultaneously into shared state
         const c1 = this.supportChoices.get(p1.sessionId) ?? null;
         const c2 = this.supportChoices.get(p2.sessionId) ?? null;
         p1.supportCard = c1;
         p2.supportCard = c2;
 
-        // Apply support effects in order: active player then defender (cancellations deferred)
+        this.state.phase = "battle_reveal";
+        this.state.message = "Support Reveal";
+
+        if (this.revealTimer) this.revealTimer.clear();
+        this.revealTimer = this.clock.setTimeout(() => {
+            this.revealTimer = null;
+            this.finishSupportRevealAndAdvance();
+        }, BattleRoom.REVEAL_MS);
+    }
+
+    private finishSupportRevealAndAdvance() {
+        const sessions = Array.from(this.state.players.keys());
+        if (sessions.length !== 2) return;
+        const p1 = this.state.players.get(sessions[0])!;
+        const p2 = this.state.players.get(sessions[1])!;
         const active = this.state.players.get(this.state.activePlayerSessionId);
+        if (!active) return;
         const defender = sessions[0] === this.state.activePlayerSessionId ? p2 : p1;
 
-        if (active && active.supportCard?.supportEffect) this.applySupportEffect(active, defender, active.supportCard.supportEffect);
-        if (defender.supportCard?.supportEffect) this.applySupportEffect(defender, active!, defender.supportCard.supportEffect);
+        const activeSupport = active.supportCard;
+        const defenderSupport = defender.supportCard;
 
-        // Advance to attack selection
+        resolveSupportPhase(active, defender, activeSupport, defenderSupport, this.supportCtx);
+
         this.state.phase = "battle_attack";
         this.state.message = "Battle Phase: Select Attack";
     }
 
-    private applySupportEffect(source: PlayerSchema, target: PlayerSchema, effect: SupportEffectSchema) {
-        // Minimal Digimon-only support resolution:
-        // - atk_buff is applied as a temporary per-player bonus handled in damage calculation (stored server-side)
-        // - hp_heal heals source active
-        // - halve_hp halves target current HP
-        // - change_attack (future) ignored for now (no Option cards)
-        if (effect.type === "atk_buff") {
-            const current = this.attackBonus.get(source.sessionId) ?? { circle: 0, triangle: 0, cross: 0 };
-            const v = effect.value ?? 0;
-            const t = effect.targetAttack;
-            if (t === "all" || t === "") {
-                current.circle += v;
-                current.triangle += v;
-                current.cross += v;
-            } else if (t === "circle" || t === "triangle" || t === "cross") {
-                current[t] += v;
-            }
-            this.attackBonus.set(source.sessionId, current);
-        } else if (effect.type === "hp_heal") {
-            const max = source.active?.maxHp ?? source.hp;
-            source.hp = Math.min(max, source.hp + effect.value);
-        } else if (effect.type === "halve_hp") {
-            target.hp = Math.floor(target.hp / 2);
-        }
-    }
-
-    private lockAttack(sessionId: string, attack: "circle" | "triangle" | "cross") {
+    private lockAttack(sessionId: string, attack: AttackType) {
         const player = this.state.players.get(sessionId);
         if (!player) return;
         if (player.attackLocked) return;
@@ -555,34 +562,40 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         const p2 = this.state.players.get(sessions[1])!;
         if (!p1.attackLocked || !p2.attackLocked) return;
 
-        const a1 = this.attackChoices.get(p1.sessionId) ?? "circle";
-        const a2 = this.attackChoices.get(p2.sessionId) ?? "circle";
+        let a1 = this.attackChoices.get(p1.sessionId) ?? "circle";
+        let a2 = this.attackChoices.get(p2.sessionId) ?? "circle";
+        const forced1 = this.supportCtx.forcedAttack.get(p1.sessionId);
+        const forced2 = this.supportCtx.forcedAttack.get(p2.sessionId);
+        if (forced1) a1 = forced1;
+        if (forced2) a2 = forced2;
         p1.selectedAttack = a1;
         p2.selectedAttack = a2;
 
         this.state.phase = "resolution";
         this.state.message = "Resolving Battle...";
 
-        const d1 = this.getAttackDamage(p1, a1);
-        const d2 = this.getAttackDamage(p2, a2);
+        const d1 = getEffectiveAttackDamage(p1, a1, this.supportCtx);
+        const d2 = getEffectiveAttackDamage(p2, a2, this.supportCtx);
 
-        p2.hp = Math.max(0, p2.hp - d1);
-        p1.hp = Math.max(0, p1.hp - d2);
+        const p1First = this.supportCtx.firstStrikePlayers.has(p1.sessionId);
+        const p2First = this.supportCtx.firstStrikePlayers.has(p2.sessionId);
+
+        if (p1First && !p2First) {
+            p2.hp = Math.max(0, p2.hp - d1);
+            if (p2.hp > 0) p1.hp = Math.max(0, p1.hp - d2);
+        } else if (p2First && !p1First) {
+            p1.hp = Math.max(0, p1.hp - d2);
+            if (p1.hp > 0) p2.hp = Math.max(0, p2.hp - d1);
+        } else {
+            p2.hp = Math.max(0, p2.hp - d1);
+            p1.hp = Math.max(0, p1.hp - d2);
+        }
 
         this.resolveKOsAndMaybeEndGame();
         if (this.state.phase === "victory") return;
 
         // End turn -> next player's draw
         this.endTurn();
-    }
-
-    private getAttackDamage(player: PlayerSchema, type: "circle" | "triangle" | "cross") {
-        const active = player.active;
-        if (!active) return 0;
-        const bonus = this.attackBonus.get(player.sessionId) ?? { circle: 0, triangle: 0, cross: 0 };
-        if (type === "circle") return active.circle.damage + bonus.circle;
-        if (type === "triangle") return active.triangle.damage + bonus.triangle;
-        return active.cross.damage + bonus.cross;
     }
 
     private resolveKOsAndMaybeEndGame() {

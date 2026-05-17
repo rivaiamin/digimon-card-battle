@@ -22,10 +22,19 @@ export interface DigimonCardData {
     cross: Attack;
   } | null;
   supportEffect?: {
-    type: 'atk_buff' | 'hp_heal' | 'change_attack' | 'halve_hp';
+    type:
+      | 'void_enemy_support'
+      | 'first_strike'
+      | 'change_attack'
+      | 'atk_mult'
+      | 'halve_hp'
+      | 'atk_buff'
+      | 'hp_heal';
     targetAttack?: 'circle' | 'triangle' | 'cross' | 'all';
     value: number;
     description: string;
+    requireType?: string;
+    priority?: number;
   };
   image: string;
 }
@@ -48,7 +57,15 @@ export interface PlayerState {
 export interface GameState {
   player: PlayerState;
   opponent: PlayerState;
-  phase: 'waiting' | 'draw' | 'preparation' | 'battle_support' | 'battle_attack' | 'resolution' | 'victory';
+  phase:
+    | 'waiting'
+    | 'draw'
+    | 'preparation'
+    | 'battle_support'
+    | 'battle_reveal'
+    | 'battle_attack'
+    | 'resolution'
+    | 'victory';
   turn: number;
   isPlayerTurn: boolean;
   message: string;

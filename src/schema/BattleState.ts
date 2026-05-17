@@ -8,10 +8,14 @@ export class AttackSchema extends Schema {
 }
 
 export class SupportEffectSchema extends Schema {
-    @type("string") type: string = ""; // atk_buff | hp_heal | change_attack | halve_hp
+    @type("string") type: string = ""; // void_enemy_support | first_strike | change_attack | atk_mult | halve_hp | atk_buff | hp_heal
     @type("string") targetAttack: string = ""; // circle | triangle | cross | all
     @type("number") value: number = 0;
     @type("string") description: string = "";
+    /** When set, effect only applies if the active Digimon's type matches (e.g. Fire). */
+    @type("string") requireType: string = "";
+    /** Override stack tier (1–5); 0 = derive from type. */
+    @type("number") priority: number = 0;
 }
 
 export class CardSchema extends Schema {

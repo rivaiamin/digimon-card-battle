@@ -67,6 +67,9 @@ export function useBattleAudio(gameState: GameState, sessionId: string) {
         case "battle_attack":
           audio.playSfx("chime");
           break;
+        case "battle_reveal":
+          audio.playSfx("evolve", { spatial: "center" });
+          break;
         case "resolution":
           audio.playSfx("phase_alert");
           break;

@@ -14,7 +14,13 @@
       "triangle": { "name": "Sharp Claw", "damage": 100, "type": "triangle", "description": "Slash." },
       "cross": { "name": "Spitfire", "damage": 120, "type": "cross", "description": "Continuous fire." }
     },
-    "supportEffect": { "type": "atk_buff", "targetAttack": "circle", "value": 100, "description": "Boosts Circle attack by 100 damage if the user is a Fire attribute Digimon." }
+    "supportEffect": {
+      "type": "atk_buff",
+      "targetAttack": "circle",
+      "value": 100,
+      "requireType": "Fire",
+      "description": "Boosts Circle attack by 100 if the active Digimon is Fire type."
+    }
   },
   {
     "id": "002",
@@ -31,7 +37,12 @@
       "triangle": { "name": "Great Horn", "damage": 200, "type": "triangle", "description": "Horn charge." },
       "cross": { "name": "Tail Whip", "damage": 180, "type": "cross", "description": "Tail strike." }
     },
-    "supportEffect": { "type": "atk_buff", "targetAttack": "all", "value": 50, "description": "Increases all attack power by 50." }
+    "supportEffect": {
+      "type": "change_attack",
+      "targetAttack": "triangle",
+      "value": 0,
+      "description": "Force the opponent to use Triangle (▲) attack."
+    }
   },
   {
     "id": "003",
@@ -47,6 +58,11 @@
       "circle": { "name": "Giga Destroyer", "damage": 450, "type": "circle", "description": "Nuclear missile." },
       "triangle": { "name": "Metal Slash", "damage": 320, "type": "triangle", "description": "Metal claw." },
       "cross": { "name": "Tera Destroyer", "damage": 280, "type": "cross", "description": "Impact fire." }
+    },
+    "supportEffect": {
+      "type": "void_enemy_support",
+      "value": 0,
+      "description": "Nullify the opponent's Support card."
     }
   },
   {
@@ -63,6 +79,13 @@
       "circle": { "name": "Gaia Force", "damage": 600, "type": "circle", "description": "Energy blast." },
       "triangle": { "name": "Great Tornado", "damage": 450, "type": "triangle", "description": "Spinning drill." },
       "cross": { "name": "Brave Shield", "damage": 300, "type": "cross", "description": "Defensive bash." }
+    },
+    "supportEffect": {
+      "type": "atk_mult",
+      "targetAttack": "circle",
+      "value": 2,
+      "requireType": "Fire",
+      "description": "Double Circle attack damage (Fire type only)."
     }
   },
   {
@@ -80,7 +103,11 @@
       "triangle": { "name": "Pecking Attack", "damage": 100, "type": "triangle", "description": "Swift peck." },
       "cross": { "name": "Charm Fly", "damage": 80, "type": "cross", "description": "Stray heat." }
     },
-    "supportEffect": { "type": "hp_heal", "value": 100, "description": "Heal 100 HP" }
+    "supportEffect": {
+      "type": "hp_heal",
+      "value": 100,
+      "description": "Recover 100 HP."
+    }
   },
   {
     "id": "006",
@@ -96,6 +123,11 @@
       "circle": { "name": "Meteor Wing", "damage": 250, "type": "circle", "description": "Fire feathers." },
       "triangle": { "name": "Fire Flap", "damage": 190, "type": "triangle", "description": "Air slash." },
       "cross": { "name": "Mach Glide", "damage": 150, "type": "cross", "description": "Brave strike." }
+    },
+    "supportEffect": {
+      "type": "first_strike",
+      "value": 0,
+      "description": "Your attack resolves before the opponent's."
     }
   },
   {
@@ -112,6 +144,13 @@
       "circle": { "name": "Blue Blaster", "damage": 140, "type": "circle", "description": "Cold fire." },
       "triangle": { "name": "Horn Attack", "damage": 100, "type": "triangle", "description": "Skull bash." },
       "cross": { "name": "Petit Fire", "damage": 90, "type": "cross", "description": "Spit fire." }
+    },
+    "supportEffect": {
+      "type": "atk_buff",
+      "targetAttack": "triangle",
+      "value": 100,
+      "requireType": "Ice",
+      "description": "Boosts Triangle attack by 100 if the active Digimon is Ice type."
     }
   },
   {
@@ -128,6 +167,12 @@
       "circle": { "name": "Howling Blaster", "damage": 270, "type": "circle", "description": "Blue fire breath." },
       "triangle": { "name": "Slamming Attack", "damage": 190, "type": "triangle", "description": "Body slam." },
       "cross": { "name": "Freeze Fang", "damage": 160, "type": "cross", "description": "Icy bite." }
+    },
+    "supportEffect": {
+      "type": "atk_buff",
+      "targetAttack": "all",
+      "value": 50,
+      "description": "Increases all attack power by 50."
     }
   },
   {
@@ -144,6 +189,12 @@
       "circle": { "name": "Wolf Claw", "damage": 420, "type": "circle", "description": "Sharp claws." },
       "triangle": { "name": "Garuru Kick", "damage": 310, "type": "triangle", "description": "Powerful kick." },
       "cross": { "name": "Baldy Blow", "damage": 250, "type": "cross", "description": "Uppercut." }
+    },
+    "supportEffect": {
+      "type": "change_attack",
+      "targetAttack": "circle",
+      "value": 0,
+      "description": "Force the opponent to use Circle (O) attack."
     }
   },
   {
@@ -160,6 +211,11 @@
       "circle": { "name": "Cocytus Breath", "damage": 580, "type": "circle", "description": "Absolute zero breath." },
       "triangle": { "name": "Grace Cross Freezer", "damage": 430, "type": "triangle", "description": "Missile barrage." },
       "cross": { "name": "Garuru Tomahawk", "damage": 290, "type": "cross", "description": "Chest missile." }
+    },
+    "supportEffect": {
+      "type": "first_strike",
+      "value": 0,
+      "description": "Your attack resolves before the opponent's."
     }
   },
   {
@@ -177,7 +233,11 @@
       "triangle": { "name": "Horn Attack", "damage": 110, "type": "triangle", "description": "Headbutt." },
       "cross": { "name": "Talon Twist", "damage": 90, "type": "cross", "description": "Claw spin." }
     },
-    "supportEffect": { "type": "hp_heal", "value": 150, "description": "Recover 150 HP" }
+    "supportEffect": {
+      "type": "hp_heal",
+      "value": 150,
+      "description": "Recover 150 HP."
+    }
   },
   {
     "id": "078",
@@ -193,6 +253,13 @@
       "circle": { "name": "Mega Blaster", "damage": 260, "type": "circle", "description": "Electric orb." },
       "triangle": { "name": "Beetle Horn", "damage": 190, "type": "triangle", "description": "Horn slash." },
       "cross": { "name": "Insect Breath", "damage": 150, "type": "cross", "description": "Nature blast." }
+    },
+    "supportEffect": {
+      "type": "atk_buff",
+      "targetAttack": "circle",
+      "value": 80,
+      "requireType": "Nature",
+      "description": "Boosts Circle attack by 80 if the active Digimon is Nature type."
     }
   },
   {
@@ -210,7 +277,11 @@
       "triangle": { "name": "Evil Whisper", "damage": 90, "type": "triangle", "description": "Curse breath." },
       "cross": { "name": "Bat Flutter", "damage": 70, "type": "cross", "description": "Quick wing strike." }
     },
-    "supportEffect": { "type": "halve_hp", "value": 0, "description": "Halve opponent's current HP" }
+    "supportEffect": {
+      "type": "halve_hp",
+      "value": 0,
+      "description": "Halve the opponent's current HP."
+    }
   },
   {
     "id": "301",
@@ -226,6 +297,13 @@
       "circle": { "name": "Fire Rocket", "damage": 300, "type": "circle", "description": "Fire dash." },
       "triangle": { "name": "Flame Shot", "damage": 220, "type": "triangle", "description": "Fire ball." },
       "cross": { "name": "Knuckle Fire", "damage": 180, "type": "cross", "description": "Fire punch." }
+    },
+    "supportEffect": {
+      "type": "atk_buff",
+      "targetAttack": "all",
+      "value": 100,
+      "requireType": "Fire",
+      "description": "+100 to all attacks (Fire type only)."
     }
   },
   {
@@ -242,6 +320,11 @@
       "circle": { "name": "Oxygen Homing", "damage": 290, "type": "circle", "description": "Torpedo." },
       "triangle": { "name": "Submarine Attack", "damage": 210, "type": "triangle", "description": "Ram." },
       "cross": { "name": "Aqua Blast", "damage": 170, "type": "cross", "description": "Water jet." }
+    },
+    "supportEffect": {
+      "type": "hp_heal",
+      "value": 200,
+      "description": "Recover 200 HP."
     }
   },
   {
@@ -258,6 +341,12 @@
       "circle": { "name": "Death Claw", "damage": 260, "type": "circle", "description": "Evil claw grab." },
       "triangle": { "name": "Evil Wing", "damage": 180, "type": "triangle", "description": "Shadow flight." },
       "cross": { "name": "Hell Contract", "damage": 140, "type": "cross", "description": "Dark pact." }
+    },
+    "supportEffect": {
+      "type": "change_attack",
+      "targetAttack": "cross",
+      "value": 0,
+      "description": "Force the opponent to use Cross (X) attack."
     }
   },
   {
@@ -274,6 +363,11 @@
       "circle": { "name": "Gris-Lyz March", "damage": 430, "type": "circle", "description": "Bat swarm." },
       "triangle": { "name": "Crimson Lightning", "damage": 330, "type": "triangle", "description": "Dark whip." },
       "cross": { "name": "Nightmare Claw", "damage": 260, "type": "cross", "description": "Ghostly strike." }
+    },
+    "supportEffect": {
+      "type": "halve_hp",
+      "value": 0,
+      "description": "Halve the opponent's current HP."
     }
   },
   {
@@ -290,6 +384,11 @@
       "circle": { "name": "Trump Sword", "damage": 550, "type": "circle", "description": "Fly swords." },
       "triangle": { "name": "Clown Trick", "damage": 420, "type": "triangle", "description": "Magic box." },
       "cross": { "name": "Ending Spell", "damage": 300, "type": "cross", "description": "Final breath." }
+    },
+    "supportEffect": {
+      "type": "void_enemy_support",
+      "value": 0,
+      "description": "Nullify the opponent's Support card."
     }
   },
   {
@@ -306,6 +405,13 @@
       "circle": { "name": "Horn Buster", "damage": 440, "type": "circle", "description": "Electric horn." },
       "triangle": { "name": "Wild Scratch", "damage": 320, "type": "triangle", "description": "Claw bash." },
       "cross": { "name": "Beetle Bomber", "damage": 260, "type": "cross", "description": "Tackle." }
+    },
+    "supportEffect": {
+      "type": "atk_mult",
+      "targetAttack": "triangle",
+      "value": 2,
+      "requireType": "Nature",
+      "description": "Double Triangle attack damage (Nature type only)."
     }
   },
   {
@@ -322,6 +428,12 @@
       "circle": { "name": "Giga Blaster", "damage": 590, "type": "circle", "description": "Ultimate thunder." },
       "triangle": { "name": "High Voltage", "damage": 440, "type": "triangle", "description": "Field charge." },
       "cross": { "name": "Scissors Arm", "damage": 310, "type": "cross", "description": "Double pinch." }
+    },
+    "supportEffect": {
+      "type": "atk_buff",
+      "targetAttack": "all",
+      "value": 75,
+      "description": "Increases all attack power by 75."
     }
   }
 ]
