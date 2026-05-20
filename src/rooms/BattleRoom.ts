@@ -88,16 +88,24 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
                     }
 
                     this.state.phase = "preparation";
+                    this.beginPrepSubPhase(player);
                     this.state.message = dugDeckForRookie
                         ? "Deck dig — deploy a Rookie from your hand"
                         : this.getActive(player)
-                          ? "Preparation Phase"
+                          ? "Step 1: Discard cards for DP"
                           : "Deploy a Rookie from your hand";
                     break;
                 }
                 case "DISCARD_FOR_DP":
                     if (!isMyTurn || this.state.phase !== "preparation") return;
+                    if (this.state.prepSubPhase !== "discard") return;
                     this.discardForDp(player, Array.isArray(message.cardIds) ? message.cardIds : []);
+                    break;
+                case "END_DISCARD":
+                    if (!isMyTurn || this.state.phase !== "preparation") return;
+                    if (!this.getActive(player) || this.state.prepSubPhase !== "discard") return;
+                    this.state.prepSubPhase = "evolve";
+                    this.state.message = "Step 2: Evolve or end prep";
                     break;
                 case "DEPLOY_ROOKIE":
                     if (!isMyTurn || this.state.phase !== "preparation") return;
@@ -106,11 +114,13 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
                     break;
                 case "EVOLVE":
                     if (!isMyTurn || this.state.phase !== "preparation") return;
+                    if (this.state.prepSubPhase !== "evolve") return;
                     if (typeof message.cardId !== "string") return;
                     this.evolve(player, message.cardId);
                     break;
                 case "END_PREP":
                     if (!isMyTurn || this.state.phase !== "preparation") return;
+                    if (this.state.prepSubPhase !== "evolve") return;
                     if (!this.getActive(player)) {
                         if (!this.hasRookieInHand(player)) {
                             this.debugDraw("END_PREP: no active, no rookie — tryRecoverRookieFromDeck", {
@@ -351,7 +361,11 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             player.trash.push(card);
             player.hand.splice(idx, 1);
         }
-        this.state.message = "Preparation Phase";
+        this.state.message = "Step 1: Discard cards for DP";
+    }
+
+    private beginPrepSubPhase(player: PlayerSchema) {
+        this.state.prepSubPhase = this.getActive(player) ? "discard" : "";
     }
 
     private evolve(player: PlayerSchema, cardId: string) {
@@ -372,7 +386,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         player.evolutionStack.push(evo);
         player.active = evo;
         player.hp = evo.maxHp; // full heal on evolve
-        this.state.message = "Preparation Phase";
+        this.state.message = "Step 2: Evolve or end prep";
     }
 
     private isValidEvolution(from: string, to: string) {
@@ -404,7 +418,8 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         player.evolutionStack.push(rookie);
         player.active = rookie;
         player.hp = rookie.maxHp;
-        this.state.message = "Preparation Phase";
+        this.state.prepSubPhase = "discard";
+        this.state.message = "Step 1: Discard cards for DP";
     }
 
     private endPrepOrPassTurn(player: PlayerSchema) {
@@ -469,6 +484,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
 
     private beginSupportPlacement() {
         this.state.phase = "battle_support";
+        this.state.prepSubPhase = "";
         this.state.message = "Battle Phase: Place Support";
 
         if (this.revealTimer) {
@@ -649,6 +665,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         this.state.activePlayerSessionId = sessions[(currentIndex + 1) % 2];
         this.state.turn += 1;
         this.state.phase = "draw";
+        this.state.prepSubPhase = "";
         this.state.message = "Draw Phase";
     }
 

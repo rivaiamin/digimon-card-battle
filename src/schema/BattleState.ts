@@ -63,6 +63,8 @@ export class PlayerSchema extends Schema {
 export class BattleStateSchema extends Schema {
     @type({ map: PlayerSchema }) players = new MapSchema<PlayerSchema>();
     @type("string") phase: string = "waiting"; // waiting, draw, preparation, battle_support, battle_reveal, battle_attack, resolution, victory
+    /** During preparation: "discard" then "evolve". Empty until active Digimon is deployed. */
+    @type("string") prepSubPhase: string = "";
     @type("number") turn: number = 1;
     @type("string") activePlayerSessionId: string = "";
     @type("string") message: string = "Waiting for players...";

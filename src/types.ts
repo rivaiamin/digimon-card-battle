@@ -69,6 +69,8 @@ export interface GameState {
   turn: number;
   isPlayerTurn: boolean;
   message: string;
+  /** preparation only: discard cards for DP, then evolve */
+  prepSubPhase: "" | "discard" | "evolve";
   hasDiscarded: boolean;
   winnerSessionId?: string;
   loserReason?: 'points' | 'deck_out' | 'disconnect' | string;

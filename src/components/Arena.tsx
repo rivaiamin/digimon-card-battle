@@ -107,6 +107,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
         turn: 1,
         isPlayerTurn: true,
         message: "CONNECTING TO SERVER...",
+        prepSubPhase: "",
         hasDiscarded: false,
         winnerSessionId: undefined,
         loserReason: undefined,
@@ -146,6 +147,10 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                 turn: state.turn,
                 isPlayerTurn: state.activePlayerSessionId === room.sessionId,
                 message: state.message,
+                prepSubPhase: (state.prepSubPhase === "discard" || state.prepSubPhase === "evolve"
+                    ? state.prepSubPhase
+                    : "") as GameState["prepSubPhase"],
+                hasDiscarded: state.prepSubPhase === "evolve",
                 winnerSessionId: (state as any).winnerSessionId,
                 loserReason: (state as any).loserReason,
             }));
@@ -211,6 +216,11 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
 
     const handleEvolution = (cardId: string) => {
         room.send("action", { type: "EVOLVE", cardId });
+    };
+
+    const handleEndDiscard = () => {
+        audio.playSfx("menu_click");
+        room.send("action", { type: "END_DISCARD" });
     };
 
     const handleEndPrep = () => {
@@ -437,23 +447,6 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
 
                  {gameState.phase === 'preparation' && (
                      <div className="flex flex-col gap-4">
-                        <div className="bg-black/80 p-2 text-white text-xs border border-ps-yellow uppercase flex items-center justify-between gap-4">
-                            <span>
-                                {!gameState.player.active
-                                    ? "Deploy a Rookie Digimon from your hand (0 cost), then manage DP and evolution."
-                                    : "Preparation: Discard cards for DP, then optionally evolve."}
-                            </span>
-                            {gameState.isPlayerTurn && (
-                                <button
-                                    onClick={handleEndPrep}
-                                    disabled={!gameState.player.active}
-                                    className="pointer-events-auto bg-ps-yellow text-black font-black px-4 py-2 border-2 border-black hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed"
-                                >
-                                    END PREP
-                                </button>
-                            )}
-                        </div>
-
                         {!gameState.player.active && gameState.isPlayerTurn && (
                             <div className="flex flex-col gap-2">
                                 <div className="bg-black/80 p-2 text-white text-xs border border-ps-green uppercase">
@@ -474,30 +467,99 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                             </div>
                         )}
 
-                        {gameState.player.active && (
-                        <>
-                        <div className="flex gap-2">
-                             {gameState.player.hand.map(c => (
-                                 <div key={c.id} onClick={() => handleDiscardForDP(c.id)} className="pointer-events-auto cursor-pointer group relative">
-                                     <DigimonCard data={c} variant="mini" onHover={setHoveredCard} />
-                                     <div className="absolute inset-0 bg-ps-red/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-[8px] font-bold text-center p-1">DISCARD<br/>(+{c.plusDp} DP)</div>
-                                 </div>
-                             ))}
-                        </div>
-
-                        <div className="flex flex-col gap-2">
-                            <div className="bg-black/80 p-2 text-white text-xs border border-ps-blue uppercase">Evolution: Pick a Digimon to evolve (DP required)</div>
-                            <div className="flex gap-2">
-                                {gameState.player.hand.map(c => (
-                                    <div key={`evo_${c.id}`} onClick={() => handleEvolution(c.id)} className="pointer-events-auto cursor-pointer">
-                                        <DigimonCard data={c} variant="mini" onHover={setHoveredCard} />
-                                        {c.evoCost > gameState.player.dp && <div className="text-[10px] text-red-500 font-bold">NO DP</div>}
-                                        <div className="text-[10px] bg-ps-blue px-1 text-white">COST: {c.evoCost}</div>
+                        {gameState.player.active && gameState.prepSubPhase === 'discard' && (
+                            <div className="flex flex-col gap-2">
+                                <div className="bg-black/80 p-2 text-white text-xs border border-ps-red uppercase flex items-center justify-between gap-4">
+                                    <span>
+                                        Step 1 — Discard for DP
+                                        {gameState.isPlayerTurn
+                                            ? " (click cards to discard, then continue)"
+                                            : ""}
+                                    </span>
+                                    <span className="text-ps-yellow font-black shrink-0">{gameState.player.dp} DP</span>
+                                    {gameState.isPlayerTurn && (
+                                        <button
+                                            onClick={handleEndDiscard}
+                                            className="pointer-events-auto bg-ps-red text-white font-black px-4 py-2 border-2 border-white hover:bg-white hover:text-ps-red shrink-0"
+                                        >
+                                            DONE DISCARDING
+                                        </button>
+                                    )}
+                                </div>
+                                {gameState.isPlayerTurn && (
+                                    <div className="flex gap-2 flex-wrap">
+                                        {gameState.player.hand.map(c => (
+                                            <div
+                                                key={c.id}
+                                                onClick={() => handleDiscardForDP(c.id)}
+                                                className="pointer-events-auto cursor-pointer group relative"
+                                            >
+                                                <DigimonCard data={c} variant="mini" onHover={setHoveredCard} />
+                                                <div className="absolute inset-0 bg-ps-red/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-[8px] font-bold text-center p-1">
+                                                    DISCARD<br/>(+{c.plusDp} DP)
+                                                </div>
+                                            </div>
+                                        ))}
+                                        {gameState.player.hand.length === 0 && (
+                                            <span className="text-white/50 text-xs uppercase">No cards to discard</span>
+                                        )}
                                     </div>
-                                ))}
+                                )}
                             </div>
-                        </div>
-                        </>
+                        )}
+
+                        {gameState.player.active && gameState.prepSubPhase === 'evolve' && (
+                            <div className="flex flex-col gap-2">
+                                <div className="bg-black/80 p-2 text-white text-xs border border-ps-blue uppercase flex items-center justify-between gap-4">
+                                    <span>
+                                        Step 2 — Evolution
+                                        {gameState.isPlayerTurn ? " (optional — pick a card or end prep)" : ""}
+                                    </span>
+                                    <span className="text-ps-yellow font-black shrink-0">{gameState.player.dp} DP</span>
+                                    {gameState.isPlayerTurn && (
+                                        <button
+                                            onClick={handleEndPrep}
+                                            className="pointer-events-auto bg-ps-yellow text-black font-black px-4 py-2 border-2 border-black hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+                                        >
+                                            END PREP
+                                        </button>
+                                    )}
+                                </div>
+                                {gameState.isPlayerTurn && (
+                                    <div className="flex gap-2 flex-wrap">
+                                        {gameState.player.hand.map(c => {
+                                            const canAfford = c.evoCost <= gameState.player.dp;
+                                            const levelOrder = ['Rookie', 'Champion', 'Ultimate', 'Mega'];
+                                            const activeIdx = levelOrder.indexOf(gameState.player.active?.level ?? '');
+                                            const cardIdx = levelOrder.indexOf(c.level);
+                                            const validStep = activeIdx >= 0 && cardIdx === activeIdx + 1;
+                                            const canEvolve = canAfford && validStep;
+                                            return (
+                                                <div
+                                                    key={`evo_${c.id}`}
+                                                    onClick={() => canEvolve && handleEvolution(c.id)}
+                                                    className={`pointer-events-auto relative ${canEvolve ? 'cursor-pointer' : 'opacity-40 cursor-not-allowed'}`}
+                                                >
+                                                    <DigimonCard data={c} variant="mini" onHover={setHoveredCard} />
+                                                    {!canAfford && (
+                                                        <div className="text-[10px] text-red-500 font-bold">NO DP</div>
+                                                    )}
+                                                    {canAfford && !validStep && (
+                                                        <div className="text-[10px] text-red-500 font-bold">INVALID</div>
+                                                    )}
+                                                    <div className="text-[10px] bg-ps-blue px-1 text-white">COST: {c.evoCost}</div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {gameState.phase === 'preparation' && !gameState.isPlayerTurn && (
+                            <div className="bg-black/80 p-2 text-white/70 text-xs border border-white/20 uppercase pointer-events-none">
+                                Opponent is preparing...
+                            </div>
                         )}
                      </div>
                  )}
