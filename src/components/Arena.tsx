@@ -13,6 +13,7 @@ import { useBattleVfx } from "../hooks/useBattleVfx";
 import { ImpactFlash } from "./battle/ImpactFlash";
 import { DamagePopups } from "./battle/DamagePopups";
 import { SupportZone } from "./battle/SupportZone";
+import { canEvolveDigimon, matchesEvolutionType } from "../lib/evolutionEligibility";
 
 const INITIAL_PLAYER_STATE: PlayerState = {
     active: null,
@@ -513,7 +514,9 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                                 <div className="bg-black/80 p-2 text-white text-xs border border-ps-blue uppercase flex items-center justify-between gap-4">
                                     <span>
                                         Step 2 — Evolution
-                                        {gameState.isPlayerTurn ? " (optional — pick a card or end prep)" : ""}
+                                        {gameState.isPlayerTurn
+                                            ? ` (same ${gameState.player.active?.type ?? "type"} only — optional)`
+                                            : ""}
                                     </span>
                                     <span className="text-ps-yellow font-black shrink-0">{gameState.player.dp} DP</span>
                                     {gameState.isPlayerTurn && (
@@ -528,12 +531,12 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                                 {gameState.isPlayerTurn && (
                                     <div className="flex gap-2 flex-wrap">
                                         {gameState.player.hand.map(c => {
+                                            const active = gameState.player.active;
+                                            const canEvolve = canEvolveDigimon(active, c, gameState.player.dp);
                                             const canAfford = c.evoCost <= gameState.player.dp;
-                                            const levelOrder = ['Rookie', 'Champion', 'Ultimate', 'Mega'];
-                                            const activeIdx = levelOrder.indexOf(gameState.player.active?.level ?? '');
-                                            const cardIdx = levelOrder.indexOf(c.level);
-                                            const validStep = activeIdx >= 0 && cardIdx === activeIdx + 1;
-                                            const canEvolve = canAfford && validStep;
+                                            const sameType = active
+                                                ? matchesEvolutionType(active.type, c.type)
+                                                : false;
                                             return (
                                                 <div
                                                     key={`evo_${c.id}`}
@@ -544,7 +547,10 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                                                     {!canAfford && (
                                                         <div className="text-[10px] text-red-500 font-bold">NO DP</div>
                                                     )}
-                                                    {canAfford && !validStep && (
+                                                    {canAfford && !sameType && (
+                                                        <div className="text-[10px] text-red-500 font-bold">WRONG TYPE</div>
+                                                    )}
+                                                    {canAfford && sameType && !canEvolve && (
                                                         <div className="text-[10px] text-red-500 font-bold">INVALID</div>
                                                     )}
                                                     <div className="text-[10px] bg-ps-blue px-1 text-white">COST: {c.evoCost}</div>

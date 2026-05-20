@@ -2,6 +2,7 @@ import { Room, type Client } from "@colyseus/core";
 import { BattleStateSchema, PlayerSchema, CardSchema, SupportEffectSchema } from "../schema/BattleState";
 import cardsData from "../data/cards.json";
 import { getFirebaseAdminAuth } from "../server/firebaseAdmin";
+import { canEvolveDigimon } from "../lib/evolutionEligibility";
 import {
     createSupportBattleContext,
     getEffectiveAttackDamage,
@@ -373,13 +374,8 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         if (idx === -1) return;
         const evo = player.hand[idx];
 
-        // Basic eligibility: cannot evolve to same/lower level; require DP
         const current = this.getActive(player);
-        if (!current) return;
-        if (player.dp < evo.evoCost) return;
-
-        // Simple level ladder (Rookie->Champion->Ultimate->Mega, Armor allowed but treated as separate)
-        if (!this.isValidEvolution(current.level, evo.level)) return;
+        if (!canEvolveDigimon(current, evo, player.dp)) return;
 
         player.dp -= evo.evoCost;
         player.hand.splice(idx, 1);
@@ -387,14 +383,6 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         player.active = evo;
         player.hp = evo.maxHp; // full heal on evolve
         this.state.message = "Step 2: Evolve or end prep";
-    }
-
-    private isValidEvolution(from: string, to: string) {
-        const order = ["Rookie", "Champion", "Ultimate", "Mega"];
-        const fi = order.indexOf(from);
-        const ti = order.indexOf(to);
-        if (fi === -1 || ti === -1) return false;
-        return ti === fi + 1;
     }
 
     private getActive(player: PlayerSchema): CardSchema | null {
