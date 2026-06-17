@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Arena: Vertical Slice</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --digi-blue: #00A3FF;
+            --digi-orange: #FF9100;
+            --digi-red: #FF2A2A;
+            --digi-green: #00FF66;
+            --bg-deep: #0a0a0c;
+        }
+
+        body {
+            background-color: var(--bg-deep);
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(0, 163, 255, 0.15) 0%, transparent 50%),
+                linear-gradient(0deg, rgba(0,0,0,0.8) 0%, transparent 100%);
+            color: white;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .orbitron { font-family: 'Orbitron', sans-serif; }
+
+        .glass-panel {
+            background: rgba(20, 20, 25, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(0, 163, 255, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .neon-border-blue { border: 1px solid var(--digi-blue); box-shadow: 0 0 10px rgba(0, 163, 255, 0.5); }
+        .neon-border-red { border: 1px solid var(--digi-red); box-shadow: 0 0 10px rgba(255, 42, 42, 0.5); }
+        .neon-text-blue { text-shadow: 0 0 8px rgba(0, 163, 255, 0.8); }
+
+        /* 2.5D Field */
+        #game-container {
+            perspective: 1200px;
+            transform-style: preserve-3d;
+        }
+
+        #battlefield {
+            transform: rotateX(25deg) scale(0.95);
+            transform-origin: center center;
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            background: 
+                linear-gradient(rgba(0, 163, 255, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 163, 255, 0.1) 1px, transparent 1px);
+            background-size: 40px 40px;
+            border: 2px solid rgba(0, 163, 255, 0.3);
+            box-shadow: inset 0 0 50px rgba(0, 163, 255, 0.2);
+        }
+
+        /* Card Styles */
+        .card {
+            width: 140px;
+            height: 200px;
+            background: linear-gradient(145deg, #1e1e24 0%, #15151a 100%);
+            border-radius: 12px;
+            border: 2px solid #333;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+            position: relative;
+            transform-style: preserve-3d;
+            will-change: transform;
+        }
+
+        .card:hover {
+            transform: translateY(-30px) scale(1.25) !important;
+            border-color: var(--digi-blue);
+            box-shadow: 0 25px 50px rgba(0, 163, 255, 0.4);
+            z-index: 100 !important;
+        }
+
+        .card-active {
+            width: 180px;
+            height: 260px;
+            cursor: default;
+        }
+
+        .card-active:hover { transform: none !important; }
+
+        .support-slot {
+            width: 120px;
+            height: 170px;
+            border: 2px dashed rgba(255, 145, 0, 0.5);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 145, 0, 0.5);
+            transition: all 0.3s;
+        }
+
+        /* Support Card Reveal Animation */
+        .card-flip {
+            animation: flipIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+        @keyframes flipIn {
+            0% { transform: rotateY(180deg) scale(0.8); opacity: 0; }
+            50% { transform: rotateY(90deg) scale(1.1); opacity: 0.5; }
+            100% { transform: rotateY(0deg) scale(1); opacity: 1; }
+        }
+
+        /* Command Hex Menu */
+        .command-hex {
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            background: rgba(10, 10, 12, 0.9);
+            border: 2px solid var(--digi-blue);
+            transition: all 0.2s;
+        }
+        .command-btn {
+            transition: all 0.2s;
+        }
+        .command-btn:hover { transform: scale(1.1); filter: brightness(1.5); }
+
+        /* Animations */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px) rotate(-2deg); }
+            50% { transform: translateX(10px) rotate(2deg); }
+            75% { transform: translateX(-10px) rotate(-2deg); }
+        }
+        .hit-shake { animation: shake 0.3s ease-in-out; }
+
+        @keyframes damagePopup {
+            0% { opacity: 0; transform: translateY(20px) scale(0.5); }
+            20% { opacity: 1; transform: translateY(0) scale(1.2); }
+            80% { opacity: 1; transform: translateY(-30px) scale(1); }
+            100% { opacity: 0; transform: translateY(-50px) scale(0.8); }
+        }
+        .dmg-popup { animation: damagePopup 1.5s forwards; font-weight: 900; }
+
+        /* HP Bar Tween */
+        .hp-fill { transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col items-center justify-center">
+
+    <!-- Full Screen Overlay for Modals/Announcements -->
+    <div id="modal-overlay" class="absolute inset-0 z-[100] bg-black/80 hidden flex-col items-center justify-center backdrop-blur-sm">
+        <div id="modal-content" class="glass-panel p-8 rounded-2xl text-center max-w-lg w-full transform transition-all scale-95 opacity-0">
+            <h2 id="modal-title" class="orbitron text-3xl font-bold text-white mb-4">Phase</h2>
+            <p id="modal-desc" class="text-blue-200 mb-8">Description goes here.</p>
+            <div id="modal-actions" class="flex justify-center gap-4">
+                <!-- Buttons injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Screen Flash Effect -->
+    <div id="screen-flash" class="absolute inset-0 z-[90] bg-white hidden opacity-0 pointer-events-none transition-opacity duration-100"></div>
+
+    <!-- Top HUD: Enemy Stats -->
+    <div class="absolute top-4 left-4 right-4 flex justify-between items-start z-40 pointer-events-none">
+        <div class="glass-panel p-4 rounded-xl flex items-center gap-4 w-1/3 neon-border-red">
+            <div class="w-16 h-16 rounded-full border-2 border-red-500 flex items-center justify-center bg-red-900/30">
+                <span class="orbitron font-bold text-red-400 text-xl" id="enemy-dp">0 DP</span>
+            </div>
+            <div class="flex-1">
+                <div class="flex justify-between text-sm mb-1">
+                    <span class="font-bold text-red-200" id="enemy-name">CPU</span>
+                    <span class="font-mono text-red-400"><span id="enemy-hp">0</span> HP</span>
+                </div>
+                <div class="h-3 bg-gray-800 rounded-full overflow-hidden border border-red-900/50">
+                    <div id="enemy-hp-bar" class="hp-fill h-full bg-gradient-to-r from-red-600 to-red-400 w-full"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="glass-panel px-6 py-3 rounded-full border border-white/20">
+            <span id="phase-indicator" class="orbitron font-bold text-xl tracking-widest text-white">DRAW PHASE</span>
+        </div>
+    </div>
+
+    <div id="game-container" class="w-full h-full flex items-center justify-center relative -mt-10">
+        <div id="battlefield" class="w-[800px] h-[600px] rounded-3xl flex flex-col justify-between p-8 relative">
+            
+            <!-- Enemy Side (Top) -->
+            <div class="flex justify-center items-center gap-12 h-1/2 w-full">
+                <div id="enemy-support" class="support-slot">
+                    <span class="text-sm font-bold opacity-50">SUPPORT</span>
+                </div>
+                <div id="enemy-active" class="card card-active neon-border-red flex flex-col items-center justify-center">
+                    <span class="text-gray-500 orbitron">NO ACTIVE</span>
+                </div>
+                <!-- Enemy Attack Intention (Hidden until reveal) -->
+                <div id="enemy-intention" class="w-20 h-20 rounded-full bg-black/50 border border-red-500/50 flex items-center justify-center opacity-0 transition-opacity">
+                    <span class="orbitron text-2xl text-red-500">?</span>
+                </div>
+            </div>
+
+            <!-- Central Divider -->
+            <div class="w-full h-px bg-gradient-to-r from-transparent via-blue-500 to-transparent opacity-50"></div>
+
+            <!-- Player Side (Bottom) -->
+            <div class="flex justify-center items-center gap-12 h-1/2 w-full">
+                <!-- Player Attack Intention -->
+                <div id="player-intention" class="w-20 h-20 rounded-full bg-black/50 border border-blue-500/50 flex items-center justify-center opacity-0 transition-opacity">
+                    <span class="orbitron text-2xl text-blue-500">?</span>
+                </div>
+                <div id="player-active" class="card card-active neon-border-blue flex flex-col items-center justify-center">
+                    <span class="text-gray-500 orbitron">NO ACTIVE</span>
+                </div>
+                <div id="player-support" class="support-slot border-blue-500 text-blue-500">
+                    <span class="text-sm font-bold opacity-50">SUPPORT</span>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+    <!-- Command Hex (Attack Phase) -->
+    <div id="command-hex" class="absolute z-50 command-hex w-64 h-64 flex items-center justify-center hidden">
+        <!-- O Attack -->
+        <button onclick="selectAttack('O')" class="command-btn absolute top-4 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full bg-red-900/80 border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center shadow-[0_0_15px_rgba(255,42,42,0.5)]">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="3"></circle></svg>
+        </button>
+        <!-- Triangle Attack -->
+        <button onclick="selectAttack('T')" class="command-btn absolute bottom-12 right-4 w-16 h-16 rounded-full bg-green-900/80 border-2 border-green-500 text-green-500 hover:bg-green-500 hover:text-white flex items-center justify-center shadow-[0_0_15px_rgba(0,255,102,0.5)]">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polygon points="12,2 22,22 2,22" stroke-width="3"></polygon></svg>
+        </button>
+        <!-- Cross Attack -->
+        <button onclick="selectAttack('X')" class="command-btn absolute bottom-12 left-4 w-16 h-16 rounded-full bg-blue-900/80 border-2 border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white flex items-center justify-center shadow-[0_0_15px_rgba(0,163,255,0.5)]">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><line x1="4" y1="4" x2="20" y2="20" stroke-width="3"></line><line x1="20" y1="4" x2="4" y2="20" stroke-width="3"></line></svg>
+        </button>
+        <div class="orbitron text-center mt-4 text-blue-300 text-sm font-bold">ATTACK</div>
+    </div>
+
+    <div class="absolute bottom-0 left-0 right-0 h-48 pointer-events-none z-40 flex justify-center">
+        <!-- Player Stats (Left) -->
+        <div class="absolute bottom-4 left-4 glass-panel p-4 rounded-xl flex items-center gap-4 w-1/3 neon-border-blue pointer-events-auto">
+            <div class="flex-1 text-right">
+                <div class="flex justify-between text-sm mb-1 flex-row-reverse">
+                    <span class="font-bold text-blue-200" id="player-name">Tamer</span>
+                    <span class="font-mono text-blue-400"><span id="player-hp">0</span> HP</span>
+                </div>
+                <div class="h-3 bg-gray-800 rounded-full overflow-hidden border border-blue-900/50 flex justify-end">
+                    <div id="player-hp-bar" class="hp-fill h-full bg-gradient-to-l from-blue-600 to-blue-400 w-full"></div>
+                </div>
+            </div>
+            <div class="w-16 h-16 rounded-full border-2 border-blue-500 flex items-center justify-center bg-blue-900/30">
+                <span class="orbitron font-bold text-blue-400 text-xl" id="player-dp">0 DP</span>
+            </div>
+        </div>
+
+        <!-- Hand Container -->
+        <div id="player-hand" class="relative flex-1 max-w-[50%] h-full flex justify-center items-end pb-4 gap-3 pointer-events-auto z-50">
+            <!-- Cards injected by JS -->
+        </div>
+        
+        <!-- Controls (Right) -->
+        <div class="absolute bottom-4 right-4 pointer-events-auto">
+            <button id="skip-btn" onclick="skipPhase()" class="glass-panel px-8 py-4 rounded-xl font-bold orbitron text-blue-400 hover:text-white hover:bg-blue-600/50 border border-blue-500 transition-colors hidden">
+                SKIP PHASE
+            </button>
+        </div>
+    </div>
+
+    <!-- Floating Damage Numbers Container -->
+    <div id="damage-container" class="absolute inset-0 pointer-events-none z-[100] overflow-hidden"></div>
+
+    <script>
+        // Web Audio API for Synthesized SFX
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const audioCtx = new AudioContext();
+
+        const SFX = {
+            tick: () => playTone(600, 'sine', 0.05, 0.1),
+            thud: () => playTone(100, 'square', 0.2, 0.5, true),
+            error: () => { playTone(150, 'sawtooth', 0.1, 0.3); setTimeout(() => playTone(100, 'sawtooth', 0.15, 0.3), 100); },
+            chime: () => { playTone(800, 'sine', 0.1, 0.2); setTimeout(() => playTone(1200, 'sine', 0.2, 0.2), 100); },
+            hit: () => playTone(80, 'sawtooth', 0.3, 0.8, true),
+            counter: () => { playTone(1500, 'square', 0.1, 0.2); setTimeout(() => playTone(2000, 'square', 0.2, 0.4), 100); }
+        };
+
+        function playTone(freq, type, duration, vol, isImpact = false) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            if(isImpact) osc.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + duration);
+
+            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        // Global UI Interactions
+        document.addEventListener('mouseover', (e) => {
+            if (e.target.closest('.card') || e.target.closest('button')) SFX.tick();
+        });
+
+        // Provided Database (Starter_Deck.json equivalent)
+        const CardDB = {
+            "c_001": { id: "c_001", name: "Agumon", level: "Rookie", type: "Fire", hp: 500, dp_yield: 10, evo_cost: 0, atk_o: 300, atk_t: 200, atk_x: 100, x_effect: "none", support_id: "buff_o_200", support_desc: "+200 O attack." },
+            "c_002": { id: "c_002", name: "Biyomon", level: "Rookie", type: "Fire", hp: 400, dp_yield: 10, evo_cost: 0, atk_o: 200, atk_t: 250, atk_x: 150, x_effect: "none", support_id: "buff_t_200", support_desc: "+200 T attack." },
+            "c_003": { id: "c_003", name: "Guilmon", level: "Rookie", type: "Fire", hp: 600, dp_yield: 10, evo_cost: 0, atk_o: 320, atk_t: 150, atk_x: 100, x_effect: "none", support_id: "heal_hp_200", support_desc: "Recover 200 HP." },
+            "c_010": { id: "c_010", name: "Greymon", level: "Champion", type: "Fire", hp: 900, dp_yield: 20, evo_cost: 20, atk_o: 500, atk_t: 300, atk_x: 100, x_effect: "none", support_id: "swap_enemy_o_to_t", support_desc: "Force enemy T attack." },
+            "c_011": { id: "c_011", name: "Birdramon", level: "Champion", type: "Fire", hp: 750, dp_yield: 20, evo_cost: 20, atk_o: 350, atk_t: 450, atk_x: 100, x_effect: "none", support_id: "first_strike", support_desc: "Attack hits first." },
+            "c_012": { id: "c_012", name: "Growlmon", level: "Champion", type: "Fire", hp: 1000, dp_yield: 20, evo_cost: 30, atk_o: 450, atk_t: 200, atk_x: 200, x_effect: "x_to_zero", support_id: "buff_all_100", support_desc: "+100 all attacks." },
+            "c_020": { id: "c_020", name: "MetalGreymon", level: "Ultimate", type: "Fire", hp: 1500, dp_yield: 40, evo_cost: 40, atk_o: 800, atk_t: 400, atk_x: 200, x_effect: "counter_o", support_id: "void_enemy_support", support_desc: "Nullify enemy Support." },
+            "c_021": { id: "c_021", name: "Garudamon", level: "Ultimate", type: "Fire", hp: 1200, dp_yield: 40, evo_cost: 40, atk_o: 600, atk_t: 700, atk_x: 300, x_effect: "none", support_id: "half_enemy_hp", support_desc: "Halve opponent HP." }
+        };
+
+        const LevelHierarchy = { "None": 0, "Rookie": 1, "Champion": 2, "Ultimate": 3 };
+
+        // Game State Machine
+        let GameState = {
+            phase: 'INIT', // INIT, EVOLUTION, SUPPORT, ATTACK, RESOLUTION, END
+            player: {
+                hp: 0, maxHp: 0, dp: 0, 
+                hand: ['c_001', 'c_002', 'c_010', 'c_012', 'c_020'], 
+                active: null, support: null, attackSelection: null
+            },
+            enemy: {
+                hp: 0, maxHp: 0, dp: 99, 
+                hand: ['c_003', 'c_011', 'c_021', 'c_010', 'c_002'], 
+                active: 'c_010', // AI starts with Greymon
+                support: null, attackSelection: null
+            }
+        };
+
+        function renderCardHTML(cardData, isHidden = false) {
+            if(!cardData) return '';
+            if(isHidden) {
+                return `
+                    <div class="w-full h-full bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PHBhdGggZD0iTTAgMGg0MHY0MEgweiIgZmlsbD0iIzIyMiIvPjxjaXJjbGUgY3g9IjIwIiBjeT0iMjAiIHI9IjIiIGZpbGw9IiM1NTUiLz48L3N2Zz4=')] rounded-lg flex items-center justify-center border-2 border-[#444]">
+                        <span class="orbitron text-gray-500 font-bold tracking-widest transform rotate-[-45deg]">DIGITAL</span>
+                    </div>
+                `;
+            }
+            return `
+                <div class="absolute inset-0 p-2 flex flex-col justify-between pointer-events-none">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <div class="text-xs font-bold text-gray-300">${cardData.level}</div>
+                            <div class="text-sm font-bold orbitron uppercase truncate w-24 text-white">${cardData.name}</div>
+                        </div>
+                        <div class="bg-gray-900 rounded px-1 border border-gray-700 text-xs font-mono text-green-400">${cardData.hp} HP</div>
+                    </div>
+                    
+                    <div class="flex-1 flex items-center justify-center">
+                        <!-- Placeholder Art -->
+                        <div class="w-16 h-16 rounded-full bg-gradient-to-br from-blue-900 to-black border border-blue-500/50 shadow-inner flex items-center justify-center">
+                            <span class="orbitron font-bold text-blue-500/30 text-xs">IMG</span>
+                        </div>
+                    </div>
+
+                    <div class="space-y-1 bg-black/50 p-1 rounded">
+                        <div class="flex justify-between text-[10px] text-gray-300">
+                            <span class="text-red-500 font-bold">O ${cardData.atk_o}</span>
+                            <span class="text-green-500 font-bold">△ ${cardData.atk_t}</span>
+                            <span class="text-blue-500 font-bold">X ${cardData.atk_x}</span>
+                        </div>
+                        <div class="text-[9px] text-gray-400 leading-tight border-t border-gray-700 pt-1">
+                            DP+${cardData.dp_yield} | Evo: ${cardData.evo_cost}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function updateHUD() {
+            // Player
+            document.getElementById('player-dp').innerText = `${GameState.player.dp} DP`;
+            if(GameState.player.active) {
+                const activeCard = CardDB[GameState.player.active];
+                document.getElementById('player-hp').innerText = GameState.player.hp;
+                document.getElementById('player-hp-bar').style.width = `${Math.max(0, (GameState.player.hp / GameState.player.maxHp) * 100)}%`;
+                
+                const activeEl = document.getElementById('player-active');
+                activeEl.innerHTML = renderCardHTML(activeCard);
+                activeEl.className = 'card card-active neon-border-blue flex flex-col items-center justify-center';
+            } else {
+                document.getElementById('player-active').innerHTML = '<span class="text-gray-500 orbitron">NO ACTIVE</span>';
+                document.getElementById('player-hp').innerText = "0";
+                document.getElementById('player-hp-bar').style.width = "0%";
+            }
+
+            // Enemy
+            document.getElementById('enemy-dp').innerText = `${GameState.enemy.dp} DP`;
+            if(GameState.enemy.active) {
+                const enemyCard = CardDB[GameState.enemy.active];
+                document.getElementById('enemy-hp').innerText = GameState.enemy.hp;
+                document.getElementById('enemy-hp-bar').style.width = `${Math.max(0, (GameState.enemy.hp / GameState.enemy.maxHp) * 100)}%`;
+                
+                const enemyEl = document.getElementById('enemy-active');
+                enemyEl.innerHTML = renderCardHTML(enemyCard);
+                enemyEl.className = 'card card-active neon-border-red flex flex-col items-center justify-center';
+            }
+
+            // Render Hand (Horizontal List)
+            const handContainer = document.getElementById('player-hand');
+            handContainer.innerHTML = '';
+            
+            GameState.player.hand.forEach((cardId, index) => {
+                const card = CardDB[cardId];
+                const cardEl = document.createElement('div');
+                cardEl.className = 'card origin-bottom shrink-0';
+                
+                cardEl.innerHTML = renderCardHTML(card);
+                
+                cardEl.onclick = () => handleHandCardClick(cardId, index);
+                handContainer.appendChild(cardEl);
+            });
+        }
+
+        function showModal(title, desc, buttons) {
+            SFX.chime();
+            const overlay = document.getElementById('modal-overlay');
+            const content = document.getElementById('modal-content');
+            const actions = document.getElementById('modal-actions');
+            
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-desc').innerText = desc;
+            
+            actions.innerHTML = buttons.map(b => `
+                <button onclick="${b.action}" class="px-6 py-2 rounded-lg font-bold orbitron border-2 ${b.style || 'border-blue-500 text-blue-400 hover:bg-blue-500 hover:text-white'} transition-all">
+                    ${b.label}
+                </button>
+            `).join('');
+
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
+            setTimeout(() => {
+                content.classList.remove('scale-95', 'opacity-0');
+                content.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        function hideModal() {
+            const overlay = document.getElementById('modal-overlay');
+            const content = document.getElementById('modal-content');
+            content.classList.remove('scale-100', 'opacity-100');
+            content.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                overlay.classList.remove('flex');
+                overlay.classList.add('hidden');
+            }, 200);
+        }
+
+        function setPhaseIndicator(text) {
+            document.getElementById('phase-indicator').innerText = text;
+        }
+
+        function spawnDamagePopup(amount, x, y, isHeal = false) {
+            const container = document.getElementById('damage-container');
+            const el = document.createElement('div');
+            el.className = `absolute dmg-popup orbitron text-4xl ${isHeal ? 'text-green-400' : 'text-white drop-shadow-[0_0_10px_rgba(255,0,0,0.8)]'}`;
+            el.innerText = isHeal ? `+${amount}` : `-${amount}`;
+            el.style.left = `${x}px`;
+            el.style.top = `${y}px`;
+            container.appendChild(el);
+            setTimeout(() => el.remove(), 1500);
+        }
+
+        function triggerScreenShake(isHeavy = false) {
+            const field = document.getElementById('battlefield');
+            field.classList.add('hit-shake');
+            if(isHeavy) {
+                const flash = document.getElementById('screen-flash');
+                flash.classList.remove('hidden');
+                flash.classList.add('opacity-100');
+                setTimeout(() => {
+                    flash.classList.remove('opacity-100');
+                    setTimeout(() => flash.classList.add('hidden'), 100);
+                }, 50);
+            }
+            setTimeout(() => field.classList.remove('hit-shake'), 300);
+        }
+
+        let selectedCardIndex = -1;
+
+        function startEvolutionPhase() {
+            GameState.phase = 'EVOLUTION';
+            setPhaseIndicator('EVOLUTION PHASE');
+            document.getElementById('skip-btn').classList.remove('hidden');
+            document.getElementById('skip-btn').innerText = "SKIP EVOLUTION";
+            
+            if(!GameState.player.active) {
+                // Must play a rookie
+                showModal("DEPLOY DIGIMON", "You have no active Digimon. Play a Rookie card (0 Cost).", [
+                    { label: "OK", action: "hideModal()" }
+                ]);
+            }
+        }
+
+        function handleHandCardClick(cardId, index) {
+            const card = CardDB[cardId];
+            selectedCardIndex = index;
+
+            if(GameState.phase === 'EVOLUTION') {
+                const activeLevelNum = GameState.player.active ? LevelHierarchy[CardDB[GameState.player.active].level] : 0;
+                const targetLevelNum = LevelHierarchy[card.level];
+                
+                const canEvolve = (targetLevelNum === activeLevelNum + 1) && (GameState.player.dp >= card.evo_cost);
+                const canPlayRookie = !GameState.player.active && card.level === 'Rookie';
+
+                let buttons = [
+                    { label: `BURN (+${card.dp_yield} DP)`, action: `burnCard()`, style: 'border-orange-500 text-orange-400 hover:bg-orange-500 hover:text-white' }
+                ];
+
+                if(canEvolve) {
+                    buttons.unshift({ label: `EVOLVE (-${card.evo_cost} DP)`, action: `evolveCard()`, style: 'border-green-500 text-green-400 hover:bg-green-500 hover:text-white' });
+                } else if(canPlayRookie) {
+                    buttons.unshift({ label: `PLAY TO FIELD`, action: `evolveCard()`, style: 'border-green-500 text-green-400 hover:bg-green-500 hover:text-white' });
+                }
+
+                showModal(`MANAGE: ${card.name}`, `Level: ${card.level} | Evo Cost: ${card.evo_cost} | DP Yield: ${card.dp_yield}`, buttons);
+            } 
+            else if(GameState.phase === 'SUPPORT') {
+                showModal(`SET SUPPORT?`, `Effect: ${card.support_desc}`, [
+                    { label: "SET FACE DOWN", action: "setSupport()", style: 'border-purple-500 text-purple-400 hover:bg-purple-500 hover:text-white' },
+                    { label: "CANCEL", action: "hideModal()" }
+                ]);
+            }
+        }
+
+        window.burnCard = function() {
+            const cardId = GameState.player.hand[selectedCardIndex];
+            const card = CardDB[cardId];
+            GameState.player.dp += card.dp_yield;
+            GameState.player.hand.splice(selectedCardIndex, 1);
+            hideModal();
+            SFX.thud();
+            updateHUD();
+        }
+
+        window.evolveCard = function() {
+            const cardId = GameState.player.hand[selectedCardIndex];
+            const card = CardDB[cardId];
+            GameState.player.dp -= card.evo_cost;
+            GameState.player.active = cardId;
+            GameState.player.hp = card.hp;
+            GameState.player.maxHp = card.hp;
+            GameState.player.hand.splice(selectedCardIndex, 1);
+            hideModal();
+            SFX.thud();
+            triggerScreenShake();
+            updateHUD();
+            startSupportPhase();
+        }
+
+        window.skipPhase = function() {
+            if(GameState.phase === 'EVOLUTION') {
+                if(!GameState.player.active) {
+                    SFX.error();
+                    showModal("ERROR", "You must play a Rookie Digimon first!", [{label:"OK", action:"hideModal()"}]);
+                    return;
+                }
+                startSupportPhase();
+            } else if (GameState.phase === 'SUPPORT') {
+                GameState.player.support = null;
+                startAttackPhase();
+            }
+        }
+
+        function startSupportPhase() {
+            GameState.phase = 'SUPPORT';
+            setPhaseIndicator('SUPPORT PHASE');
+            document.getElementById('skip-btn').innerText = "SKIP SUPPORT";
+            
+            // Dummy AI sets support randomly 50% of time
+            if(Math.random() > 0.5) {
+                GameState.enemy.support = GameState.enemy.hand[Math.floor(Math.random() * GameState.enemy.hand.length)];
+                const enemySupportEl = document.getElementById('enemy-support');
+                enemySupportEl.innerHTML = renderCardHTML(null, true);
+                enemySupportEl.className = "card card-flip border border-red-500 shadow-[0_0_15px_rgba(255,0,0,0.5)]";
+                SFX.thud();
+            }
+        }
+
+        window.setSupport = function() {
+            const cardId = GameState.player.hand[selectedCardIndex];
+            GameState.player.support = cardId;
+            GameState.player.hand.splice(selectedCardIndex, 1);
+            hideModal();
+            
+            const playerSupportEl = document.getElementById('player-support');
+            playerSupportEl.innerHTML = renderCardHTML(null, true);
+            playerSupportEl.className = "card card-flip border border-blue-500 shadow-[0_0_15px_rgba(0,163,255,0.5)]";
+            
+            SFX.thud();
+            updateHUD();
+            startAttackPhase();
+        }
+
+        function startAttackPhase() {
+            GameState.phase = 'ATTACK';
+            setPhaseIndicator('ATTACK PHASE');
+            document.getElementById('skip-btn').classList.add('hidden');
+            
+            document.getElementById('command-hex').classList.remove('hidden');
+        }
+
+        window.selectAttack = function(type) { // 'O', 'T', 'X'
+            SFX.tick();
+            GameState.player.attackSelection = type;
+            
+            const pIntent = document.getElementById('player-intention');
+            pIntent.innerHTML = `<span class="orbitron text-2xl text-blue-500 font-bold">${type}</span>`;
+            pIntent.classList.remove('opacity-0');
+
+            // AI Selection
+            const attacks = ['O', 'T', 'X'];
+            GameState.enemy.attackSelection = attacks[Math.floor(Math.random() * attacks.length)];
+            
+            const eIntent = document.getElementById('enemy-intention');
+            eIntent.innerHTML = `<span class="orbitron text-2xl text-red-500 font-bold">READY</span>`;
+            eIntent.classList.remove('opacity-0');
+
+            document.getElementById('command-hex').classList.add('hidden');
+            
+            setTimeout(resolveCombat, 1000);
+        }
+
+        function applySupportEffect(supportId, isPlayer) {
+            if(!supportId) return;
+            const card = CardDB[supportId];
+            const tokens = card.support_id.split('_'); // e.g., buff_o_200, swap_enemy_o_to_t
+            const action = tokens[0];
+            const target = tokens[1];
+            const value = parseInt(tokens[2] || 0);
+
+            const me = isPlayer ? GameState.player : GameState.enemy;
+            const enemy = isPlayer ? GameState.enemy : GameState.player;
+            const myActive = CardDB[me.active];
+
+            if(action === 'buff') {
+                if(target === 'all') {
+                    me.tmp_o += value; me.tmp_t += value; me.tmp_x += value;
+                } else if(target === 'o') me.tmp_o += value;
+                else if(target === 't') me.tmp_t += value;
+                else if(target === 'x') me.tmp_x += value;
+            } else if(action === 'heal' && target === 'hp') {
+                me.hp = Math.min(me.maxHp, me.hp + value);
+                const box = document.getElementById(isPlayer ? 'player-active' : 'enemy-active').getBoundingClientRect();
+                spawnDamagePopup(value, box.left + 50, box.top, true);
+            } else if(action === 'swap' && target === 'enemy') {
+                enemy.attackSelection = tokens[3].toUpperCase(); // swap_enemy_o_to_t -> token[3] is 't'
+            } else if(action === 'void' && target === 'enemy') {
+                enemy.support = null;
+            } else if(action === 'half' && target === 'enemy') {
+                enemy.hp = Math.floor(enemy.hp / 2);
+            }
+        }
+
+        function resolveCombat() {
+            GameState.phase = 'RESOLUTION';
+            setPhaseIndicator('RESOLUTION');
+            
+            const eIntent = document.getElementById('enemy-intention');
+            eIntent.innerHTML = `<span class="orbitron text-2xl text-red-500 font-bold">${GameState.enemy.attackSelection}</span>`;
+            
+            // Reveal Supports
+            if(GameState.player.support) {
+                document.getElementById('player-support').innerHTML = renderCardHTML(CardDB[GameState.player.support]);
+            }
+            if(GameState.enemy.support) {
+                document.getElementById('enemy-support').innerHTML = renderCardHTML(CardDB[GameState.enemy.support]);
+            }
+
+            SFX.chime();
+
+            setTimeout(() => {
+                // Initialize Temp Combat Stats
+                const pActive = CardDB[GameState.player.active];
+                const eActive = CardDB[GameState.enemy.active];
+                
+                GameState.player.tmp_o = pActive.atk_o;
+                GameState.player.tmp_t = pActive.atk_t;
+                GameState.player.tmp_x = pActive.atk_x;
+                GameState.player.mult = 1;
+
+                GameState.enemy.tmp_o = eActive.atk_o;
+                GameState.enemy.tmp_t = eActive.atk_t;
+                GameState.enemy.tmp_x = eActive.atk_x;
+                GameState.enemy.mult = 1;
+
+                // Apply Supports
+                // Order: Rule Overrides -> Swaps -> Mutlipliers -> Buffs -> Utility
+                // For simplicity in vertical slice, execute simultaneously unless nullified
+                const pSup = GameState.player.support;
+                const eSup = GameState.enemy.support;
+
+                if(!(eSup && CardDB[eSup].support_id === 'void_enemy_support')) applySupportEffect(pSup, true);
+                if(!(pSup && CardDB[pSup].support_id === 'void_enemy_support')) applySupportEffect(eSup, false);
+
+                // Fetch Final Selected Atk
+                let pDmg = GameState.player[`tmp_${GameState.player.attackSelection.toLowerCase()}`];
+                let eDmg = GameState.enemy[`tmp_${GameState.enemy.attackSelection.toLowerCase()}`];
+
+                // Apply X-Effects (Counter logic)
+                if(GameState.player.attackSelection === 'X' && GameState.enemy.attackSelection === 'O' && pActive.x_effect === 'counter_o') {
+                    SFX.counter();
+                    pDmg = eDmg * 2;
+                    eDmg = 0;
+                }
+                if(GameState.enemy.attackSelection === 'X' && GameState.player.attackSelection === 'O' && eActive.x_effect === 'counter_o') {
+                    SFX.counter();
+                    eDmg = pDmg * 2;
+                    pDmg = 0;
+                }
+                if(pActive.x_effect === 'x_to_zero' && GameState.player.attackSelection === 'X') eDmg = 0;
+                if(eActive.x_effect === 'x_to_zero' && GameState.enemy.attackSelection === 'X') pDmg = 0;
+
+                // Execute Damage visually
+                if(pDmg > 0) {
+                    setTimeout(() => {
+                        SFX.hit();
+                        triggerScreenShake(pDmg > 500);
+                        GameState.enemy.hp -= pDmg;
+                        const box = document.getElementById('enemy-active').getBoundingClientRect();
+                        spawnDamagePopup(pDmg, box.left + 50, box.top + 50);
+                        updateHUD();
+                        checkWinState();
+                    }, 500);
+                }
+
+                if(eDmg > 0) {
+                    setTimeout(() => {
+                        SFX.hit();
+                        triggerScreenShake(eDmg > 500);
+                        GameState.player.hp -= eDmg;
+                        const box = document.getElementById('player-active').getBoundingClientRect();
+                        spawnDamagePopup(eDmg, box.left + 50, box.top - 50);
+                        updateHUD();
+                        checkWinState();
+                    }, pDmg > 0 ? 1500 : 500); // offset if both hit
+                }
+
+                // Cleanup and Loop
+                setTimeout(() => {
+                    if(GameState.phase !== 'END') {
+                        // Reset field intentions/supports
+                        document.getElementById('player-intention').classList.add('opacity-0');
+                        document.getElementById('enemy-intention').classList.add('opacity-0');
+                        
+                        document.getElementById('player-support').innerHTML = '<span class="text-sm font-bold opacity-50">SUPPORT</span>';
+                        document.getElementById('player-support').className = 'support-slot border-blue-500 text-blue-500';
+                        document.getElementById('enemy-support').innerHTML = '<span class="text-sm font-bold opacity-50">SUPPORT</span>';
+                        document.getElementById('enemy-support').className = 'support-slot';
+                        
+                        GameState.player.support = null;
+                        GameState.enemy.support = null;
+                        
+                        startEvolutionPhase();
+                    }
+                }, Math.max(pDmg > 0 ? 2000 : 0, eDmg > 0 ? 2500 : 1000));
+
+            }, 1500);
+        }
+
+        function checkWinState() {
+            if(GameState.player.hp <= 0 || GameState.enemy.hp <= 0) {
+                GameState.phase = 'END';
+                const isWin = GameState.player.hp > 0;
+                SFX.thud();
+                triggerScreenShake(true);
+                showModal(
+                    isWin ? "VICTORY" : "DEFEAT", 
+                    isWin ? "Enemy Digimon De-compiled. +40 Bits, +25 XP" : "Your Digimon was destroyed. Match Over.", 
+                    [{ label: "PLAY AGAIN", action: "location.reload()" }]
+                );
+            }
+        }
+
+        window.onload = () => {
+            // Setup Enemy HP
+            GameState.enemy.hp = CardDB[GameState.enemy.active].hp;
+            GameState.enemy.maxHp = CardDB[GameState.enemy.active].hp;
+            updateHUD();
+            startEvolutionPhase();
+        };
+
+    </script>
+</body>
+</html>
