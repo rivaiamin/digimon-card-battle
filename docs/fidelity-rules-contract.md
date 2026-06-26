@@ -87,11 +87,49 @@ Primary objective for E0 / T0-1:
 
 ---
 
-## 5. Completion criteria for E0 / T0-1
+## 5. Resolved ambiguities (E0 / T0-2)
+
+The following conflicts were resolved for implementation guidance.  
+If future primary evidence contradicts a decision, update this section and link the change in the relevant task.
+
+| Ambiguity ID | Ambiguous topic | Conflicting evidence | Decision (resolved) | Impacted FC IDs |
+|---|---|---|---|---|
+| RA-001 | Opening hand size and refill target | Current server uses draw-to-6; manual/wiki references indicate draw-to-4 opening flow and redraw behavior. | Fidelity profile uses **4-card hand model** for opening and turn-start refill logic. Draw-to-6 is treated as non-fidelity legacy behavior. | FC-001, FC-003, FC-005 |
+| RA-002 | Attack/support order inside battle phase | Internal docs historically describe support-then-attack; manual/wiki wording points to attack selection and support sequencing in canonical flow. | Fidelity profile contracts battle as **attack lock then support resolution pipeline**. Any transitional divergence must be tagged as known difference. | FC-011, FC-012, FC-013, FC-014 |
+| RA-003 | Support pick order between players | Current implementation uses unordered lock-in; manual states attacking second chooses support first. | Adopt **attacking second chooses support first** in canonical profile. | FC-012, FC-025 |
+| RA-004 | Deck-out semantics | Sources describe loss when unable to continue required draw/selection; project currently emphasizes draw shortfall checks. | Deck-out loss is triggered when player cannot satisfy a required progression step (required draw or required legal replacement battler selection). | FC-005, FC-019 |
+| RA-005 | Non-rookie opening legality | Current flow enforces rookie deploy; manual describes Level C/U opening with stat penalties. | Canonical profile allows non-rookie opening if selected by rule set, with explicit HP/ATK penalties according to contract values. | FC-002 |
+| RA-006 | Effect tie-break order | Current support tie-break uses active player; manual says same-speed effects defer to 1st-attack player. | Tie-break order is: effect speed/priority -> 1st-attack owner (if defined) -> attacking player -> deterministic session order. | FC-014, FC-018, FC-020 |
+| RA-007 | Special arena rule restrictions in multiplayer | Some references include PvE arena rule overrides (for example, option restrictions). | Ranked multiplayer baseline excludes PvE arena overrides by default; special rule sets are explicit profile variants. | FC-029 |
+
+### 5.1 Clarifications to avoid hidden scope creep
+
+1. **Profile naming**
+   - `fidelity_ps1`: canonical-focused profile for parity work.
+   - `legacy_online`: existing behavior profile retained only for transition/testing.
+
+2. **Evidence quality rule**
+   - When manual text and derived summaries disagree, manual + replay evidence wins.
+
+3. **Change control**
+   - Any future ambiguity resolution must include:
+     - impacted FC IDs,
+     - migration implications,
+     - test scenario IDs to update.
+
+---
+
+## 6. Completion criteria for E0 / T0-1
 
 T0-1 is complete when:
 
 - all `FC-001`..`FC-030` have a written rule statement;
 - each statement has at least one citation;
 - baseline implementation references are attached for gap tracking.
+
+T0-2 is complete when:
+
+- all active rule conflicts are listed in the resolved ambiguities table;
+- each ambiguity has an explicit decision and FC impact mapping;
+- ambiguity decisions are implementation-ready (not open-ended notes).
 
