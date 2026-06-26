@@ -6,9 +6,16 @@ export interface Attack {
   effect?: string;
 }
 
+export type CardKind = 'digimon' | 'option' | 'evolution_option';
+
+/**
+ * Historical type name kept for compatibility with UI components.
+ * This now represents a generic battle card payload and includes `cardKind`.
+ */
 export interface DigimonCardData {
   id: string;
   name: string;
+  cardKind: CardKind;
   level: 'Rookie' | 'Champion' | 'Ultimate' | 'Mega' | 'Armor';
   type: 'Fire' | 'Ice' | 'Nature' | 'Dark' | 'Rare';
   hp: number;

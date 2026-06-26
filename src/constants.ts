@@ -10,6 +10,7 @@ export const DEFAULT_CARD_ATTACKS: NonNullable<DigimonCardData["attacks"]> = {
 export const AGUMON: DigimonCardData = {
   id: "agumon",
   name: "AGUMON",
+  cardKind: "digimon",
   level: "Rookie",
   type: "Fire",
   hp: 380,
@@ -29,6 +30,7 @@ export const AGUMON: DigimonCardData = {
 export const GREYMON: DigimonCardData = {
   id: "greymon",
   name: "GREYMON",
+  cardKind: "digimon",
   level: "Champion",
   type: "Fire",
   hp: 650,
@@ -48,6 +50,7 @@ export const GREYMON: DigimonCardData = {
 export const METALGREYMON: DigimonCardData = {
   id: "metalgreymon",
   name: "METALGREYMON",
+  cardKind: "digimon",
   level: "Ultimate",
   type: "Fire",
   hp: 950,
@@ -66,6 +69,7 @@ export const METALGREYMON: DigimonCardData = {
 export const WARGREYMON: DigimonCardData = {
   id: "wargreymon",
   name: "WARGREYMON",
+  cardKind: "digimon",
   level: "Mega",
   type: "Fire",
   hp: 1200,
@@ -84,6 +88,7 @@ export const WARGREYMON: DigimonCardData = {
 export const TENTOMON: DigimonCardData = {
   id: "tentomon",
   name: "TENTOMON",
+  cardKind: "digimon",
   level: "Rookie",
   type: "Nature",
   hp: 350,
@@ -103,6 +108,7 @@ export const TENTOMON: DigimonCardData = {
 export const KABUTERIMON: DigimonCardData = {
   id: "kabuterimon",
   name: "KABUTERIMON",
+  cardKind: "digimon",
   level: "Champion",
   type: "Nature",
   hp: 600,
@@ -122,6 +128,7 @@ export const KABUTERIMON: DigimonCardData = {
 export const GABUMON: DigimonCardData = {
   id: "gabumon",
   name: "GABUMON",
+  cardKind: "digimon",
   level: "Rookie",
   type: "Ice",
   hp: 360,

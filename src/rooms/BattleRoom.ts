@@ -240,10 +240,19 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
     // Deck + card helpers
     // ----------------------------
 
+    private normalizeCardKind(rawKind: unknown): "digimon" | "option" | "evolution_option" {
+        if (rawKind === "option" || rawKind === "evolution_option" || rawKind === "digimon") {
+            return rawKind;
+        }
+        // Legacy cards.json entries are Digimon-only and have no explicit kind.
+        return "digimon";
+    }
+
     private toSchemaCard(raw: any, instanceId: string): CardSchema {
         const card = new CardSchema();
         card.id = instanceId;
         card.name = String(raw.name ?? "").toUpperCase();
+        card.cardKind = this.normalizeCardKind(raw.cardKind);
         card.level = String(raw.level ?? "");
         card.type = String(raw.type ?? "");
         card.hp = Number(raw.hp ?? 0);
