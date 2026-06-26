@@ -7,6 +7,8 @@ export interface Attack {
 }
 
 export type CardKind = 'digimon' | 'option' | 'evolution_option';
+export type EffectArgValue = string | number | boolean;
+export type EffectArgs = Record<string, EffectArgValue>;
 
 /**
  * Historical type name kept for compatibility with UI components.
@@ -16,6 +18,10 @@ export interface DigimonCardData {
   id: string;
   name: string;
   cardKind: CardKind;
+  /** Normalized effect identifier for data-driven resolvers. */
+  effectId?: string;
+  /** Effect arguments for `effectId`. */
+  effectArgs?: EffectArgs;
   level: 'Rookie' | 'Champion' | 'Ultimate' | 'Mega' | 'Armor';
   type: 'Fire' | 'Ice' | 'Nature' | 'Dark' | 'Rare';
   hp: number;
