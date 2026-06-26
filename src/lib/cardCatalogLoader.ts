@@ -39,6 +39,16 @@ export type NormalizedCardCatalogEntry = {
     supportEffect: NormalizedSupportEffect | null;
 };
 
+export const KNOWN_EFFECT_IDS = new Set<string>([
+    "support.void_enemy_support",
+    "support.first_strike",
+    "support.change_attack",
+    "support.atk_mult",
+    "support.halve_hp",
+    "support.atk_buff",
+    "support.hp_heal",
+]);
+
 function toCardKind(rawKind: unknown): CardKind {
     if (rawKind === "option" || rawKind === "evolution_option" || rawKind === "digimon") {
         return rawKind;
@@ -67,7 +77,7 @@ function letterToAttack(letter: string | undefined): "circle" | "triangle" | "cr
     return null;
 }
 
-function parseLegacySupportId(supportId: string): LegacySupportEffect | null {
+function parseLegacySupportId(supportId: string, cardId: string): LegacySupportEffect | null {
     if (!supportId || supportId === "none") return null;
     const tokens = supportId.split("_");
     const action = tokens[0];
@@ -98,7 +108,9 @@ function parseLegacySupportId(supportId: string): LegacySupportEffect | null {
         return { type: "hp_heal", value };
     }
 
-    return null;
+    throw new Error(
+        `[cardCatalogLoader] Unsupported legacy support_id "${supportId}" on card "${cardId}".`
+    );
 }
 
 function normalizeSupportEffect(raw: LegacySupportEffect | null): NormalizedSupportEffect | null {
@@ -115,17 +127,29 @@ function normalizeSupportEffect(raw: LegacySupportEffect | null): NormalizedSupp
     };
 }
 
-function toNormalizedEffectDescriptor(raw: {
+function assertKnownEffectId(effectId: string, cardId: string): void {
+    if (!KNOWN_EFFECT_IDS.has(effectId)) {
+        throw new Error(
+            `[cardCatalogLoader] Unknown effectId "${effectId}" on card "${cardId}". Add it to KNOWN_EFFECT_IDS before startup.`
+        );
+    }
+}
+
+function toNormalizedEffectDescriptor(cardId: string, raw: {
     effectId?: unknown;
     effectArgs?: unknown;
     supportEffect?: LegacySupportEffect | null;
     support_id?: unknown;
 }): { effectId: string; effectArgs: EffectArgs } {
     if (typeof raw.effectId === "string" && raw.effectId.trim().length > 0) {
-        return { effectId: raw.effectId.trim(), effectArgs: normalizeEffectArgs(raw.effectArgs) };
+        const effectId = raw.effectId.trim();
+        assertKnownEffectId(effectId, cardId);
+        return { effectId, effectArgs: normalizeEffectArgs(raw.effectArgs) };
     }
 
-    const supportEffect = raw.supportEffect ?? (typeof raw.support_id === "string" ? parseLegacySupportId(raw.support_id) : null);
+    const supportEffect =
+        raw.supportEffect ??
+        (typeof raw.support_id === "string" ? parseLegacySupportId(raw.support_id, cardId) : null);
     if (!supportEffect) return { effectId: "", effectArgs: {} };
 
     const targetAttack =
@@ -164,13 +188,9 @@ function toNormalizedEffectDescriptor(raw: {
         case "hp_heal":
             return { effectId: "support.hp_heal", effectArgs: { value } };
         default:
-            return {
-                effectId: `legacy.${type || "unknown"}`,
-                effectArgs: {
-                    ...(targetAttack ? { targetAttack } : {}),
-                    ...(Number.isFinite(value) ? { value } : {}),
-                },
-            };
+            throw new Error(
+                `[cardCatalogLoader] Unsupported legacy supportEffect.type "${type}" on card "${cardId}". Add a normalized mapping first.`
+            );
     }
 }
 
@@ -198,12 +218,12 @@ export function loadCardCatalog(rawCatalog: unknown): NormalizedCardCatalogEntry
 
         const support = normalizeSupportEffect(
             ((r.supportEffect as LegacySupportEffect | null | undefined) ??
-                (typeof r.support_id === "string" ? parseLegacySupportId(r.support_id) : null)) ??
+                (typeof r.support_id === "string" ? parseLegacySupportId(r.support_id, String(r.id)) : null)) ??
                 null
         );
 
         const attacks = r.attacks && typeof r.attacks === "object" ? (r.attacks as Record<string, unknown>) : {};
-        const effect = toNormalizedEffectDescriptor({
+        const effect = toNormalizedEffectDescriptor(String(r.id), {
             effectId: r.effectId,
             effectArgs: r.effectArgs,
             supportEffect: support,
