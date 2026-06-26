@@ -18,6 +18,7 @@ Primary objective for E0 / T0-1:
 
 - `MANUAL`: PS1 manual text snapshot: `/home/ubuntu/.cursor/projects/workspace/agent-tools/bca3730f-d2db-4031-a565-46aa85a22373.txt`
 - `WIKIMON`: Wikimon gameplay summary snapshot: `/home/ubuntu/.cursor/projects/workspace/agent-tools/06caf3cd-991c-4944-a363-140d0c6a6cdf.txt`
+- `GFQ_CARDLIST`: GameFAQs complete card-collection/card-list reference: `/home/ubuntu/.cursor/projects/workspace/agent-tools/d88c0f7b-4b3f-44e0-aaa6-f6f9422d7635.txt` (source URL: `https://gamefaqs.gamespot.com/ps/526754-digimon-digital-card-battle/faqs/78563/100-card-collection-extra-notes`)
 
 ### Project references (current baseline / planned scope)
 
@@ -54,7 +55,7 @@ Primary objective for E0 / T0-1:
 | FC-014 | Support/effect resolution MUST use deterministic speed/priority ordering, with explicit tie-break behavior. | `MANUAL` L413-L417 | `SUPPORT` L14-L23, L259-L263 |
 | FC-015 | Nullification/jamming-style effects MUST be represented and resolved at correct timing/scope. | `MANUAL` L389, L413-L417 | `SUPPORT` L5-L12, L160-L162 (void only) |
 | FC-016 | Circle/Triangle/Cross base attack characteristics MUST match canonical behavior per card and selection. | `MANUAL` L386; `WIKIMON` L50 | `SUPPORT` L270-L285; `ROOM` L581-L596 |
-| FC-017 | Cross special-effect logic MUST support canonical X behavior set (counter/to-0/crash/eat-up HP, etc.) via effect IDs. | `MANUAL` L386-L394; `WIKIMON` L50 | `ROOM` L581-L596 (no X-specific branch engine); `SUPPORT` L151-L212 (limited generic effects) |
+| FC-017 | Cross special-effect logic MUST support canonical X behavior set (counter/to-0/crash/eat-up HP, etc.) via effect IDs. | `MANUAL` L386-L394; `WIKIMON` L50; `GFQ_CARDLIST` L191, L222, L232 | `ROOM` L581-L596 (no X-specific branch engine); `SUPPORT` L151-L212 (limited generic effects) |
 | FC-018 | First Attack behavior MUST resolve precedence and cancellation exactly per contract. | `MANUAL` L392, L417 | `SUPPORT` L163-L165; `ROOM` L584-L593 |
 | FC-019 | Simultaneous KO / double KO rules MUST be deterministic and match contract (scoring + redeploy behavior). | `GDD` L90-L93 | `ROOM` L616-L621, L624-L633 |
 | FC-020 | Conflicting effects MUST resolve through a deterministic conflict policy (priority + tie-break + override rules). | `MANUAL` L413-L417 | `SUPPORT` L69-L74, L259-L263 |
@@ -63,7 +64,7 @@ Primary objective for E0 / T0-1:
 | FC-023 | Consecutive inactivity MUST trigger strike accounting and forfeit at configured threshold. | `TIMER_SPEC` L26-L29 | `ROOM` L40-L156 (no AFK strike system) |
 | FC-024 | Disconnect/reconnect policy MUST be explicit, fair, and deterministic for ranked multiplayer outcomes. | `NET_SPEC` L5, L15-L22 | `ROOM` L196-L204 (disconnect ends match immediately) |
 | FC-025 | Hidden information MUST remain private until reveal gates are satisfied (support/attack anti-leak guarantees). | `NET_SPEC` L19-L22 | `ROOM` L19-L23, L482-L493, L520-L527; `STATE` L51-L60 |
-| FC-026 | Card taxonomy MUST represent Digimon, Option, and Evolution card categories in schema/runtime. | `MANUAL` L269-L271; `WIKIMON` L36 | `CARDS` L1-L439 (Digimon-focused data); `STATE` L21-L37 (single card schema type) |
+| FC-026 | Card taxonomy MUST represent Digimon, Option, and Evolution card categories in schema/runtime. | `MANUAL` L269-L271; `WIKIMON` L36; `GFQ_CARDLIST` L180-L184, L1883, L2080, L2724, L2772 | `CARDS` L1-L439 (Digimon-focused data); `STATE` L21-L37 (single card schema type) |
 | FC-027 | Effect modeling MUST be normalized into stable effect IDs + arguments (data-driven, not one-off hardcoding). | `BACKLOG` L88; `MANUAL` L413-L417 | `SUPPORT` L5-L12, L95-L140 (partial token parsing) |
 | FC-028 | Deck legality MUST enforce canonical constraints (30 cards, duplicate limits, special constraints). | `MANUAL` L427; `WIKIMON` L40 | `ROOM` L290-L313 (auto-generated deck, no player deck validation API) |
 | FC-029 | Rule variants (special arenas / mode rules) MUST be configurable as explicit profiles, not hidden ad-hoc code branches. | `BACKLOG` L90; `NET_SPEC` L5-L6 | `ROOM` L27-L31, L290-L313 (single rule path) |
