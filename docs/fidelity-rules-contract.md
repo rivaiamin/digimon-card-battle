@@ -119,7 +119,46 @@ If future primary evidence contradicts a decision, update this section and link 
 
 ---
 
-## 6. Completion criteria for E0 / T0-1
+## 6. v1 scope freeze (E0 / T0-3)
+
+This section freezes the initial implementation scope so E1+ can execute without changing targets midstream.
+
+### 6.1 Scope profile
+
+- Scope name: `v1-ranked-fidelity-core`
+- Applies to: multiplayer ranked/friendly online match rules
+- Explicitly excluded from this scope: story/PvE progression systems
+
+### 6.2 In-scope FC IDs for v1
+
+| Group | FC IDs | Scope note |
+|---|---|---|
+| Core flow and outcomes | FC-001, FC-002, FC-003, FC-004, FC-005 | Canonical opening, turn flow, and match results for online play. |
+| DP/evolution baseline | FC-006, FC-007, FC-008, FC-009 | Includes Evolution Option support, excludes partner progression mechanics. |
+| Battle/support core | FC-011, FC-012, FC-014, FC-015, FC-016, FC-017, FC-018, FC-019, FC-020 | Full battle resolver parity for online matches. |
+| Multiplayer integrity | FC-021, FC-022, FC-023, FC-024, FC-025 | Timers, anti-griefing, hidden-information integrity. |
+| Data/deck baseline | FC-026, FC-027, FC-028 | Card taxonomy, effect normalization, legal deck enforcement. |
+| Verification baseline | FC-030 | Deterministic replay/scenario coverage for all in-scope FC IDs. |
+
+### 6.3 Deferred FC IDs for post-v1
+
+| FC ID | Deferred reason | Planned epic entry point |
+|---|---|---|
+| FC-010 | Partner/Armor progression introduces cross-cutting data, UX, and long-tail balancing beyond core online parity. | E7 (after deck/runtime stabilization) |
+| FC-013 | "Online Deck gamble" support draw is a canonical behavior but lower priority than deterministic support order/effect engine correctness. | E5 follow-up after E4 completion |
+| FC-029 | Arena-specific/special-rule profiles are important, but add mode complexity best layered after baseline parity is stable. | E7 |
+
+### 6.4 Change policy for frozen scope
+
+Any change to this scope freeze requires:
+
+1. FC ID add/remove list in this section,
+2. one-line reason and risk note,
+3. linked backlog task that absorbs the scope change.
+
+---
+
+## 7. Completion criteria for E0
 
 T0-1 is complete when:
 
@@ -132,4 +171,10 @@ T0-2 is complete when:
 - all active rule conflicts are listed in the resolved ambiguities table;
 - each ambiguity has an explicit decision and FC impact mapping;
 - ambiguity decisions are implementation-ready (not open-ended notes).
+
+T0-3 is complete when:
+
+- in-scope and deferred FC IDs are explicitly frozen for v1;
+- every deferred FC has a rationale and planned epic entry point;
+- scope-change policy is documented.
 
