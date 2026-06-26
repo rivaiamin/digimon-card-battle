@@ -1,0 +1,237 @@
+import type { CardKind, EffectArgs } from "../types";
+
+type LegacySupportEffect = {
+    type?: unknown;
+    targetAttack?: unknown;
+    value?: unknown;
+    description?: unknown;
+    requireType?: unknown;
+    priority?: unknown;
+};
+
+export type NormalizedSupportEffect = {
+    type: string;
+    targetAttack: string;
+    value: number;
+    description: string;
+    requireType: string;
+    priority: number;
+};
+
+export type NormalizedCardCatalogEntry = {
+    id: string;
+    name: string;
+    cardKind: CardKind;
+    effectId: string;
+    effectArgs: EffectArgs;
+    level: string;
+    type: string;
+    hp: number;
+    maxHp: number;
+    plusDp: number;
+    evoCost: number;
+    image: string;
+    attacks: {
+        circle: { name: string; damage: number; type: "circle"; description: string };
+        triangle: { name: string; damage: number; type: "triangle"; description: string };
+        cross: { name: string; damage: number; type: "cross"; description: string };
+    };
+    supportEffect: NormalizedSupportEffect | null;
+};
+
+function toCardKind(rawKind: unknown): CardKind {
+    if (rawKind === "option" || rawKind === "evolution_option" || rawKind === "digimon") {
+        return rawKind;
+    }
+    // Legacy cards are Digimon-only and have no explicit kind.
+    return "digimon";
+}
+
+function normalizeEffectArgs(rawArgs: unknown): EffectArgs {
+    if (!rawArgs || typeof rawArgs !== "object" || Array.isArray(rawArgs)) return {};
+    const args: EffectArgs = {};
+    for (const [k, v] of Object.entries(rawArgs as Record<string, unknown>)) {
+        if (typeof v === "string" || typeof v === "number" || typeof v === "boolean") {
+            args[k] = v;
+        }
+    }
+    return args;
+}
+
+function letterToAttack(letter: string | undefined): "circle" | "triangle" | "cross" | null {
+    if (!letter) return null;
+    const l = letter.toLowerCase();
+    if (l === "o" || l === "circle") return "circle";
+    if (l === "t" || l === "triangle") return "triangle";
+    if (l === "x" || l === "cross") return "cross";
+    return null;
+}
+
+function parseLegacySupportId(supportId: string): LegacySupportEffect | null {
+    if (!supportId || supportId === "none") return null;
+    const tokens = supportId.split("_");
+    const action = tokens[0];
+
+    if (action === "void" && tokens[1] === "enemy" && tokens[2] === "support") {
+        return { type: "void_enemy_support", description: "Nullify enemy Support." };
+    }
+    if (supportId === "first_strike") {
+        return { type: "first_strike", description: "Attack hits first." };
+    }
+    if (action === "swap" && tokens[1] === "enemy") {
+        const to = tokens[4] ?? tokens[3];
+        const attack = letterToAttack(to);
+        if (attack) return { type: "change_attack", targetAttack: attack };
+    }
+    if (action === "half" && tokens[1] === "enemy" && tokens[2] === "hp") {
+        return { type: "halve_hp" };
+    }
+    if (action === "buff") {
+        const target = tokens[1];
+        const value = parseInt(tokens[2] ?? "0", 10) || 0;
+        if (target === "all") return { type: "atk_buff", targetAttack: "all", value };
+        const atk = letterToAttack(target);
+        if (atk) return { type: "atk_buff", targetAttack: atk, value };
+    }
+    if (action === "heal" && tokens[1] === "hp") {
+        const value = parseInt(tokens[2] ?? "0", 10) || 0;
+        return { type: "hp_heal", value };
+    }
+
+    return null;
+}
+
+function normalizeSupportEffect(raw: LegacySupportEffect | null): NormalizedSupportEffect | null {
+    if (!raw || typeof raw !== "object") return null;
+    const type = String(raw.type ?? "").trim();
+    if (!type) return null;
+    return {
+        type,
+        targetAttack: String(raw.targetAttack ?? ""),
+        value: Number(raw.value ?? 0),
+        description: String(raw.description ?? ""),
+        requireType: String(raw.requireType ?? ""),
+        priority: Number(raw.priority ?? 0),
+    };
+}
+
+function toNormalizedEffectDescriptor(raw: {
+    effectId?: unknown;
+    effectArgs?: unknown;
+    supportEffect?: LegacySupportEffect | null;
+    support_id?: unknown;
+}): { effectId: string; effectArgs: EffectArgs } {
+    if (typeof raw.effectId === "string" && raw.effectId.trim().length > 0) {
+        return { effectId: raw.effectId.trim(), effectArgs: normalizeEffectArgs(raw.effectArgs) };
+    }
+
+    const supportEffect = raw.supportEffect ?? (typeof raw.support_id === "string" ? parseLegacySupportId(raw.support_id) : null);
+    if (!supportEffect) return { effectId: "", effectArgs: {} };
+
+    const targetAttack =
+        typeof supportEffect.targetAttack === "string" ? supportEffect.targetAttack : "";
+    const value = Number(supportEffect.value ?? 0);
+    const type = String(supportEffect.type ?? "");
+
+    switch (type) {
+        case "void_enemy_support":
+            return { effectId: "support.void_enemy_support", effectArgs: {} };
+        case "first_strike":
+            return { effectId: "support.first_strike", effectArgs: {} };
+        case "change_attack":
+            return {
+                effectId: "support.change_attack",
+                effectArgs: targetAttack ? { targetAttack } : {},
+            };
+        case "atk_mult":
+            return {
+                effectId: "support.atk_mult",
+                effectArgs: {
+                    ...(targetAttack ? { targetAttack } : {}),
+                    value: value > 0 ? value : 2,
+                },
+            };
+        case "halve_hp":
+            return { effectId: "support.halve_hp", effectArgs: {} };
+        case "atk_buff":
+            return {
+                effectId: "support.atk_buff",
+                effectArgs: {
+                    ...(targetAttack ? { targetAttack } : {}),
+                    value,
+                },
+            };
+        case "hp_heal":
+            return { effectId: "support.hp_heal", effectArgs: { value } };
+        default:
+            return {
+                effectId: `legacy.${type || "unknown"}`,
+                effectArgs: {
+                    ...(targetAttack ? { targetAttack } : {}),
+                    ...(Number.isFinite(value) ? { value } : {}),
+                },
+            };
+    }
+}
+
+function normalizeAttack(
+    rawAttack: unknown,
+    type: "circle" | "triangle" | "cross"
+): { name: string; damage: number; type: "circle" | "triangle" | "cross"; description: string } {
+    const a = rawAttack && typeof rawAttack === "object" ? (rawAttack as Record<string, unknown>) : {};
+    return {
+        name: String(a.name ?? ""),
+        damage: Number(a.damage ?? 0),
+        type,
+        description: String(a.description ?? ""),
+    };
+}
+
+export function loadCardCatalog(rawCatalog: unknown): NormalizedCardCatalogEntry[] {
+    if (!Array.isArray(rawCatalog)) return [];
+    const normalized: NormalizedCardCatalogEntry[] = [];
+
+    for (const rawEntry of rawCatalog) {
+        if (!rawEntry || typeof rawEntry !== "object") continue;
+        const r = rawEntry as Record<string, unknown>;
+        if (typeof r.id !== "string" || r.id.length === 0) continue;
+
+        const support = normalizeSupportEffect(
+            ((r.supportEffect as LegacySupportEffect | null | undefined) ??
+                (typeof r.support_id === "string" ? parseLegacySupportId(r.support_id) : null)) ??
+                null
+        );
+
+        const attacks = r.attacks && typeof r.attacks === "object" ? (r.attacks as Record<string, unknown>) : {};
+        const effect = toNormalizedEffectDescriptor({
+            effectId: r.effectId,
+            effectArgs: r.effectArgs,
+            supportEffect: support,
+            support_id: r.support_id,
+        });
+
+        normalized.push({
+            id: String(r.id),
+            name: String(r.name ?? ""),
+            cardKind: toCardKind(r.cardKind),
+            effectId: effect.effectId,
+            effectArgs: effect.effectArgs,
+            level: String(r.level ?? ""),
+            type: String(r.type ?? ""),
+            hp: Number(r.hp ?? 0),
+            maxHp: Number(r.maxHp ?? r.hp ?? 0),
+            plusDp: Number(r.plusDp ?? 0),
+            evoCost: Number(r.evoCost ?? 0),
+            image: String(r.image ?? ""),
+            attacks: {
+                circle: normalizeAttack(attacks.circle, "circle"),
+                triangle: normalizeAttack(attacks.triangle, "triangle"),
+                cross: normalizeAttack(attacks.cross, "cross"),
+            },
+            supportEffect: support,
+        });
+    }
+
+    return normalized;
+}
+

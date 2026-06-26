@@ -3,10 +3,10 @@ import { BattleStateSchema, PlayerSchema, CardSchema, SupportEffectSchema } from
 import cardsData from "../data/cards.json";
 import { getFirebaseAdminAuth } from "../server/firebaseAdmin";
 import { canEvolveDigimon } from "../lib/evolutionEligibility";
+import { loadCardCatalog, type NormalizedCardCatalogEntry } from "../lib/cardCatalogLoader";
 import {
     createSupportBattleContext,
     getEffectiveAttackDamage,
-    parseSupportId,
     resolveSupportPhase,
     type AttackType,
     type SupportBattleContext,
@@ -14,6 +14,7 @@ import {
 
 /** Set `DEBUG_BATTLE_ROOM=0` when starting the server to silence draw/deck-out traces. */
 const DEBUG_BATTLE_ROOM = process.env.DEBUG_BATTLE_ROOM !== "0";
+const CARD_CATALOG: NormalizedCardCatalogEntry[] = loadCardCatalog(cardsData);
 
 export class BattleRoom extends Room<{ state: BattleStateSchema }> {
     private supportChoices = new Map<string, CardSchema | null>();
@@ -240,93 +241,13 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
     // Deck + card helpers
     // ----------------------------
 
-    private normalizeCardKind(rawKind: unknown): "digimon" | "option" | "evolution_option" {
-        if (rawKind === "option" || rawKind === "evolution_option" || rawKind === "digimon") {
-            return rawKind;
-        }
-        // Legacy cards.json entries are Digimon-only and have no explicit kind.
-        return "digimon";
-    }
-
-    private normalizeEffectDescriptor(raw: any): { effectId: string; effectArgsJson: string } {
-        const encodeArgs = (args: Record<string, string | number | boolean>) => JSON.stringify(args);
-
-        if (typeof raw?.effectId === "string" && raw.effectId.trim().length > 0) {
-            const args =
-                raw?.effectArgs && typeof raw.effectArgs === "object" && !Array.isArray(raw.effectArgs)
-                    ? (raw.effectArgs as Record<string, string | number | boolean>)
-                    : {};
-            return { effectId: raw.effectId.trim(), effectArgsJson: encodeArgs(args) };
-        }
-
-        const parsedFromId =
-            typeof raw?.support_id === "string" ? parseSupportId(raw.support_id) : null;
-        const rawEffect = raw?.supportEffect ?? parsedFromId;
-        if (!rawEffect || typeof rawEffect !== "object") {
-            return { effectId: "", effectArgsJson: "" };
-        }
-
-        const targetAttack =
-            typeof (rawEffect as { targetAttack?: unknown }).targetAttack === "string"
-                ? (rawEffect as { targetAttack?: string }).targetAttack!
-                : "";
-        const value = Number((rawEffect as { value?: unknown }).value ?? 0);
-
-        switch (String((rawEffect as { type?: unknown }).type ?? "")) {
-            case "void_enemy_support":
-                return { effectId: "support.void_enemy_support", effectArgsJson: encodeArgs({}) };
-            case "first_strike":
-                return { effectId: "support.first_strike", effectArgsJson: encodeArgs({}) };
-            case "change_attack":
-                return {
-                    effectId: "support.change_attack",
-                    effectArgsJson: encodeArgs(targetAttack ? { targetAttack } : {}),
-                };
-            case "atk_mult":
-                return {
-                    effectId: "support.atk_mult",
-                    effectArgsJson: encodeArgs({
-                        ...(targetAttack ? { targetAttack } : {}),
-                        value: value > 0 ? value : 2,
-                    }),
-                };
-            case "halve_hp":
-                return { effectId: "support.halve_hp", effectArgsJson: encodeArgs({}) };
-            case "atk_buff":
-                return {
-                    effectId: "support.atk_buff",
-                    effectArgsJson: encodeArgs({
-                        ...(targetAttack ? { targetAttack } : {}),
-                        value,
-                    }),
-                };
-            case "hp_heal":
-                return {
-                    effectId: "support.hp_heal",
-                    effectArgsJson: encodeArgs({ value }),
-                };
-            default: {
-                const legacyType = String((rawEffect as { type?: unknown }).type ?? "").trim();
-                if (!legacyType) return { effectId: "", effectArgsJson: "" };
-                return {
-                    effectId: `legacy.${legacyType}`,
-                    effectArgsJson: encodeArgs({
-                        ...(targetAttack ? { targetAttack } : {}),
-                        ...(Number.isFinite(value) ? { value } : {}),
-                    }),
-                };
-            }
-        }
-    }
-
-    private toSchemaCard(raw: any, instanceId: string): CardSchema {
+    private toSchemaCard(raw: NormalizedCardCatalogEntry, instanceId: string): CardSchema {
         const card = new CardSchema();
         card.id = instanceId;
         card.name = String(raw.name ?? "").toUpperCase();
-        card.cardKind = this.normalizeCardKind(raw.cardKind);
-        const normalizedEffect = this.normalizeEffectDescriptor(raw);
-        card.effectId = normalizedEffect.effectId;
-        card.effectArgsJson = normalizedEffect.effectArgsJson;
+        card.cardKind = raw.cardKind;
+        card.effectId = String(raw.effectId ?? "");
+        card.effectArgsJson = card.effectId ? JSON.stringify(raw.effectArgs ?? {}) : "";
         card.level = String(raw.level ?? "");
         card.type = String(raw.type ?? "");
         card.hp = Number(raw.hp ?? 0);
@@ -351,9 +272,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         card.cross.type = "cross";
         card.cross.description = String(attacks.cross?.description ?? "");
 
-        const parsedFromId =
-            typeof raw.support_id === "string" ? parseSupportId(raw.support_id) : null;
-        const rawEffect = raw.supportEffect ?? parsedFromId;
+        const rawEffect = raw.supportEffect;
         if (rawEffect) {
             const se = new SupportEffectSchema();
             se.type = String(rawEffect.type ?? "");
@@ -371,8 +290,8 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
     }
 
     private buildDeck30(playerIndex: number): CardSchema[] {
-        // Digimon-only, simple seed: allow up to 4 copies per base card id in cards.json
-        const baseCards = (cardsData as any[]).filter(c => typeof c?.id === "string");
+        // Current online profile still seeds a Digimon-only deck from the normalized catalog.
+        const baseCards = CARD_CATALOG.filter(c => c.cardKind === "digimon");
         const counts = new Map<string, number>();
         const deck: CardSchema[] = [];
 
