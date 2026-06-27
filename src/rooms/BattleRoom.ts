@@ -3,10 +3,10 @@ import { BattleStateSchema, PlayerSchema, CardSchema, SupportEffectSchema } from
 import cardsData from "../data/cards.json";
 import { getFirebaseAdminAuth } from "../server/firebaseAdmin";
 import { canEvolveDigimon } from "../lib/evolutionEligibility";
+import { loadCardCatalog, type NormalizedCardCatalogEntry } from "../lib/cardCatalogLoader";
 import {
     createSupportBattleContext,
     getEffectiveAttackDamage,
-    parseSupportId,
     resolveSupportPhase,
     type AttackType,
     type SupportBattleContext,
@@ -14,6 +14,7 @@ import {
 
 /** Set `DEBUG_BATTLE_ROOM=0` when starting the server to silence draw/deck-out traces. */
 const DEBUG_BATTLE_ROOM = process.env.DEBUG_BATTLE_ROOM !== "0";
+const CARD_CATALOG: NormalizedCardCatalogEntry[] = loadCardCatalog(cardsData);
 
 export class BattleRoom extends Room<{ state: BattleStateSchema }> {
     private supportChoices = new Map<string, CardSchema | null>();
@@ -240,10 +241,13 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
     // Deck + card helpers
     // ----------------------------
 
-    private toSchemaCard(raw: any, instanceId: string): CardSchema {
+    private toSchemaCard(raw: NormalizedCardCatalogEntry, instanceId: string): CardSchema {
         const card = new CardSchema();
         card.id = instanceId;
         card.name = String(raw.name ?? "").toUpperCase();
+        card.cardKind = raw.cardKind;
+        card.effectId = String(raw.effectId ?? "");
+        card.effectArgsJson = card.effectId ? JSON.stringify(raw.effectArgs ?? {}) : "";
         card.level = String(raw.level ?? "");
         card.type = String(raw.type ?? "");
         card.hp = Number(raw.hp ?? 0);
@@ -268,9 +272,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         card.cross.type = "cross";
         card.cross.description = String(attacks.cross?.description ?? "");
 
-        const parsedFromId =
-            typeof raw.support_id === "string" ? parseSupportId(raw.support_id) : null;
-        const rawEffect = raw.supportEffect ?? parsedFromId;
+        const rawEffect = raw.supportEffect;
         if (rawEffect) {
             const se = new SupportEffectSchema();
             se.type = String(rawEffect.type ?? "");
@@ -288,8 +290,8 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
     }
 
     private buildDeck30(playerIndex: number): CardSchema[] {
-        // Digimon-only, simple seed: allow up to 4 copies per base card id in cards.json
-        const baseCards = (cardsData as any[]).filter(c => typeof c?.id === "string");
+        // Current online profile still seeds a Digimon-only deck from the normalized catalog.
+        const baseCards = CARD_CATALOG.filter(c => c.cardKind === "digimon");
         const counts = new Map<string, number>();
         const deck: CardSchema[] = [];
 

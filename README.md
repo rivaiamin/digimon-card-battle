@@ -89,18 +89,43 @@ For step-by-step priority, cancellation, and special Cross rules, read **[GDD.md
    pnpm install
    ```
 
-2. **Environment**
+2. **Firebase project (client + server must match)**
 
-   - Copy [`.env.example`](./.env.example) to `.env` if you use Gemini / other keys from the template.
-   - **Firebase Admin** (required for `BattleRoom` token verification): set either  
-     `GOOGLE_APPLICATION_CREDENTIALS=/absolute/path/to/serviceAccount.json`  
-     **or**  
-     `FIREBASE_SERVICE_ACCOUNT_JSON='{"type":"service_account",...}'`  
-   - Client Firebase config: [`firebase-applet-config.json`](./firebase-applet-config.json) (must match the same Firebase project as Admin).
+   This repo uses one Firebase project end-to-end. For local dev that is **`raysaber`** (see [`firebase-applet-config.json`](./firebase-applet-config.json) → `projectId`).
 
-3. **Enable Firebase Auth** — Anonymous (or your chosen provider) in the Firebase console; ensure the **Web API key** allows **Identity Toolkit API** if the key is restricted.
+   | Piece | Where it is configured |
+   |-------|------------------------|
+   | **Client** (browser sign-in, ID tokens) | [`firebase-applet-config.json`](./firebase-applet-config.json) |
+   | **Server** (Admin SDK verifies those tokens in `BattleRoom`) | `.env` (see step 3) |
 
-4. **Start**
+   Use **`.env` for this repo**, not Firebase CLI project selection. `firebase use` only affects CLI deploy commands; it does **not** change which credentials the Colyseus server uses at runtime.
+
+3. **Environment (Admin credentials in `.env`)**
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   In the **raysaber** Firebase console: **Project settings → Service accounts → Generate new private key**. Save the JSON **outside** the repo (never commit it).
+
+   Add **one** of these to `.env`:
+
+   ```bash
+   # Option A — path to the downloaded key (easiest)
+   GOOGLE_APPLICATION_CREDENTIALS=/absolute/path/to/raysaber-serviceAccount.json
+
+   # Option B — same JSON as a single line (use this if you already have
+   # GOOGLE_APPLICATION_CREDENTIALS set globally for another project, e.g. office)
+   FIREBASE_SERVICE_ACCOUNT_JSON={"type":"service_account","project_id":"raysaber",...}
+   ```
+
+   The server reads `FIREBASE_SERVICE_ACCOUNT_JSON` **before** any global `GOOGLE_APPLICATION_CREDENTIALS`, so Option B is safest when you work across multiple Firebase projects on one machine.
+
+   Restart `pnpm dev` after editing `.env`.
+
+4. **Enable Firebase Auth** — In the **raysaber** console, enable **Anonymous** (or your chosen provider). If the Web API key is restricted, allow **Identity Toolkit API**.
+
+5. **Start**
 
    ```bash
    pnpm dev
@@ -108,9 +133,23 @@ For step-by-step priority, cancellation, and special Cross rules, read **[GDD.md
 
    Open **http://localhost:3000** — use **two browser windows** to test **Join Match** queueing.
 
-5. **Colyseus monitor (dev):** [http://localhost:3000/colyseus](http://localhost:3000/colyseus)
+6. **Colyseus monitor (dev):** [http://localhost:3000/colyseus](http://localhost:3000/colyseus)
 
 **Other scripts:** `pnpm build` (client bundle), `pnpm preview` (static preview only — no Colyseus server unless you host both).
+
+### Troubleshooting
+
+**`Firebase ID token has incorrect "aud" (audience) claim. Expected "aimsis-…" but got "raysaber"`**
+
+The browser signed in to **raysaber** (client config is correct), but the **server** is verifying tokens with credentials from a **different** project (often a global `GOOGLE_APPLICATION_CREDENTIALS` from `/etc/environment` or another repo).
+
+Fix:
+
+1. Confirm [`firebase-applet-config.json`](./firebase-applet-config.json) has `"projectId": "raysaber"`.
+2. Put a **raysaber** service account in `.env` (step 3 above). Prefer `FIREBASE_SERVICE_ACCOUNT_JSON` if a system-wide office credential is already set.
+3. Restart `pnpm dev`.
+
+Both sides must use the same `project_id` / `projectId`.
 
 ---
 

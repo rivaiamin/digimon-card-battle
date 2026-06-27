@@ -21,6 +21,12 @@ export class SupportEffectSchema extends Schema {
 export class CardSchema extends Schema {
     @type("string") id: string = "";
     @type("string") name: string = "";
+    /** digimon | option | evolution_option */
+    @type("string") cardKind: string = "digimon";
+    /** Normalized effect identifier (for data-driven resolvers). */
+    @type("string") effectId: string = "";
+    /** JSON-encoded effect arguments for `effectId`. */
+    @type("string") effectArgsJson: string = "";
     @type("string") level: string = "";
     @type("string") type: string = "";
     @type("number") hp: number = 0;

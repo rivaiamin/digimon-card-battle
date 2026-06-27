@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { DigimonCard } from "./Card";
 import { BattleHUD } from "./BattleHUD";
 import { DEFAULT_CARD_ATTACKS } from "../constants";
-import { GameState, DigimonCardData, PlayerState } from "../types";
+import { GameState, DigimonCardData, PlayerState, CardKind, EffectArgs } from "../types";
 import { getAllCards } from "../services/cardService";
 import { BattleStateSchema } from "../schema/BattleState";
 import { useAudio } from "../context/AudioProvider";
@@ -45,6 +45,24 @@ const INITIAL_OPPONENT_STATE: PlayerState = {
     attackLocked: false
 };
 
+const normalizeCardKind = (rawKind: unknown): CardKind => {
+    if (rawKind === "option" || rawKind === "evolution_option" || rawKind === "digimon") {
+        return rawKind;
+    }
+    return "digimon";
+};
+
+const parseEffectArgs = (rawJson: unknown): EffectArgs | undefined => {
+    if (typeof rawJson !== "string" || rawJson.trim().length === 0) return undefined;
+    try {
+        const parsed = JSON.parse(rawJson);
+        if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return undefined;
+        return parsed as EffectArgs;
+    } catch {
+        return undefined;
+    }
+};
+
 const mapSchemaCardToData = (c: any): DigimonCardData => {
     const attacks = {
         circle: { ...(c.circle ?? DEFAULT_CARD_ATTACKS.circle), type: 'circle' as const },
@@ -54,6 +72,9 @@ const mapSchemaCardToData = (c: any): DigimonCardData => {
     return {
         id: c.id,
         name: c.name,
+        cardKind: normalizeCardKind(c.cardKind),
+        effectId: typeof c.effectId === "string" && c.effectId.length > 0 ? c.effectId : undefined,
+        effectArgs: parseEffectArgs(c.effectArgsJson),
         level: c.level,
         type: c.type,
         hp: c.hp,
