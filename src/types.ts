@@ -65,6 +65,8 @@ export interface PlayerState {
   supportLocked?: boolean;
   selectedAttack: 'circle' | 'triangle' | 'cross' | null;
   attackLocked?: boolean;
+  mulligansRemaining?: number;
+  needsOpeningDeploy?: boolean;
 }
 
 export interface GameState {
@@ -82,8 +84,9 @@ export interface GameState {
   turn: number;
   isPlayerTurn: boolean;
   message: string;
-  /** preparation only: discard cards for DP, then evolve */
-  prepSubPhase: "" | "discard" | "evolve";
+  ruleProfileId?: string;
+  /** preparation only: mulligan → deploy → discard → evolve */
+  prepSubPhase: "" | "mulligan" | "deploy" | "discard" | "evolve";
   hasDiscarded: boolean;
   winnerSessionId?: string;
   loserReason?: 'points' | 'deck_out' | 'disconnect' | string;

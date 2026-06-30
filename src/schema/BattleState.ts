@@ -64,12 +64,19 @@ export class PlayerSchema extends Schema {
     /** Revealed after both players lock in (hidden choices kept server-side). */
     @type("string") selectedAttack: string | null = null;
     @type("boolean") attackLocked: boolean = false;
+
+    /** Opening mulligan redraws remaining (fidelity_ps1). */
+    @type("number") mulligansRemaining: number = 0;
+    /** True until the player's first battle Digimon is deployed this match. */
+    @type("boolean") needsOpeningDeploy: boolean = true;
 }
 
 export class BattleStateSchema extends Schema {
     @type({ map: PlayerSchema }) players = new MapSchema<PlayerSchema>();
     @type("string") phase: string = "waiting"; // waiting, draw, preparation, battle_support, battle_reveal, battle_attack, resolution, victory
-    /** During preparation: "discard" then "evolve". Empty until active Digimon is deployed. */
+    /** fidelity_ps1 | legacy_online */
+    @type("string") ruleProfileId: string = "fidelity_ps1";
+    /** During preparation: mulligan → deploy → discard → evolve */
     @type("string") prepSubPhase: string = "";
     @type("number") turn: number = 1;
     @type("string") activePlayerSessionId: string = "";

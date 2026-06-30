@@ -14,6 +14,8 @@ import { ImpactFlash } from "./battle/ImpactFlash";
 import { DamagePopups } from "./battle/DamagePopups";
 import { SupportZone } from "./battle/SupportZone";
 import { canEvolveDigimon, matchesEvolutionType } from "../lib/evolutionEligibility";
+import { validateDeployDigimon } from "../lib/openingFlow";
+import { getRuleProfile } from "../lib/ruleProfile";
 
 const INITIAL_PLAYER_STATE: PlayerState = {
     active: null,
@@ -112,6 +114,8 @@ const mapSchemaToPlayerState = (schema: any): PlayerState => {
         supportLocked: !!schema.supportLocked,
         selectedAttack: schema.selectedAttack,
         attackLocked: !!schema.attackLocked,
+        mulligansRemaining: schema.mulligansRemaining ?? 0,
+        needsOpeningDeploy: schema.needsOpeningDeploy ?? false,
     };
 };
 
@@ -169,9 +173,15 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                 turn: state.turn,
                 isPlayerTurn: state.activePlayerSessionId === room.sessionId,
                 message: state.message,
-                prepSubPhase: (state.prepSubPhase === "discard" || state.prepSubPhase === "evolve"
-                    ? state.prepSubPhase
-                    : "") as GameState["prepSubPhase"],
+                prepSubPhase: (
+                    state.prepSubPhase === "discard" ||
+                    state.prepSubPhase === "evolve" ||
+                    state.prepSubPhase === "mulligan" ||
+                    state.prepSubPhase === "deploy"
+                        ? state.prepSubPhase
+                        : ""
+                ) as GameState["prepSubPhase"],
+                ruleProfileId: state.ruleProfileId ?? "fidelity_ps1",
                 hasDiscarded: state.prepSubPhase === "evolve",
                 winnerSessionId: (state as any).winnerSessionId,
                 loserReason: (state as any).loserReason,
@@ -232,9 +242,32 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
         room.send("action", { type: "DISCARD_FOR_DP", cardIds: [cardId] });
     };
 
-    const handleDeployRookie = (cardId: string) => {
-        room.send("action", { type: "DEPLOY_ROOKIE", cardId });
+    const handleDeployDigimon = (cardId: string) => {
+        room.send("action", { type: "DEPLOY_DIGIMON", cardId });
     };
+
+    const handleMulligan = () => {
+        audio.playSfx("menu_click");
+        room.send("action", { type: "MULLIGAN" });
+    };
+
+    const handleAcceptHand = () => {
+        audio.playSfx("menu_click");
+        room.send("action", { type: "ACCEPT_HAND" });
+    };
+
+    const ruleProfile = getRuleProfile(
+        (gameState.ruleProfileId === "legacy_online" ? "legacy_online" : "fidelity_ps1")
+    );
+
+    const deployableHandCards = gameState.player.hand.filter(c => {
+        const result = validateDeployDigimon(
+            c,
+            ruleProfile,
+            !!gameState.player.needsOpeningDeploy
+        );
+        return result.ok;
+    });
 
     const handleEvolution = (cardId: string) => {
         room.send("action", { type: "EVOLVE", cardId });
@@ -469,22 +502,63 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
 
                  {gameState.phase === 'preparation' && (
                      <div className="flex flex-col gap-4">
-                        {!gameState.player.active && gameState.isPlayerTurn && (
+                        {gameState.prepSubPhase === 'mulligan' && gameState.isPlayerTurn && (
                             <div className="flex flex-col gap-2">
-                                <div className="bg-black/80 p-2 text-white text-xs border border-ps-green uppercase">
-                                    Deploy Digimon: Choose a Rookie from your hand
+                                <div className="bg-black/80 p-2 text-white text-xs border border-ps-yellow uppercase">
+                                    Opening hand ({ruleProfile.handTarget} cards) — keep or mulligan?
+                                    {gameState.player.mulligansRemaining != null && gameState.player.mulligansRemaining > 0 && (
+                                        <span className="ml-2 text-ps-yellow">
+                                            ({gameState.player.mulligansRemaining} redraw{gameState.player.mulligansRemaining === 1 ? "" : "s"} left)
+                                        </span>
+                                    )}
                                 </div>
                                 <div className="flex gap-2 flex-wrap">
-                                    {gameState.player.hand.filter(c => c.level === 'Rookie').map(c => (
+                                    {gameState.player.hand.map(c => (
+                                        <DigimonCard key={`mull_${c.id}`} data={c} variant="mini" onHover={setHoveredCard} />
+                                    ))}
+                                </div>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={handleAcceptHand}
+                                        className="pointer-events-auto bg-ps-green text-black font-black px-4 py-2 border-2 border-white hover:bg-white"
+                                    >
+                                        KEEP HAND
+                                    </button>
+                                    {(gameState.player.mulligansRemaining ?? 0) > 0 && (
+                                        <button
+                                            onClick={handleMulligan}
+                                            className="pointer-events-auto bg-ps-yellow text-black font-black px-4 py-2 border-2 border-black hover:bg-white"
+                                        >
+                                            MULLIGAN
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {gameState.prepSubPhase === 'deploy' && !gameState.player.active && gameState.isPlayerTurn && (
+                            <div className="flex flex-col gap-2">
+                                <div className="bg-black/80 p-2 text-white text-xs border border-ps-green uppercase">
+                                    {gameState.player.needsOpeningDeploy
+                                        ? "Deploy battle Digimon (Champion/Ultimate get HP/ATK penalties)"
+                                        : "Deploy Digimon: Choose a Rookie from your hand"}
+                                </div>
+                                <div className="flex gap-2 flex-wrap">
+                                    {deployableHandCards.map(c => (
                                         <div
                                             key={`deploy_${c.id}`}
-                                            onClick={() => handleDeployRookie(c.id)}
+                                            onClick={() => handleDeployDigimon(c.id)}
                                             className="pointer-events-auto cursor-pointer ring-2 ring-ps-green ring-offset-2 ring-offset-black rounded"
                                         >
                                             <DigimonCard data={c} variant="mini" onHover={setHoveredCard} />
-                                            <div className="text-[10px] bg-ps-green px-1 text-black font-black text-center">DEPLOY</div>
+                                            <div className="text-[10px] bg-ps-green px-1 text-black font-black text-center">
+                                                DEPLOY {c.level !== 'Rookie' ? `(${c.level})` : ''}
+                                            </div>
                                         </div>
                                     ))}
+                                    {deployableHandCards.length === 0 && (
+                                        <span className="text-white/50 text-xs uppercase">No legal deploy cards</span>
+                                    )}
                                 </div>
                             </div>
                         )}

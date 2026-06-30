@@ -194,10 +194,10 @@ function toNormalizedEffectDescriptor(cardId: string, raw: {
     }
 }
 
-function normalizeAttack(
+function normalizeAttack<T extends "circle" | "triangle" | "cross">(
     rawAttack: unknown,
-    type: "circle" | "triangle" | "cross"
-): { name: string; damage: number; type: "circle" | "triangle" | "cross"; description: string } {
+    type: T
+): { name: string; damage: number; type: T; description: string } {
     const a = rawAttack && typeof rawAttack === "object" ? (rawAttack as Record<string, unknown>) : {};
     return {
         name: String(a.name ?? ""),
