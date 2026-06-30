@@ -8,7 +8,8 @@ import { AudioSettings } from "./components/AudioSettings";
 import { HomeScreen } from "./components/HomeScreen";
 import { useAudio } from "./context/AudioProvider";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { joinRandomBattle } from "./services/matchmaking";
+import { joinRandomBattle, type MatchJoinOptions } from "./services/matchmaking";
+import { formatJoinError } from "./services/deckService";
 import type { Room } from "colyseus.js";
 import type { BattleStateSchema } from "./schema/BattleState";
 
@@ -16,14 +17,16 @@ export default function App() {
   const audio = useAudio();
   const [screen, setScreen] = useState<"home" | "queueing" | "game">("home");
   const [room, setRoom] = useState<Room<BattleStateSchema> | null>(null);
+  const [joinError, setJoinError] = useState<string | null>(null);
   const joinAttemptIdRef = useRef(0);
 
-  const handleJoin = useCallback(async () => {
+  const handleJoin = useCallback(async (config: MatchJoinOptions) => {
     joinAttemptIdRef.current += 1;
     const attemptId = joinAttemptIdRef.current;
+    setJoinError(null);
     setScreen("queueing");
     try {
-      const r = await joinRandomBattle();
+      const r = await joinRandomBattle(config);
       if (attemptId !== joinAttemptIdRef.current) {
         r.leave();
         return;
@@ -34,6 +37,7 @@ export default function App() {
       console.error(e);
       if (attemptId !== joinAttemptIdRef.current) return;
       setRoom(null);
+      setJoinError(formatJoinError(e));
       setScreen("home");
     }
   }, []);
@@ -70,7 +74,7 @@ export default function App() {
   return (
     <div className="w-full h-screen">
       <AudioSettings className="fixed top-4 right-4 z-[500]" />
-      {screen === "home" && <HomeScreen onJoinMatch={handleJoin} />}
+      {screen === "home" && <HomeScreen onJoinMatch={handleJoin} joinError={joinError} />}
 
       {screen === "queueing" && (
         <div className="relative w-screen h-screen bg-black overflow-hidden flex items-center justify-center">

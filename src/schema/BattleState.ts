@@ -83,6 +83,8 @@ export class BattleStateSchema extends Schema {
     @type("string") phase: string = "waiting"; // waiting, draw, preparation, battle_support, battle_reveal, battle_attack, resolution, victory
     /** fidelity_ps1 | legacy_online */
     @type("string") ruleProfileId: string = "fidelity_ps1";
+    /** standard | no_options — explicit arena variant (FC-029). */
+    @type("string") arenaVariantId: string = "standard";
     /** During preparation: mulligan → deploy → discard → evolve */
     @type("string") prepSubPhase: string = "";
     @type("number") turn: number = 1;

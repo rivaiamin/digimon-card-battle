@@ -192,6 +192,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                         : ""
                 ) as GameState["prepSubPhase"],
                 ruleProfileId: state.ruleProfileId ?? "fidelity_ps1",
+                arenaVariantId: state.arenaVariantId ?? "standard",
                 supportPickSessionId: state.supportPickSessionId ?? "",
                 phaseEndsAtMs: state.phaseEndsAtMs ?? 0,
                 hasDiscarded: state.prepSubPhase === "evolve",

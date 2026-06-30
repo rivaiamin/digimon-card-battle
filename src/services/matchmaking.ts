@@ -3,6 +3,7 @@ import { signInAnonymously } from "firebase/auth";
 import { auth } from "../lib/firebase";
 import { BattleStateSchema } from "../schema/BattleState";
 import { ColyseusClient017 } from "./colyseusClient";
+import { fetchDefaultDeck, type MatchJoinOptions } from "./deckService";
 
 function getWsUrl() {
   const protocol = window.location.protocol.replace("http", "ws");
@@ -16,12 +17,23 @@ async function ensureSignedIn() {
   return cred.user;
 }
 
-export async function joinRandomBattle(): Promise<Room<BattleStateSchema>> {
+export async function joinRandomBattle(
+  options: MatchJoinOptions = {}
+): Promise<Room<BattleStateSchema>> {
   const user = await ensureSignedIn();
   const idToken = await user.getIdToken();
 
+  const ruleProfile = options.ruleProfile ?? "fidelity_ps1";
+  const arenaVariant = options.arenaVariant ?? "standard";
+  const deckCardIds = options.deckCardIds ?? (await fetchDefaultDeck(0));
+
   const client = new ColyseusClient017(getWsUrl());
-  const room = await client.joinOrCreate("battle", { idToken }, BattleStateSchema);
+  const room = await client.joinOrCreate(
+    "battle",
+    { idToken, ruleProfile, arenaVariant, deckCardIds },
+    BattleStateSchema
+  );
   return room as unknown as Room<BattleStateSchema>;
 }
 
+export type { MatchJoinOptions };

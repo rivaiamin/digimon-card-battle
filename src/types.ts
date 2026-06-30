@@ -87,6 +87,7 @@ export interface GameState {
   isPlayerTurn: boolean;
   message: string;
   ruleProfileId?: string;
+  arenaVariantId?: string;
   /** preparation only: mulligan → deploy → discard → evolve */
   prepSubPhase: "" | "mulligan" | "deploy" | "discard" | "evolve";
   hasDiscarded: boolean;

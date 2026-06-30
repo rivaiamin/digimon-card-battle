@@ -49,6 +49,13 @@ import {
     nextSupportPickerAfterLock,
 } from "../lib/supportPhase";
 import {
+    arenaVariantMatchesRuleProfile,
+    resolveArenaVariant,
+    type ArenaVariant,
+} from "../lib/arenaVariant";
+import { buildDefaultDeckCardIds } from "../lib/defaultDeckBuilder";
+import { validateDeck, formatDeckValidationError } from "../lib/deckValidator";
+import {
     AFK_FORFEIT_THRESHOLD,
     shouldForfeitAfk,
     strikesAfterTimeout,
@@ -73,6 +80,8 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
     private revealTimer: ReturnType<typeof this.clock.setTimeout> | null = null;
     private phaseTimerHandle: ReturnType<typeof this.clock.setTimeout> | null = null;
     private ruleProfile: RuleProfile = resolveRuleProfile("fidelity_ps1");
+    private arenaVariant: ArenaVariant = resolveArenaVariant("standard");
+    private pendingDecks = new Map<string, string[]>();
     private auditLog = new BattleAuditLog();
 
     /** Pause on reveal so clients can play flip / hologram FX before effects resolve. */
@@ -81,10 +90,12 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
     onCreate(options: any) {
         console.log("[SERVER] BattleRoom created", options);
         this.ruleProfile = resolveRuleProfile(options?.ruleProfile);
+        this.arenaVariant = resolveArenaVariant(options?.arenaVariant, this.ruleProfile.id);
         // Matchmaking target: exactly 2 players per match.
         this.maxClients = 2;
         this.state = new BattleStateSchema();
         this.state.ruleProfileId = this.ruleProfile.id;
+        this.state.arenaVariantId = this.arenaVariant.id;
 
         this.onMessage("action", (client, message) => {
             const player = this.state.players.get(client.sessionId);
@@ -251,6 +262,29 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
 
     onJoin(client: Client, options: any) {
         console.log(`[SERVER] Client joined: ${client.sessionId}`, options);
+
+        const joinProfile = resolveRuleProfile(options?.ruleProfile);
+        if (joinProfile.id !== this.ruleProfile.id) {
+            throw new Error("rule_profile_mismatch");
+        }
+
+        const joinArena = resolveArenaVariant(options?.arenaVariant, joinProfile.id);
+        if (joinArena.id !== this.arenaVariant.id) {
+            throw new Error("arena_variant_mismatch");
+        }
+        if (!arenaVariantMatchesRuleProfile(joinArena, joinProfile.id)) {
+            throw new Error("arena_variant_invalid");
+        }
+
+        const deckCardIds = this.parseDeckCardIds(options?.deckCardIds);
+        const deckValidation = validateDeck(deckCardIds, CATALOG_BY_ID, this.arenaVariant);
+        if (deckValidation.ok === false) {
+            throw new Error(
+                `invalid_deck:${deckValidation.reason}:${formatDeckValidationError(deckValidation)}`
+            );
+        }
+        this.pendingDecks.set(client.sessionId, deckCardIds);
+
         const player = new PlayerSchema();
         player.sessionId = client.sessionId;
         const authName = (client as any).auth?.name;
@@ -269,6 +303,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
     onLeave(client: Client, code?: number) {
         console.log(`[SERVER] Client left: ${client.sessionId}, code: ${code}`);
         this.clearPhaseTimer();
+        this.pendingDecks.delete(client.sessionId);
         this.state.players.delete(client.sessionId);
         if (this.state.phase !== "victory") {
             this.state.phase = "victory";
@@ -303,7 +338,10 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             p.openingPenaltyActive = false;
             p.afkStrikes = 0;
 
-            const deck = this.buildDeck30(playerIndex);
+            const deckIds =
+                this.pendingDecks.get(sessionId) ??
+                buildDefaultDeckCardIds(CARD_CATALOG, playerIndex);
+            const deck = this.buildDeckFromCardIds(playerIndex, deckIds);
             this.shuffle(deck);
             deck.forEach(c => p.deck.push(c));
         });
@@ -379,40 +417,23 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         return card;
     }
 
-    private buildDeck30(playerIndex: number): CardSchema[] {
-        const digimonCards = CARD_CATALOG.filter(c => c.cardKind === "digimon");
-        const optionCards = CARD_CATALOG.filter(
-            c => c.cardKind === "option" || c.cardKind === "evolution_option"
-        );
-        const counts = new Map<string, number>();
-        const deck: CardSchema[] = [];
-
-        const start = playerIndex % Math.max(1, digimonCards.length);
-        let cursor = start;
-        let serial = 1;
-
-        const pushCard = (raw: NormalizedCardCatalogEntry, maxCopies: number) => {
-            const baseId = String(raw.id);
-            const n = counts.get(baseId) ?? 0;
-            if (n >= maxCopies) return false;
-            counts.set(baseId, n + 1);
-            const instanceId = `p${playerIndex}_${baseId}_${serial++}`;
-            deck.push(this.toSchemaCard(raw, instanceId));
-            return true;
-        };
-
-        // Seed a small option package for fidelity testing (max 1 copy each).
-        for (const raw of optionCards) {
-            if (deck.length >= 26) break;
-            pushCard(raw, 1);
+    private parseDeckCardIds(raw: unknown): string[] {
+        if (!Array.isArray(raw) || !raw.every(id => typeof id === "string")) {
+            const playerIndex = this.state.players.size;
+            return buildDefaultDeckCardIds(CARD_CATALOG, playerIndex);
         }
+        return raw as string[];
+    }
 
-        while (deck.length < 30 && digimonCards.length > 0) {
-            const raw = digimonCards[cursor];
-            cursor = (cursor + 1) % digimonCards.length;
-            pushCard(raw, 4);
-        }
-        return deck;
+    private buildDeckFromCardIds(playerIndex: number, cardIds: string[]): CardSchema[] {
+        return cardIds.map((baseId, index) => {
+            const raw = CATALOG_BY_ID.get(baseId);
+            if (!raw) {
+                throw new Error(`invalid_deck:unknown_card_id:Missing catalog card ${baseId}`);
+            }
+            const instanceId = `p${playerIndex}_${baseId}_${index + 1}`;
+            return this.toSchemaCard(raw, instanceId);
+        });
     }
 
     private shuffle<T>(arr: T[]) {
