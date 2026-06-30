@@ -68,6 +68,7 @@ export interface PlayerState {
   mulligansRemaining?: number;
   needsOpeningDeploy?: boolean;
   openingPenaltyActive?: boolean;
+  afkStrikes?: number;
 }
 
 export interface GameState {
@@ -90,7 +91,9 @@ export interface GameState {
   prepSubPhase: "" | "mulligan" | "deploy" | "discard" | "evolve";
   hasDiscarded: boolean;
   winnerSessionId?: string;
-  loserReason?: 'points' | 'deck_out' | 'disconnect' | string;
+  loserReason?: 'points' | 'deck_out' | 'disconnect' | 'afk' | string;
   /** Fidelity: whose turn to lock support; empty = simultaneous or done. */
   supportPickSessionId?: string;
+  /** Server timestamp (ms) when the interactive phase ends. */
+  phaseEndsAtMs?: number;
 }

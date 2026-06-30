@@ -13,6 +13,7 @@ import { useBattleVfx } from "../hooks/useBattleVfx";
 import { ImpactFlash } from "./battle/ImpactFlash";
 import { DamagePopups } from "./battle/DamagePopups";
 import { SupportZone } from "./battle/SupportZone";
+import { PhaseTimer } from "./battle/PhaseTimer";
 import { canEvolveDigimon, matchesEvolutionType } from "../lib/evolutionEligibility";
 import { validateDeployDigimon } from "../lib/openingFlow";
 import { getRuleProfile } from "../lib/ruleProfile";
@@ -123,6 +124,7 @@ const mapSchemaToPlayerState = (schema: any): PlayerState => {
         mulligansRemaining: schema.mulligansRemaining ?? 0,
         needsOpeningDeploy: schema.needsOpeningDeploy ?? false,
         openingPenaltyActive: !!schema.openingPenaltyActive,
+        afkStrikes: schema.afkStrikes ?? 0,
     };
 };
 
@@ -191,6 +193,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                 ) as GameState["prepSubPhase"],
                 ruleProfileId: state.ruleProfileId ?? "fidelity_ps1",
                 supportPickSessionId: state.supportPickSessionId ?? "",
+                phaseEndsAtMs: state.phaseEndsAtMs ?? 0,
                 hasDiscarded: state.prepSubPhase === "evolve",
                 winnerSessionId: (state as any).winnerSessionId,
                 loserReason: (state as any).loserReason,
@@ -827,6 +830,8 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                      </div>
                  )}
             </div>
+
+            <PhaseTimer phase={gameState.phase} phaseEndsAtMs={gameState.phaseEndsAtMs} />
 
             {/* SCORE COUNTER */}
             <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] flex gap-8">

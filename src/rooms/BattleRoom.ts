@@ -48,6 +48,18 @@ import {
     initialSupportPicker,
     nextSupportPickerAfterLock,
 } from "../lib/supportPhase";
+import {
+    AFK_FORFEIT_THRESHOLD,
+    shouldForfeitAfk,
+    strikesAfterTimeout,
+    strikesAfterVoluntaryAction,
+} from "../lib/afkPolicy";
+import {
+    phaseTimerDurationMs,
+    pickRandomAttack,
+    resolveTimedPhaseKey,
+    type TimedPhaseKey,
+} from "../lib/phaseTimer";
 
 /** Set `DEBUG_BATTLE_ROOM=0` when starting the server to silence draw/deck-out traces. */
 const DEBUG_BATTLE_ROOM = process.env.DEBUG_BATTLE_ROOM !== "0";
@@ -59,6 +71,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
     private attackChoices = new Map<string, AttackType | null>();
     private supportCtx: SupportBattleContext = createSupportBattleContext();
     private revealTimer: ReturnType<typeof this.clock.setTimeout> | null = null;
+    private phaseTimerHandle: ReturnType<typeof this.clock.setTimeout> | null = null;
     private ruleProfile: RuleProfile = resolveRuleProfile("fidelity_ps1");
     private auditLog = new BattleAuditLog();
 
@@ -83,67 +96,15 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             switch (message.type) {
                 case "DRAW": {
                     if (!isMyTurn || this.state.phase !== "draw") return;
-                    this.logDrawSnapshot("DRAW before drawToTarget", player);
-                    this.drawToHandTarget(player);
-                    this.logDrawSnapshot("DRAW after drawToTarget", player);
-                    if ((this.state.phase as string) === "victory") return;
-
-                    const target = this.ruleProfile.handTarget;
-                    const deckEmpty = player.deck.length <= 0;
-                    const belowTarget = player.hand.length < target;
-                    const hasActive = !!this.getActive(player);
-                    const digimonInHand = hasDigimonInHand(player.hand);
-                    let dugDeckForDigimon = false;
-
-                    this.debugDraw("DRAW branch check", {
-                        sessionId: player.sessionId.slice(0, 8),
-                        hasActive,
-                        digimonInHand,
-                        hand: player.hand.length,
-                        deck: player.deck.length,
-                        belowTarget,
-                        deckEmpty,
-                        turn: this.state.turn,
-                        handTarget: target,
-                    });
-
-                    if (hasActive) {
-                        if (shouldDeckOutOnDraw(true, player.hand.length, player.deck.length, target)) {
-                            this.audit("DRAW", player, "rejected", "deck_out_active", {
-                                handSize: player.hand.length,
-                                deckSize: player.deck.length,
-                            });
-                            this.endGame(player.sessionId, "deck_out");
-                            return;
-                        }
-                    } else if (!digimonInHand) {
-                        if (!this.tryRecoverDigimonFromDeck(player)) {
-                            this.audit("DRAW", player, "rejected", "deck_out_no_digimon", {
-                                handSize: player.hand.length,
-                                deckSize: player.deck.length,
-                            });
-                            this.endGame(player.sessionId, "deck_out");
-                            return;
-                        }
-                        dugDeckForDigimon = true;
-                        this.logDrawSnapshot("DRAW after digimon recovery", player);
-                    }
-
-                    this.state.phase = "preparation";
-                    this.beginPrepSubPhase(player);
-                    this.audit("DRAW", player, "ok", undefined, {
-                        dugDeckForDigimon,
-                        handSize: player.hand.length,
-                    });
-                    this.state.message = dugDeckForDigimon
-                        ? "Deck dig — deploy a Digimon from your hand"
-                        : this.prepMessageFor(player);
+                    this.recordVoluntaryAction(client.sessionId);
+                    this.executeDrawPhase(player, false);
                     break;
                 }
                 case "MULLIGAN": {
                     if (!isMyTurn || this.state.phase !== "preparation") return;
                     if (this.state.prepSubPhase !== "mulligan") return;
                     if (player.mulligansRemaining <= 0) return;
+                    this.recordVoluntaryAction(client.sessionId);
                     player.mulligansRemaining -= 1;
                     mulliganHand(player.hand, player.deck, this.ruleProfile.handTarget, arr =>
                         this.shuffle(arr)
@@ -162,19 +123,23 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
                         this.state.prepSubPhase = "deploy";
                     }
                     this.state.message = this.prepMessageFor(player);
+                    this.syncPhaseTimer();
                     break;
                 }
                 case "ACCEPT_HAND": {
                     if (!isMyTurn || this.state.phase !== "preparation") return;
                     if (this.state.prepSubPhase !== "mulligan") return;
+                    this.recordVoluntaryAction(client.sessionId);
                     this.state.prepSubPhase = "deploy";
                     this.audit("ACCEPT_HAND", player, "ok");
                     this.state.message = this.prepMessageFor(player);
+                    this.syncPhaseTimer();
                     break;
                 }
                 case "DISCARD_FOR_DP":
                     if (!isMyTurn || this.state.phase !== "preparation") return;
                     if (this.state.prepSubPhase !== "discard") return;
+                    this.recordVoluntaryAction(client.sessionId);
                     {
                         const dpBefore = player.dp;
                         this.discardForDp(player, Array.isArray(message.cardIds) ? message.cardIds : []);
@@ -188,26 +153,31 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
                 case "END_DISCARD":
                     if (!isMyTurn || this.state.phase !== "preparation") return;
                     if (!this.getActive(player) || this.state.prepSubPhase !== "discard") return;
+                    this.recordVoluntaryAction(client.sessionId);
                     this.state.prepSubPhase = "evolve";
                     this.audit("END_DISCARD", player, "ok");
                     this.state.message = "Step 2: Evolve or end prep";
+                    this.syncPhaseTimer();
                     break;
                 case "DEPLOY_DIGIMON":
                 case "DEPLOY_ROOKIE":
                     if (!isMyTurn || this.state.phase !== "preparation") return;
                     if (this.state.prepSubPhase !== "deploy" && this.state.prepSubPhase !== "") return;
                     if (typeof message.cardId !== "string") return;
+                    this.recordVoluntaryAction(client.sessionId);
                     this.deployDigimon(player, message.cardId);
                     break;
                 case "PLAY_PREP_OPTION":
                     if (!isMyTurn || this.state.phase !== "preparation") return;
                     if (typeof message.cardId !== "string") return;
+                    this.recordVoluntaryAction(client.sessionId);
                     this.playPrepOption(player, message.cardId);
                     break;
                 case "EVOLVE":
                     if (!isMyTurn || this.state.phase !== "preparation") return;
                     if (this.state.prepSubPhase !== "evolve") return;
                     if (typeof message.cardId !== "string") return;
+                    this.recordVoluntaryAction(client.sessionId);
                     {
                         const dpBefore = player.dp;
                         const evolutionOptionCardId =
@@ -227,6 +197,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
                     if (!isMyTurn || this.state.phase !== "preparation") return;
                     if (this.state.prepSubPhase === "mulligan" || this.state.prepSubPhase === "deploy") return;
                     if (this.state.prepSubPhase !== "evolve") return;
+                    this.recordVoluntaryAction(client.sessionId);
                     if (!this.getActive(player)) {
                         if (!hasDigimonInHand(player.hand)) {
                             if (!this.tryRecoverDigimonFromDeck(player)) {
@@ -246,11 +217,13 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
                 case "LOCK_SUPPORT":
                     if (this.state.phase !== "battle_support") return;
                     if (message.cardId != null && typeof message.cardId !== "string") return;
+                    this.recordVoluntaryAction(client.sessionId);
                     this.lockSupport(client.sessionId, message.cardId ?? null);
                     break;
                 case "LOCK_ATTACK":
                     if (this.state.phase !== "battle_attack") return;
                     if (!["circle", "triangle", "cross"].includes(message.attack)) return;
+                    this.recordVoluntaryAction(client.sessionId);
                     this.lockAttack(client.sessionId, message.attack);
                     break;
             }
@@ -295,6 +268,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
 
     onLeave(client: Client, code?: number) {
         console.log(`[SERVER] Client left: ${client.sessionId}, code: ${code}`);
+        this.clearPhaseTimer();
         this.state.players.delete(client.sessionId);
         if (this.state.phase !== "victory") {
             this.state.phase = "victory";
@@ -327,6 +301,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             p.needsOpeningDeploy = true;
             p.mulligansRemaining = this.ruleProfile.mulligan.maxRedraws;
             p.openingPenaltyActive = false;
+            p.afkStrikes = 0;
 
             const deck = this.buildDeck30(playerIndex);
             this.shuffle(deck);
@@ -336,6 +311,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         if (this.state.phase !== "victory") {
             this.state.phase = "draw";
             this.state.message = "Draw Phase";
+            this.syncPhaseTimer();
         }
     }
 
@@ -487,6 +463,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             player.mulligansRemaining,
             this.ruleProfile
         );
+        this.syncPhaseTimer();
     }
 
     private prepMessageFor(player: PlayerSchema): string {
@@ -715,6 +692,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             penaltyApplied,
             penaltyLevel: validation.penaltyLevel,
         });
+        this.syncPhaseTimer();
     }
 
     private endPrepOrPassTurn(player: PlayerSchema) {
@@ -755,6 +733,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             this.supportChoices.set(p.sessionId, null);
             this.attackChoices.set(p.sessionId, null);
         });
+        this.syncPhaseTimer();
     }
 
     /**
@@ -836,6 +815,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             this.state.supportPickSessionId = "";
             this.state.message = "Battle Phase: Place Support";
         }
+        this.syncPhaseTimer();
     }
 
     private lockSupport(sessionId: string, cardId: string | null) {
@@ -883,6 +863,14 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         }
 
         this.maybeRevealSupportAndAdvance();
+        const sessions = Array.from(this.state.players.keys());
+        if (sessions.length === 2 && this.state.phase === "battle_support") {
+            const p1 = this.state.players.get(sessions[0])!;
+            const p2 = this.state.players.get(sessions[1])!;
+            if (!p1.supportLocked || !p2.supportLocked) {
+                this.syncPhaseTimer();
+            }
+        }
     }
 
     private maybeRevealSupportAndAdvance() {
@@ -891,6 +879,9 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         const p1 = this.state.players.get(sessions[0])!;
         const p2 = this.state.players.get(sessions[1])!;
         if (!p1.supportLocked || !p2.supportLocked) return;
+
+        this.clearPhaseTimer();
+        this.state.phaseEndsAtMs = 0;
 
         const c1 = this.supportChoices.get(p1.sessionId) ?? null;
         const c2 = this.supportChoices.get(p2.sessionId) ?? null;
@@ -944,6 +935,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         } else {
             this.state.phase = "battle_attack";
             this.state.message = "Battle Phase: Select Attack";
+            this.syncPhaseTimer();
         }
     }
 
@@ -1003,6 +995,9 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         const p1 = this.state.players.get(sessions[0])!;
         const p2 = this.state.players.get(sessions[1])!;
         if (!p1.attackLocked || !p2.attackLocked) return;
+
+        this.clearPhaseTimer();
+        this.state.phaseEndsAtMs = 0;
 
         let a1 = this.attackChoices.get(p1.sessionId) ?? "circle";
         let a2 = this.attackChoices.get(p2.sessionId) ?? "circle";
@@ -1099,9 +1094,16 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         this.state.phase = "draw";
         this.state.prepSubPhase = "";
         this.state.message = "Draw Phase";
+        this.syncPhaseTimer();
     }
 
-    private endGame(loserSessionId: string, reason: "points" | "deck_out" | "disconnect") {
+    private endGame(loserSessionId: string, reason: "points" | "deck_out" | "disconnect" | "afk") {
+        this.clearPhaseTimer();
+        if (this.revealTimer) {
+            this.revealTimer.clear();
+            this.revealTimer = null;
+        }
+        this.state.phaseEndsAtMs = 0;
         if (reason === "deck_out" && DEBUG_BATTLE_ROOM) {
             const loser = this.state.players.get(loserSessionId);
             console.log("[BattleRoom:draw] endGame deck_out", {
@@ -1117,7 +1119,283 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         this.state.phase = "victory";
         this.state.winnerSessionId = winnerSessionId;
         this.state.loserReason = reason;
-        this.state.message = reason === "deck_out" ? "Deck Out!" : "Match Over";
+        if (reason === "deck_out") {
+            this.state.message = "Deck Out!";
+        } else if (reason === "afk") {
+            this.state.message = "Match forfeited (AFK)";
+        } else {
+            this.state.message = "Match Over";
+        }
+    }
+
+    // ----------------------------
+    // Phase timers & AFK (E6)
+    // ----------------------------
+
+    private clearPhaseTimer() {
+        if (this.phaseTimerHandle) {
+            this.phaseTimerHandle.clear();
+            this.phaseTimerHandle = null;
+        }
+    }
+
+    private syncPhaseTimer() {
+        this.clearPhaseTimer();
+        if (this.state.phase === "victory") {
+            this.state.phaseEndsAtMs = 0;
+            return;
+        }
+        const duration = phaseTimerDurationMs(this.state.phase, this.state.prepSubPhase);
+        if (!duration) {
+            this.state.phaseEndsAtMs = 0;
+            return;
+        }
+        this.state.phaseEndsAtMs = Date.now() + duration;
+        this.phaseTimerHandle = this.clock.setTimeout(() => {
+            this.phaseTimerHandle = null;
+            this.onPhaseTimeout();
+        }, duration);
+    }
+
+    private recordVoluntaryAction(sessionId: string) {
+        const player = this.state.players.get(sessionId);
+        if (player) {
+            player.afkStrikes = strikesAfterVoluntaryAction();
+        }
+    }
+
+    private applyTimeoutStrike(sessionId: string): boolean {
+        const player = this.state.players.get(sessionId);
+        if (!player) return false;
+        player.afkStrikes = strikesAfterTimeout(player.afkStrikes);
+        this.auditLog.emit({
+            turn: this.state.turn,
+            phase: this.state.phase,
+            prepSubPhase: this.state.prepSubPhase,
+            playerSessionId: sessionId,
+            action: "AFK_STRIKE",
+            validation: "ok",
+            detail: { strikes: player.afkStrikes, threshold: AFK_FORFEIT_THRESHOLD },
+        });
+        if (shouldForfeitAfk(player.afkStrikes)) {
+            this.auditLog.emit({
+                turn: this.state.turn,
+                phase: this.state.phase,
+                prepSubPhase: this.state.prepSubPhase,
+                playerSessionId: sessionId,
+                action: "AFK_FORFEIT",
+                validation: "ok",
+                detail: { strikes: player.afkStrikes },
+            });
+            this.endGame(sessionId, "afk");
+            return true;
+        }
+        return false;
+    }
+
+    private auditPhaseTimeout(phaseKey: TimedPhaseKey, sessionIds: string[], autoCommit: string) {
+        for (const sessionId of sessionIds) {
+            this.auditLog.emit({
+                turn: this.state.turn,
+                phase: this.state.phase,
+                prepSubPhase: this.state.prepSubPhase,
+                playerSessionId: sessionId,
+                action: "PHASE_TIMEOUT",
+                validation: "ok",
+                detail: { phaseKey, autoCommit },
+            });
+        }
+    }
+
+    private onPhaseTimeout() {
+        if (this.state.phase === "victory") return;
+        const phaseKey = resolveTimedPhaseKey(this.state.phase, this.state.prepSubPhase);
+        if (!phaseKey) return;
+
+        switch (phaseKey) {
+            case "draw": {
+                const player = this.state.players.get(this.state.activePlayerSessionId);
+                if (!player || this.state.phase !== "draw") return;
+                this.auditPhaseTimeout(phaseKey, [player.sessionId], "auto_draw");
+                if (this.applyTimeoutStrike(player.sessionId)) return;
+                this.executeDrawPhase(player, true);
+                break;
+            }
+            case "prep_mulligan": {
+                const player = this.state.players.get(this.state.activePlayerSessionId);
+                if (!player || this.state.phase !== "preparation") return;
+                this.auditPhaseTimeout(phaseKey, [player.sessionId], "auto_accept_hand");
+                if (this.applyTimeoutStrike(player.sessionId)) return;
+                this.state.prepSubPhase = "deploy";
+                this.state.message = this.prepMessageFor(player);
+                this.syncPhaseTimer();
+                break;
+            }
+            case "prep_deploy": {
+                const player = this.state.players.get(this.state.activePlayerSessionId);
+                if (!player || this.state.phase !== "preparation") return;
+                this.auditPhaseTimeout(phaseKey, [player.sessionId], "auto_deploy");
+                if (this.applyTimeoutStrike(player.sessionId)) return;
+                this.autoDeployDigimon(player);
+                break;
+            }
+            case "prep_discard": {
+                const player = this.state.players.get(this.state.activePlayerSessionId);
+                if (!player || this.state.phase !== "preparation" || !this.getActive(player)) return;
+                this.auditPhaseTimeout(phaseKey, [player.sessionId], "auto_end_discard");
+                if (this.applyTimeoutStrike(player.sessionId)) return;
+                this.state.prepSubPhase = "evolve";
+                this.state.message = "Step 2: Evolve or end prep";
+                this.syncPhaseTimer();
+                break;
+            }
+            case "prep_evolve": {
+                const player = this.state.players.get(this.state.activePlayerSessionId);
+                if (!player || this.state.phase !== "preparation") return;
+                this.auditPhaseTimeout(phaseKey, [player.sessionId], "auto_end_prep");
+                if (this.applyTimeoutStrike(player.sessionId)) return;
+                this.autoEndPrep(player);
+                break;
+            }
+            case "battle_support":
+                this.autoCommitSupportTimeouts(phaseKey);
+                break;
+            case "battle_attack":
+                this.autoCommitAttackTimeouts(phaseKey);
+                break;
+        }
+    }
+
+    private executeDrawPhase(player: PlayerSchema, auto: boolean) {
+        this.logDrawSnapshot("DRAW before drawToTarget", player);
+        this.drawToHandTarget(player);
+        this.logDrawSnapshot("DRAW after drawToTarget", player);
+        if ((this.state.phase as string) === "victory") return;
+
+        const target = this.ruleProfile.handTarget;
+        const hasActive = !!this.getActive(player);
+        const digimonInHand = hasDigimonInHand(player.hand);
+        let dugDeckForDigimon = false;
+
+        this.debugDraw("DRAW branch check", {
+            sessionId: player.sessionId.slice(0, 8),
+            hasActive,
+            digimonInHand,
+            hand: player.hand.length,
+            deck: player.deck.length,
+            belowTarget: player.hand.length < target,
+            deckEmpty: player.deck.length <= 0,
+            turn: this.state.turn,
+            handTarget: target,
+        });
+
+        if (hasActive) {
+            if (shouldDeckOutOnDraw(true, player.hand.length, player.deck.length, target)) {
+                this.audit("DRAW", player, "rejected", "deck_out_active", {
+                    handSize: player.hand.length,
+                    deckSize: player.deck.length,
+                    auto,
+                });
+                this.endGame(player.sessionId, "deck_out");
+                return;
+            }
+        } else if (!digimonInHand) {
+            if (!this.tryRecoverDigimonFromDeck(player)) {
+                this.audit("DRAW", player, "rejected", "deck_out_no_digimon", {
+                    handSize: player.hand.length,
+                    deckSize: player.deck.length,
+                    auto,
+                });
+                this.endGame(player.sessionId, "deck_out");
+                return;
+            }
+            dugDeckForDigimon = true;
+            this.logDrawSnapshot("DRAW after digimon recovery", player);
+        }
+
+        this.state.phase = "preparation";
+        this.beginPrepSubPhase(player);
+        this.audit("DRAW", player, "ok", undefined, {
+            dugDeckForDigimon,
+            handSize: player.hand.length,
+            auto,
+        });
+        this.state.message = dugDeckForDigimon
+            ? "Deck dig — deploy a Digimon from your hand"
+            : this.prepMessageFor(player);
+    }
+
+    private autoDeployDigimon(player: PlayerSchema) {
+        if (this.state.prepSubPhase !== "deploy" && this.state.prepSubPhase !== "") return;
+        if (this.getActive(player)) {
+            this.autoEndPrep(player);
+            return;
+        }
+        for (const card of player.hand) {
+            const validation = validateDeployDigimon(card, this.ruleProfile, player.needsOpeningDeploy);
+            if (validation.ok !== false) {
+                this.deployDigimon(player, card.id);
+                return;
+            }
+        }
+        if (!hasDigimonInHand(player.hand)) {
+            if (!this.tryRecoverDigimonFromDeck(player)) {
+                this.endGame(player.sessionId, "deck_out");
+                return;
+            }
+            this.autoDeployDigimon(player);
+            return;
+        }
+        this.autoEndPrep(player);
+    }
+
+    private autoEndPrep(player: PlayerSchema) {
+        if (this.state.phase !== "preparation" || this.state.prepSubPhase !== "evolve") return;
+        if (!this.getActive(player)) {
+            if (!hasDigimonInHand(player.hand)) {
+                if (!this.tryRecoverDigimonFromDeck(player)) {
+                    this.endGame(player.sessionId, "deck_out");
+                } else {
+                    this.state.prepSubPhase = "deploy";
+                    this.state.message = "Deck dig — deploy a Digimon from your hand";
+                    this.syncPhaseTimer();
+                }
+            }
+            return;
+        }
+        this.audit("END_PREP", player, "ok", undefined, { auto: true });
+        this.endPrepOrPassTurn(player);
+    }
+
+    private autoCommitSupportTimeouts(phaseKey: TimedPhaseKey) {
+        if (this.state.phase !== "battle_support") return;
+
+        if (this.ruleProfile.battle.supportPickDefenderFirst && this.state.supportPickSessionId) {
+            const sessionId = this.state.supportPickSessionId;
+            const player = this.state.players.get(sessionId);
+            if (!player || player.supportLocked) return;
+            this.auditPhaseTimeout(phaseKey, [sessionId], "auto_no_support");
+            if (this.applyTimeoutStrike(sessionId)) return;
+            this.lockSupport(sessionId, null);
+            return;
+        }
+
+        for (const player of this.state.players.values()) {
+            if (player.supportLocked) continue;
+            this.auditPhaseTimeout(phaseKey, [player.sessionId], "auto_no_support");
+            if (this.applyTimeoutStrike(player.sessionId)) return;
+            this.lockSupport(player.sessionId, null);
+        }
+    }
+
+    private autoCommitAttackTimeouts(phaseKey: TimedPhaseKey) {
+        if (this.state.phase !== "battle_attack") return;
+        for (const player of this.state.players.values()) {
+            if (player.attackLocked) continue;
+            this.auditPhaseTimeout(phaseKey, [player.sessionId], "auto_random_attack");
+            if (this.applyTimeoutStrike(player.sessionId)) return;
+            this.lockAttack(player.sessionId, pickRandomAttack());
+        }
     }
 
     private audit(

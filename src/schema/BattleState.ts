@@ -74,6 +74,8 @@ export class PlayerSchema extends Schema {
     @type("boolean") needsOpeningDeploy: boolean = true;
     /** Active Digimon was deployed with opening level C/U penalties. */
     @type("boolean") openingPenaltyActive: boolean = false;
+    /** Consecutive phase timeouts without voluntary action (FC-023). */
+    @type("number") afkStrikes: number = 0;
 }
 
 export class BattleStateSchema extends Schema {
@@ -88,10 +90,12 @@ export class BattleStateSchema extends Schema {
     @type("string") message: string = "Waiting for players...";
 
     @type("string") winnerSessionId: string = "";
-    @type("string") loserReason: string = ""; // points | deck_out | disconnect
+    @type("string") loserReason: string = ""; // points | deck_out | disconnect | afk
     /**
      * During battle_support (fidelity_ps1): session id allowed to lock support next.
      * Empty = simultaneous pick (legacy) or both committed.
      */
     @type("string") supportPickSessionId: string = "";
+    /** Server wall-clock ms when the current interactive phase ends (FC-021). */
+    @type("number") phaseEndsAtMs: number = 0;
 }
