@@ -190,6 +190,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                         : ""
                 ) as GameState["prepSubPhase"],
                 ruleProfileId: state.ruleProfileId ?? "fidelity_ps1",
+                supportPickSessionId: state.supportPickSessionId ?? "",
                 hasDiscarded: state.prepSubPhase === "evolve",
                 winnerSessionId: (state as any).winnerSessionId,
                 loserReason: (state as any).loserReason,
@@ -309,6 +310,27 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
     const battleSupportCards = gameState.player.hand.filter(c =>
         canUseAsBattleSupport({ cardKind: c.cardKind, effectId: c.effectId ?? "" })
     );
+
+    const canPickSupport =
+        gameState.phase === "battle_support" &&
+        !gameState.player.supportLocked &&
+        (!ruleProfile.battle.supportPickDefenderFirst ||
+            !gameState.supportPickSessionId ||
+            gameState.supportPickSessionId === room.sessionId);
+
+    const supportPhaseHint = (() => {
+        if (gameState.phase !== "battle_support") return "";
+        if (gameState.player.supportLocked) return "Waiting for opponent...";
+        if (ruleProfile.battle.supportPickDefenderFirst && gameState.supportPickSessionId) {
+            if (gameState.supportPickSessionId === room.sessionId) {
+                return ruleProfile.battle.attackLockBeforeSupport
+                    ? "Your turn — lock support (attacks already committed)."
+                    : "Your turn — lock support.";
+            }
+            return "Waiting for opponent to place support...";
+        }
+        return "Lock support or battle option (or none).";
+    })();
 
     const handleEvolution = (cardId: string) => {
         room.send("action", {
@@ -775,16 +797,16 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                             <span>
                                 {gameState.phase === 'battle_reveal'
                                     ? 'Revealing support...'
-                                    : 'Battle: Lock Support or Battle Option (or none).'}
+                                    : supportPhaseHint}
                             </span>
                             {gameState.player.supportLocked && gameState.phase === 'battle_support' && (
                                 <span className="text-white/50">LOCKED</span>
                             )}
                         </div>
                         <div className="flex gap-2">
-                             <button onClick={() => handleSupportChoice(null)} disabled={!!gameState.player.supportLocked} className="pointer-events-auto bg-slate-800 text-white p-4 disabled:opacity-40">NO SUPPORT</button>
+                             <button onClick={() => handleSupportChoice(null)} disabled={!canPickSupport} className="pointer-events-auto bg-slate-800 text-white p-4 disabled:opacity-40">NO SUPPORT</button>
                              {battleSupportCards.map(c => (
-                                 <div key={c.id} onClick={() => handleSupportChoice(c.id)} className={`pointer-events-auto cursor-pointer group relative ${gameState.player.supportLocked ? 'opacity-40 pointer-events-none' : ''}`}>
+                                 <div key={c.id} onClick={() => canPickSupport && handleSupportChoice(c.id)} className={`pointer-events-auto cursor-pointer group relative ${!canPickSupport ? 'opacity-40 pointer-events-none' : ''}`}>
                                      <DigimonCard data={c} variant="mini" onHover={setHoveredCard} />
                                      <div className="text-[10px] bg-black/80 text-white text-center font-black">
                                          {c.cardKind === "option" ? "OPTION" : "SUPPORT"}

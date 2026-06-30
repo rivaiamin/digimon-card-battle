@@ -42,6 +42,12 @@ import {
     resolveKoScoring,
     type BattleCombatant,
 } from "../lib/battleEffectEngine";
+import {
+    canLockSupport,
+    getDefenderSessionId,
+    initialSupportPicker,
+    nextSupportPickerAfterLock,
+} from "../lib/supportPhase";
 
 /** Set `DEBUG_BATTLE_ROOM=0` when starting the server to silence draw/deck-out traces. */
 const DEBUG_BATTLE_ROOM = process.env.DEBUG_BATTLE_ROOM !== "0";
@@ -717,7 +723,38 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             this.endTurn();
             return;
         }
-        this.beginSupportPlacement();
+        this.beginBattlePhaseAfterPrep();
+    }
+
+    private beginBattlePhaseAfterPrep() {
+        if (this.ruleProfile.battle.attackLockBeforeSupport) {
+            this.beginAttackSelection();
+        } else {
+            this.beginSupportPlacement();
+        }
+    }
+
+    private beginAttackSelection() {
+        this.state.phase = "battle_attack";
+        this.state.prepSubPhase = "";
+        this.state.message = "Battle Phase: Select Attack";
+        this.state.supportPickSessionId = "";
+
+        if (this.revealTimer) {
+            this.revealTimer.clear();
+            this.revealTimer = null;
+        }
+        this.supportChoices.clear();
+        this.attackChoices.clear();
+        this.supportCtx = createSupportBattleContext();
+        this.state.players.forEach(p => {
+            p.supportCard = null;
+            p.supportLocked = false;
+            p.selectedAttack = null;
+            p.attackLocked = false;
+            this.supportChoices.set(p.sessionId, null);
+            this.attackChoices.set(p.sessionId, null);
+        });
     }
 
     /**
@@ -768,29 +805,52 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
     private beginSupportPlacement() {
         this.state.phase = "battle_support";
         this.state.prepSubPhase = "";
-        this.state.message = "Battle Phase: Place Support";
+        const attackFirst = this.ruleProfile.battle.attackLockBeforeSupport;
 
         if (this.revealTimer) {
             this.revealTimer.clear();
             this.revealTimer = null;
         }
         this.supportChoices.clear();
-        this.attackChoices.clear();
-        this.supportCtx = createSupportBattleContext();
+        if (!attackFirst) {
+            this.attackChoices.clear();
+            this.supportCtx = createSupportBattleContext();
+        }
         this.state.players.forEach(p => {
-            p.supportCard = null; // not revealed yet
+            p.supportCard = null;
             p.supportLocked = false;
-            p.selectedAttack = null;
-            p.attackLocked = false;
+            if (!attackFirst) {
+                p.selectedAttack = null;
+                p.attackLocked = false;
+                this.attackChoices.set(p.sessionId, null);
+            }
             this.supportChoices.set(p.sessionId, null);
-            this.attackChoices.set(p.sessionId, null);
         });
+
+        if (this.ruleProfile.battle.supportPickDefenderFirst) {
+            const sessions = Array.from(this.state.players.keys());
+            const defender = getDefenderSessionId(this.state.activePlayerSessionId, sessions);
+            this.state.supportPickSessionId = initialSupportPicker(defender);
+            this.state.message = "Defender: Place Support";
+        } else {
+            this.state.supportPickSessionId = "";
+            this.state.message = "Battle Phase: Place Support";
+        }
     }
 
     private lockSupport(sessionId: string, cardId: string | null) {
         const player = this.state.players.get(sessionId);
         if (!player) return;
-        if (player.supportLocked) return;
+        if (
+            !canLockSupport(
+                sessionId,
+                this.state.supportPickSessionId,
+                this.ruleProfile.battle.supportPickDefenderFirst,
+                player.supportLocked
+            )
+        ) {
+            return;
+        }
 
         let chosen: CardSchema | null = null;
         if (cardId) {
@@ -805,6 +865,23 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
 
         player.supportLocked = true;
         this.supportChoices.set(sessionId, chosen);
+
+        if (this.ruleProfile.battle.supportPickDefenderFirst) {
+            const sessions = Array.from(this.state.players.keys());
+            const defender = getDefenderSessionId(this.state.activePlayerSessionId, sessions);
+            const next = nextSupportPickerAfterLock(
+                sessionId,
+                defender,
+                this.state.activePlayerSessionId
+            );
+            if (next) {
+                this.state.supportPickSessionId = next;
+                this.state.message = "Active: Place Support";
+            } else {
+                this.state.supportPickSessionId = "";
+            }
+        }
+
         this.maybeRevealSupportAndAdvance();
     }
 
@@ -860,8 +937,14 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             sessionOrder: sessions,
         });
 
-        this.state.phase = "battle_attack";
-        this.state.message = "Battle Phase: Select Attack";
+        if (this.ruleProfile.battle.attackLockBeforeSupport) {
+            this.state.phase = "resolution";
+            this.state.message = "Resolving Battle...";
+            this.maybeResolveBattle();
+        } else {
+            this.state.phase = "battle_attack";
+            this.state.message = "Battle Phase: Select Attack";
+        }
     }
 
     private lockAttack(sessionId: string, attack: AttackType) {
@@ -870,7 +953,20 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         if (player.attackLocked) return;
         player.attackLocked = true;
         this.attackChoices.set(sessionId, attack);
-        this.maybeResolveBattle();
+        if (this.ruleProfile.battle.attackLockBeforeSupport) {
+            this.maybeBeginSupportAfterAttacks();
+        } else {
+            this.maybeResolveBattle();
+        }
+    }
+
+    private maybeBeginSupportAfterAttacks() {
+        const sessions = Array.from(this.state.players.keys());
+        if (sessions.length !== 2) return;
+        const p1 = this.state.players.get(sessions[0])!;
+        const p2 = this.state.players.get(sessions[1])!;
+        if (!p1.attackLocked || !p2.attackLocked) return;
+        this.beginSupportPlacement();
     }
 
     private toBattleCombatant(player: PlayerSchema): BattleCombatant {

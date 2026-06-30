@@ -91,4 +91,6 @@ export interface GameState {
   hasDiscarded: boolean;
   winnerSessionId?: string;
   loserReason?: 'points' | 'deck_out' | 'disconnect' | string;
+  /** Fidelity: whose turn to lock support; empty = simultaneous or done. */
+  supportPickSessionId?: string;
 }

@@ -28,12 +28,26 @@ export interface MulliganRules {
     maxRedraws: number;
 }
 
+export interface BattleFlowRules {
+    /**
+     * Fidelity: lock attacks before support (RA-002).
+     * Legacy: support → reveal → attack.
+     */
+    attackLockBeforeSupport: boolean;
+    /**
+     * Fidelity: defender (attacks second) picks support before active (RA-003).
+     * Legacy: simultaneous hidden lock-in.
+     */
+    supportPickDefenderFirst: boolean;
+}
+
 export interface RuleProfile {
     id: RuleProfileId;
     /** Hand size target for opening draw and turn-start refill. */
     handTarget: number;
     mulligan: MulliganRules;
     openingDeploy: OpeningDeployRules;
+    battle: BattleFlowRules;
     /** After a KO, redeploy is Rookie-only in both profiles. */
     postKoDeployRookieOnly: boolean;
     /**
@@ -55,6 +69,10 @@ const FIDELITY_PS1: RuleProfile = {
             ultimate: { hp: 0.25, atk: 0.25 },
         },
     },
+    battle: {
+        attackLockBeforeSupport: true,
+        supportPickDefenderFirst: true,
+    },
     postKoDeployRookieOnly: true,
     digForRookieOnly: false,
 };
@@ -70,6 +88,10 @@ const LEGACY_ONLINE: RuleProfile = {
             champion: { hp: 0.5, atk: 0.5 },
             ultimate: { hp: 0.25, atk: 0.25 },
         },
+    },
+    battle: {
+        attackLockBeforeSupport: false,
+        supportPickDefenderFirst: false,
     },
     postKoDeployRookieOnly: true,
     digForRookieOnly: true,

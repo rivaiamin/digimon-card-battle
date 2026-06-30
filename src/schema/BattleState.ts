@@ -89,4 +89,9 @@ export class BattleStateSchema extends Schema {
 
     @type("string") winnerSessionId: string = "";
     @type("string") loserReason: string = ""; // points | deck_out | disconnect
+    /**
+     * During battle_support (fidelity_ps1): session id allowed to lock support next.
+     * Empty = simultaneous pick (legacy) or both committed.
+     */
+    @type("string") supportPickSessionId: string = "";
 }
