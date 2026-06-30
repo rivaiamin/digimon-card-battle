@@ -69,6 +69,8 @@ export class PlayerSchema extends Schema {
     @type("number") mulligansRemaining: number = 0;
     /** True until the player's first battle Digimon is deployed this match. */
     @type("boolean") needsOpeningDeploy: boolean = true;
+    /** Active Digimon was deployed with opening level C/U penalties. */
+    @type("boolean") openingPenaltyActive: boolean = false;
 }
 
 export class BattleStateSchema extends Schema {

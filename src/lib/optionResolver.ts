@@ -1,0 +1,213 @@
+/**
+ * Data-driven prep / evolution / battle option resolution (E3).
+ * @see docs/fidelity-rules-contract.md FC-008
+ */
+
+import type { EffectArgs } from "../types";
+import { readNumberArg } from "./effectArgs";
+import { isValidEvolutionLevel } from "./evolutionEligibility";
+import { EVOLUTION_LEVEL_ORDER } from "./evolutionEligibility";
+
+export interface OptionCardLike {
+    id: string;
+    cardKind: string;
+    effectId: string;
+    effectArgs?: EffectArgs;
+    level?: string;
+    type?: string;
+    evoCost?: number;
+    maxHp?: number;
+    hp?: number;
+    circle?: { damage: number };
+    triangle?: { damage: number };
+    cross?: { damage: number };
+}
+
+export interface CatalogStatSnapshot {
+    maxHp: number;
+    circle: number;
+    triangle: number;
+    cross: number;
+}
+
+export interface PrepOptionMutableState {
+    dp: number;
+    hp: number;
+    maxHp: number;
+    hand: OptionCardLike[];
+    deck: OptionCardLike[];
+    trash: OptionCardLike[];
+}
+
+export type PrepOptionResult =
+    | { ok: true; effectId: string; detail?: Record<string, unknown> }
+    | { ok: false; reason: string };
+
+export interface EvolutionModifiers {
+    warpSkipLevels: number;
+    dpCostDelta: number;
+    restoreFullStats: boolean;
+}
+
+const EMPTY_MODIFIERS: EvolutionModifiers = {
+    warpSkipLevels: 0,
+    dpCostDelta: 0,
+    restoreFullStats: false,
+};
+
+export function parseEvolutionModifiers(card: OptionCardLike | null | undefined): EvolutionModifiers {
+    if (!card || card.cardKind !== "evolution_option") return { ...EMPTY_MODIFIERS };
+
+    const args = card.effectArgs ?? {};
+    switch (card.effectId) {
+        case "evolution_option.warp_evolve":
+            return {
+                warpSkipLevels: Math.max(0, readNumberArg(args, "skipLevels", 1)),
+                dpCostDelta: readNumberArg(args, "dpCostDelta", 0),
+                restoreFullStats: false,
+            };
+        case "evolution_option.dp_adjust":
+            return {
+                warpSkipLevels: Math.max(0, readNumberArg(args, "skipLevels", 0)),
+                dpCostDelta: readNumberArg(args, "delta", 0),
+                restoreFullStats: false,
+            };
+        case "evolution_option.restore_full_stats":
+            return {
+                warpSkipLevels: 0,
+                dpCostDelta: readNumberArg(args, "dpCostDelta", 0),
+                restoreFullStats: true,
+            };
+        default:
+            return { ...EMPTY_MODIFIERS };
+    }
+}
+
+export function mergeEvolutionModifiers(a: EvolutionModifiers, b: EvolutionModifiers): EvolutionModifiers {
+    return {
+        warpSkipLevels: Math.max(a.warpSkipLevels, b.warpSkipLevels),
+        dpCostDelta: a.dpCostDelta + b.dpCostDelta,
+        restoreFullStats: a.restoreFullStats || b.restoreFullStats,
+    };
+}
+
+export function canEvolveWithOption(
+    active: { level: string; type: string } | null | undefined,
+    target: { level: string; type: string; evoCost: number },
+    playerDp: number,
+    modifiers: EvolutionModifiers
+): boolean {
+    if (!active) return false;
+    const adjustedCost = Math.max(0, target.evoCost + modifiers.dpCostDelta);
+    if (playerDp < adjustedCost) return false;
+
+    if (
+        String(active.type).trim().toLowerCase() !== String(target.type).trim().toLowerCase()
+    ) {
+        return false;
+    }
+
+    const fi = EVOLUTION_LEVEL_ORDER.indexOf(active.level as (typeof EVOLUTION_LEVEL_ORDER)[number]);
+    const ti = EVOLUTION_LEVEL_ORDER.indexOf(target.level as (typeof EVOLUTION_LEVEL_ORDER)[number]);
+    if (fi === -1 || ti === -1) return false;
+
+    if (modifiers.warpSkipLevels > 0) {
+        const maxJump = 1 + modifiers.warpSkipLevels;
+        return ti > fi && ti - fi <= maxJump;
+    }
+
+    return isValidEvolutionLevel(active.level, target.level);
+}
+
+export function resolvePrepOption(
+    card: OptionCardLike,
+    state: PrepOptionMutableState,
+    drawFromDeck: (count: number) => number
+): PrepOptionResult {
+    const args = card.effectArgs ?? {};
+
+    switch (card.effectId) {
+        case "option.prep.gain_dp": {
+            const value = readNumberArg(args, "value", 0);
+            if (value <= 0) return { ok: false, reason: "invalid_gain_dp_value" };
+            state.dp += value;
+            return { ok: true, effectId: card.effectId, detail: { gained: value, dp: state.dp } };
+        }
+        case "option.prep.draw": {
+            const count = Math.max(1, readNumberArg(args, "count", 1));
+            const drawn = drawFromDeck(count);
+            return { ok: true, effectId: card.effectId, detail: { requested: count, drawn } };
+        }
+        case "option.prep.heal_active": {
+            const value = readNumberArg(args, "value", 0);
+            if (value <= 0) return { ok: false, reason: "invalid_heal_value" };
+            if (state.maxHp <= 0) return { ok: false, reason: "no_active_digimon" };
+            const before = state.hp;
+            state.hp = Math.min(state.maxHp, state.hp + value);
+            return { ok: true, effectId: card.effectId, detail: { before, after: state.hp } };
+        }
+        case "option.prep.fetch_trash_digimon": {
+            const trashIdx = state.trash.findIndex(c => c.cardKind === "digimon" || !c.cardKind);
+            if (trashIdx === -1) return { ok: false, reason: "no_digimon_in_trash" };
+            const [fetched] = state.trash.splice(trashIdx, 1);
+            state.hand.push(fetched);
+            return { ok: true, effectId: card.effectId, detail: { fetchedId: fetched.id } };
+        }
+        default:
+            return { ok: false, reason: "unsupported_prep_option" };
+    }
+}
+
+export function applyFullStatsFromCatalog(card: OptionCardLike, catalog: CatalogStatSnapshot): void {
+    card.maxHp = catalog.maxHp;
+    card.hp = catalog.maxHp;
+    if (card.circle) card.circle.damage = catalog.circle;
+    if (card.triangle) card.triangle.damage = catalog.triangle;
+    if (card.cross) card.cross.damage = catalog.cross;
+}
+
+export function shouldRestoreFullStatsAfterEvolve(
+    modifiers: EvolutionModifiers,
+    openingPenaltyActive: boolean,
+    fromLevel: string,
+    toLevel: string
+): boolean {
+    if (modifiers.restoreFullStats) return true;
+    // PS1 manual: penalized Level C -> Level U with any Digivolve Option restores full power.
+    if (!openingPenaltyActive) return false;
+    const from = fromLevel.trim().toLowerCase();
+    const to = toLevel.trim().toLowerCase();
+    return from === "champion" && to === "ultimate";
+}
+
+export function getBattleOptionAttackBuff(args: EffectArgs): { targetAttack: string; value: number } | null {
+    const value = readNumberArg(args, "value", 0);
+    if (value === 0) return null;
+    const targetAttack = typeof args.targetAttack === "string" ? args.targetAttack : "all";
+    return { targetAttack, value };
+}
+
+export interface AttackBonusContext {
+    attackBonus: Map<string, { circle: number; triangle: number; cross: number }>;
+}
+
+export function applyBattleOptionToContext(
+    card: OptionCardLike,
+    sourceSessionId: string,
+    ctx: AttackBonusContext
+): boolean {
+    if (card.effectId !== "option.battle.atk_buff") return false;
+    const buff = getBattleOptionAttackBuff(card.effectArgs ?? {});
+    if (!buff) return false;
+
+    const bonus = ctx.attackBonus.get(sourceSessionId) ?? { circle: 0, triangle: 0, cross: 0 };
+    if (buff.targetAttack === "all") {
+        bonus.circle += buff.value;
+        bonus.triangle += buff.value;
+        bonus.cross += buff.value;
+    } else if (buff.targetAttack === "circle" || buff.targetAttack === "triangle" || buff.targetAttack === "cross") {
+        bonus[buff.targetAttack] += buff.value;
+    }
+    ctx.attackBonus.set(sourceSessionId, bonus);
+    return true;
+}

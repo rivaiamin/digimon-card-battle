@@ -16,6 +16,12 @@ import { SupportZone } from "./battle/SupportZone";
 import { canEvolveDigimon, matchesEvolutionType } from "../lib/evolutionEligibility";
 import { validateDeployDigimon } from "../lib/openingFlow";
 import { getRuleProfile } from "../lib/ruleProfile";
+import {
+    canPlayEvolutionOption,
+    canPlayPrepOption,
+    canUseAsBattleSupport,
+} from "../lib/optionEligibility";
+import { canEvolveWithOption, parseEvolutionModifiers } from "../lib/optionResolver";
 
 const INITIAL_PLAYER_STATE: PlayerState = {
     active: null,
@@ -116,6 +122,7 @@ const mapSchemaToPlayerState = (schema: any): PlayerState => {
         attackLocked: !!schema.attackLocked,
         mulligansRemaining: schema.mulligansRemaining ?? 0,
         needsOpeningDeploy: schema.needsOpeningDeploy ?? false,
+        openingPenaltyActive: !!schema.openingPenaltyActive,
     };
 };
 
@@ -142,6 +149,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
     const [hoveredCard, setHoveredCard] = useState<DigimonCardData | null>(null);
     /** Face-down preview of own support until server reveal syncs. */
     const [committedSupport, setCommittedSupport] = useState<DigimonCardData | null>(null);
+    const [selectedEvoOptionId, setSelectedEvoOptionId] = useState<string | null>(null);
 
     useBattleAudio(gameState, room.sessionId);
     const vfx = useBattleVfx(gameState);
@@ -269,8 +277,51 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
         return result.ok;
     });
 
+    const prepOptionCards = gameState.player.hand.filter(c =>
+        canPlayPrepOption(
+            { cardKind: c.cardKind, effectId: c.effectId ?? "" },
+            gameState.prepSubPhase,
+            !!gameState.player.active
+        )
+    );
+
+    const evolutionOptionCards = gameState.player.hand.filter(c =>
+        canPlayEvolutionOption(
+            { cardKind: c.cardKind, effectId: c.effectId ?? "" },
+            gameState.prepSubPhase,
+            !!gameState.player.active
+        )
+    );
+
+    const selectedEvoOption = selectedEvoOptionId
+        ? gameState.player.hand.find(c => c.id === selectedEvoOptionId) ?? null
+        : null;
+    const evoModifiers = selectedEvoOption
+        ? parseEvolutionModifiers({
+              id: selectedEvoOption.id,
+              cardKind: selectedEvoOption.cardKind,
+              effectId: selectedEvoOption.effectId ?? "",
+              effectArgs: selectedEvoOption.effectArgs,
+          })
+        : parseEvolutionModifiers(null);
+
+    const discardableCards = gameState.player.hand.filter(c => c.cardKind === "digimon");
+    const battleSupportCards = gameState.player.hand.filter(c =>
+        canUseAsBattleSupport({ cardKind: c.cardKind, effectId: c.effectId ?? "" })
+    );
+
     const handleEvolution = (cardId: string) => {
-        room.send("action", { type: "EVOLVE", cardId });
+        room.send("action", {
+            type: "EVOLVE",
+            cardId,
+            evolutionOptionCardId: selectedEvoOptionId ?? undefined,
+        });
+        setSelectedEvoOptionId(null);
+    };
+
+    const handlePlayPrepOption = (cardId: string) => {
+        audio.playSfx("thud", { spatial: "player" });
+        room.send("action", { type: "PLAY_PREP_OPTION", cardId });
     };
 
     const handleEndDiscard = () => {
@@ -584,7 +635,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                                 </div>
                                 {gameState.isPlayerTurn && (
                                     <div className="flex gap-2 flex-wrap">
-                                        {gameState.player.hand.map(c => (
+                                        {discardableCards.map(c => (
                                             <div
                                                 key={c.id}
                                                 onClick={() => handleDiscardForDP(c.id)}
@@ -596,9 +647,26 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                                                 </div>
                                             </div>
                                         ))}
-                                        {gameState.player.hand.length === 0 && (
+                                        {discardableCards.length === 0 && (
                                             <span className="text-white/50 text-xs uppercase">No cards to discard</span>
                                         )}
+                                    </div>
+                                )}
+                                {gameState.isPlayerTurn && prepOptionCards.length > 0 && (
+                                    <div className="flex flex-col gap-1 mt-1">
+                                        <div className="text-[10px] text-ps-yellow uppercase font-black">Prep Options</div>
+                                        <div className="flex gap-2 flex-wrap">
+                                            {prepOptionCards.map(c => (
+                                                <div
+                                                    key={`prep_opt_${c.id}`}
+                                                    onClick={() => handlePlayPrepOption(c.id)}
+                                                    className="pointer-events-auto cursor-pointer ring-2 ring-ps-yellow ring-offset-2 ring-offset-black rounded"
+                                                >
+                                                    <DigimonCard data={c} variant="mini" onHover={setHoveredCard} />
+                                                    <div className="text-[10px] bg-ps-yellow px-1 text-black font-black text-center">PLAY</div>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
                                 )}
                             </div>
@@ -624,11 +692,46 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                                     )}
                                 </div>
                                 {gameState.isPlayerTurn && (
-                                    <div className="flex gap-2 flex-wrap">
-                                        {gameState.player.hand.map(c => {
+                                    <>
+                                        {evolutionOptionCards.length > 0 && (
+                                            <div className="flex flex-col gap-1 mb-2">
+                                                <div className="text-[10px] text-ps-blue uppercase font-black">
+                                                    Digivolve Options {selectedEvoOptionId ? "(selected — pick evolution target)" : "(optional)"}
+                                                </div>
+                                                <div className="flex gap-2 flex-wrap">
+                                                    {evolutionOptionCards.map(c => (
+                                                        <div
+                                                            key={`evo_opt_${c.id}`}
+                                                            onClick={() =>
+                                                                setSelectedEvoOptionId(prev =>
+                                                                    prev === c.id ? null : c.id
+                                                                )
+                                                            }
+                                                            className={`pointer-events-auto cursor-pointer rounded ring-2 ring-offset-2 ring-offset-black ${
+                                                                selectedEvoOptionId === c.id
+                                                                    ? "ring-white"
+                                                                    : "ring-ps-blue"
+                                                            }`}
+                                                        >
+                                                            <DigimonCard data={c} variant="mini" onHover={setHoveredCard} />
+                                                            <div className="text-[10px] bg-ps-blue px-1 text-white font-black text-center">
+                                                                {selectedEvoOptionId === c.id ? "SELECTED" : "ATTACH"}
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                        <div className="flex gap-2 flex-wrap">
+                                        {gameState.player.hand
+                                            .filter(c => c.cardKind === "digimon")
+                                            .map(c => {
                                             const active = gameState.player.active;
-                                            const canEvolve = canEvolveDigimon(active, c, gameState.player.dp);
-                                            const canAfford = c.evoCost <= gameState.player.dp;
+                                            const canEvolve = selectedEvoOption
+                                                ? canEvolveWithOption(active, c, gameState.player.dp, evoModifiers)
+                                                : canEvolveDigimon(active, c, gameState.player.dp);
+                                            const adjustedCost = Math.max(0, c.evoCost + evoModifiers.dpCostDelta);
+                                            const canAfford = gameState.player.dp >= adjustedCost;
                                             const sameType = active
                                                 ? matchesEvolutionType(active.type, c.type)
                                                 : false;
@@ -648,11 +751,12 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                                                     {canAfford && sameType && !canEvolve && (
                                                         <div className="text-[10px] text-red-500 font-bold">INVALID</div>
                                                     )}
-                                                    <div className="text-[10px] bg-ps-blue px-1 text-white">COST: {c.evoCost}</div>
+                                                    <div className="text-[10px] bg-ps-blue px-1 text-white">COST: {adjustedCost}</div>
                                                 </div>
                                             );
                                         })}
-                                    </div>
+                                        </div>
+                                    </>
                                 )}
                             </div>
                         )}
@@ -671,7 +775,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                             <span>
                                 {gameState.phase === 'battle_reveal'
                                     ? 'Revealing support...'
-                                    : 'Battle: Lock a Support card (or none).'}
+                                    : 'Battle: Lock Support or Battle Option (or none).'}
                             </span>
                             {gameState.player.supportLocked && gameState.phase === 'battle_support' && (
                                 <span className="text-white/50">LOCKED</span>
@@ -679,12 +783,20 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                         </div>
                         <div className="flex gap-2">
                              <button onClick={() => handleSupportChoice(null)} disabled={!!gameState.player.supportLocked} className="pointer-events-auto bg-slate-800 text-white p-4 disabled:opacity-40">NO SUPPORT</button>
-                             {gameState.player.hand.map(c => (
+                             {battleSupportCards.map(c => (
                                  <div key={c.id} onClick={() => handleSupportChoice(c.id)} className={`pointer-events-auto cursor-pointer group relative ${gameState.player.supportLocked ? 'opacity-40 pointer-events-none' : ''}`}>
                                      <DigimonCard data={c} variant="mini" onHover={setHoveredCard} />
+                                     <div className="text-[10px] bg-black/80 text-white text-center font-black">
+                                         {c.cardKind === "option" ? "OPTION" : "SUPPORT"}
+                                     </div>
                                      {c.supportEffect && (
                                          <div className="absolute inset-x-0 bottom-full bg-black text-[8px] p-1 border border-white/20 whitespace-nowrap">
                                              {c.supportEffect.description}
+                                         </div>
+                                     )}
+                                     {c.cardKind === "option" && c.effectId && (
+                                         <div className="absolute inset-x-0 bottom-full bg-black text-[8px] p-1 border border-ps-yellow/40 whitespace-nowrap">
+                                             {c.effectId.replace("option.battle.", "")}
                                          </div>
                                      )}
                                  </div>

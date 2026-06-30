@@ -2,7 +2,6 @@ import { Room, type Client } from "@colyseus/core";
 import { BattleStateSchema, PlayerSchema, CardSchema, SupportEffectSchema } from "../schema/BattleState";
 import cardsData from "../data/cards.json";
 import { getFirebaseAdminAuth } from "../server/firebaseAdmin";
-import { canEvolveDigimon } from "../lib/evolutionEligibility";
 import { loadCardCatalog, type NormalizedCardCatalogEntry } from "../lib/cardCatalogLoader";
 import { BattleAuditLog } from "../lib/battleAuditLog";
 import {
@@ -16,6 +15,22 @@ import {
     validateDeployDigimon,
 } from "../lib/openingFlow";
 import { resolveRuleProfile, type RuleProfile } from "../lib/ruleProfile";
+import { parseEffectArgsJson } from "../lib/effectArgs";
+import {
+    canPlayBattleOption,
+    canPlayEvolutionOption,
+    canPlayPrepOption,
+    canUseAsBattleSupport,
+} from "../lib/optionEligibility";
+import {
+    applyBattleOptionToContext,
+    applyFullStatsFromCatalog,
+    canEvolveWithOption,
+    parseEvolutionModifiers,
+    resolvePrepOption,
+    shouldRestoreFullStatsAfterEvolve,
+    type OptionCardLike,
+} from "../lib/optionResolver";
 import {
     createSupportBattleContext,
     getEffectiveAttackDamage,
@@ -27,6 +42,7 @@ import {
 /** Set `DEBUG_BATTLE_ROOM=0` when starting the server to silence draw/deck-out traces. */
 const DEBUG_BATTLE_ROOM = process.env.DEBUG_BATTLE_ROOM !== "0";
 const CARD_CATALOG: NormalizedCardCatalogEntry[] = loadCardCatalog(cardsData);
+const CATALOG_BY_ID = new Map(CARD_CATALOG.map(c => [c.id, c]));
 
 export class BattleRoom extends Room<{ state: BattleStateSchema }> {
     private supportChoices = new Map<string, CardSchema | null>();
@@ -173,15 +189,25 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
                     if (typeof message.cardId !== "string") return;
                     this.deployDigimon(player, message.cardId);
                     break;
+                case "PLAY_PREP_OPTION":
+                    if (!isMyTurn || this.state.phase !== "preparation") return;
+                    if (typeof message.cardId !== "string") return;
+                    this.playPrepOption(player, message.cardId);
+                    break;
                 case "EVOLVE":
                     if (!isMyTurn || this.state.phase !== "preparation") return;
                     if (this.state.prepSubPhase !== "evolve") return;
                     if (typeof message.cardId !== "string") return;
                     {
                         const dpBefore = player.dp;
-                        const evolved = this.evolve(player, message.cardId);
+                        const evolutionOptionCardId =
+                            typeof message.evolutionOptionCardId === "string"
+                                ? message.evolutionOptionCardId
+                                : undefined;
+                        const evolved = this.evolve(player, message.cardId, evolutionOptionCardId);
                         this.audit("EVOLVE", player, evolved ? "ok" : "rejected", evolved ? undefined : "invalid_evolution", {
                             cardId: message.cardId,
+                            evolutionOptionCardId,
                             dpBefore,
                             dpAfter: player.dp,
                         });
@@ -290,6 +316,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             p.hp = 0;
             p.needsOpeningDeploy = true;
             p.mulligansRemaining = this.ruleProfile.mulligan.maxRedraws;
+            p.openingPenaltyActive = false;
 
             const deck = this.buildDeck30(playerIndex);
             this.shuffle(deck);
@@ -355,26 +382,37 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
     }
 
     private buildDeck30(playerIndex: number): CardSchema[] {
-        // Current online profile still seeds a Digimon-only deck from the normalized catalog.
-        const baseCards = CARD_CATALOG.filter(c => c.cardKind === "digimon");
+        const digimonCards = CARD_CATALOG.filter(c => c.cardKind === "digimon");
+        const optionCards = CARD_CATALOG.filter(
+            c => c.cardKind === "option" || c.cardKind === "evolution_option"
+        );
         const counts = new Map<string, number>();
         const deck: CardSchema[] = [];
 
-        // Deterministic-ish order per player by rotating start index.
-        const start = playerIndex % Math.max(1, baseCards.length);
+        const start = playerIndex % Math.max(1, digimonCards.length);
         let cursor = start;
         let serial = 1;
-        while (deck.length < 30 && baseCards.length > 0) {
-            const raw = baseCards[cursor];
-            cursor = (cursor + 1) % baseCards.length;
 
+        const pushCard = (raw: NormalizedCardCatalogEntry, maxCopies: number) => {
             const baseId = String(raw.id);
             const n = counts.get(baseId) ?? 0;
-            if (n >= 4) continue;
+            if (n >= maxCopies) return false;
             counts.set(baseId, n + 1);
-
             const instanceId = `p${playerIndex}_${baseId}_${serial++}`;
             deck.push(this.toSchemaCard(raw, instanceId));
+            return true;
+        };
+
+        // Seed a small option package for fidelity testing (max 1 copy each).
+        for (const raw of optionCards) {
+            if (deck.length >= 26) break;
+            pushCard(raw, 1);
+        }
+
+        while (deck.length < 30 && digimonCards.length > 0) {
+            const raw = digimonCards[cursor];
+            cursor = (cursor + 1) % digimonCards.length;
+            pushCard(raw, 4);
         }
         return deck;
     }
@@ -446,19 +484,161 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         }
     }
 
-    private evolve(player: PlayerSchema, cardId: string): boolean {
+    private toOptionCardView(card: CardSchema): OptionCardLike {
+        return {
+            id: card.id,
+            cardKind: card.cardKind,
+            effectId: card.effectId,
+            effectArgs: parseEffectArgsJson(card.effectArgsJson),
+            level: card.level,
+            type: card.type,
+            evoCost: card.evoCost,
+            maxHp: card.maxHp,
+            hp: card.hp,
+            circle: card.circle,
+            triangle: card.triangle,
+            cross: card.cross,
+        };
+    }
+
+    private catalogBaseId(instanceId: string): string {
+        const parts = instanceId.split("_");
+        return parts.length >= 2 ? parts[1] : instanceId;
+    }
+
+    private getCatalogStats(card: CardSchema) {
+        const baseId = this.catalogBaseId(card.id);
+        const entry = CATALOG_BY_ID.get(baseId);
+        if (!entry) return null;
+        return {
+            maxHp: entry.maxHp,
+            circle: entry.attacks.circle.damage,
+            triangle: entry.attacks.triangle.damage,
+            cross: entry.attacks.cross.damage,
+        };
+    }
+
+    private playPrepOption(player: PlayerSchema, cardId: string) {
         const idx = player.hand.findIndex(c => c.id === cardId);
-        if (idx === -1) return false;
-        const evo = player.hand[idx];
+        if (idx === -1) {
+            this.audit("PLAY_PREP_OPTION", player, "rejected", "card_not_in_hand", { cardId });
+            return;
+        }
+        const card = player.hand[idx];
+        const view = this.toOptionCardView(card);
+        if (
+            !canPlayPrepOption(
+                view,
+                this.state.prepSubPhase as "" | "mulligan" | "deploy" | "discard" | "evolve",
+                !!this.getActive(player)
+            )
+        ) {
+            this.audit("PLAY_PREP_OPTION", player, "rejected", "illegal_timing", { cardId });
+            return;
+        }
+
+        const dpBefore = player.dp;
+        const hpBefore = player.hp;
+        const prepState = {
+            dp: player.dp,
+            hp: player.hp,
+            maxHp: player.active?.maxHp ?? 0,
+            hand: player.hand as unknown as OptionCardLike[],
+            deck: player.deck as unknown as OptionCardLike[],
+            trash: player.trash as unknown as OptionCardLike[],
+        };
+        const result = resolvePrepOption(view, prepState, count => {
+            let drawn = 0;
+            for (let i = 0; i < count; i++) {
+                if (player.deck.length <= 0) break;
+                player.hand.push(player.deck.shift()!);
+                drawn++;
+            }
+            return drawn;
+        });
+
+        if (result.ok === false) {
+            this.audit("PLAY_PREP_OPTION", player, "rejected", result.reason, { cardId });
+            return;
+        }
+
+        player.dp = prepState.dp;
+        player.hp = prepState.hp;
+
+        player.hand.splice(idx, 1);
+        player.trash.push(card);
+        this.audit("PLAY_PREP_OPTION", player, "ok", undefined, {
+            cardId,
+            effectId: result.effectId,
+            dpBefore,
+            dpAfter: player.dp,
+            hpBefore,
+            hpAfter: player.hp,
+            detail: result.detail,
+        });
+        this.state.message = this.prepMessageFor(player);
+    }
+
+    private evolve(player: PlayerSchema, cardId: string, evolutionOptionCardId?: string): boolean {
+        const evoIdx = player.hand.findIndex(c => c.id === cardId);
+        if (evoIdx === -1) return false;
+        const evo = player.hand[evoIdx];
 
         const current = this.getActive(player);
-        if (!canEvolveDigimon(current, evo, player.dp)) return false;
+        if (!current) return false;
 
-        player.dp -= evo.evoCost;
-        player.hand.splice(idx, 1);
-        player.evolutionStack.push(evo);
-        player.active = evo;
-        player.hp = evo.maxHp;
+        let modifiers = parseEvolutionModifiers(null);
+        let optionIdx = -1;
+        if (evolutionOptionCardId) {
+            optionIdx = player.hand.findIndex(c => c.id === evolutionOptionCardId);
+            if (optionIdx === -1) return false;
+            const optionCard = player.hand[optionIdx];
+            const optionView = this.toOptionCardView(optionCard);
+            if (
+                !canPlayEvolutionOption(
+                    optionView,
+                    this.state.prepSubPhase as "" | "mulligan" | "deploy" | "discard" | "evolve",
+                    true
+                )
+            ) {
+                return false;
+            }
+            modifiers = parseEvolutionModifiers(optionView);
+        }
+
+        if (!canEvolveWithOption(current, evo, player.dp, modifiers)) return false;
+
+        const adjustedCost = Math.max(0, evo.evoCost + modifiers.dpCostDelta);
+        const fromLevel = current.level;
+
+        let digimonHandIdx = evoIdx;
+        if (optionIdx !== -1) {
+            const optionCard = player.hand.splice(optionIdx, 1)[0];
+            if (optionIdx < digimonHandIdx) digimonHandIdx -= 1;
+            player.trash.push(optionCard);
+        }
+
+        const evoCard = player.hand.splice(digimonHandIdx, 1)[0];
+        player.dp -= adjustedCost;
+        player.evolutionStack.push(evoCard);
+        player.active = evoCard;
+        player.hp = evoCard.maxHp;
+
+        const restore = shouldRestoreFullStatsAfterEvolve(
+            modifiers,
+            player.openingPenaltyActive,
+            fromLevel,
+            evoCard.level
+        );
+        if (restore) {
+            const stats = this.getCatalogStats(evoCard);
+            if (stats) {
+                applyFullStatsFromCatalog(evoCard, stats);
+                player.hp = evoCard.maxHp;
+            }
+            player.openingPenaltyActive = false;
+        }
+
         this.state.message = "Step 2: Evolve or end prep";
         return true;
     }
@@ -497,6 +677,9 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         if (validation.isOpening && validation.penaltyLevel) {
             const result = applyOpeningPenalty(card, this.ruleProfile);
             penaltyApplied = result.applied;
+            player.openingPenaltyActive = result.applied;
+        } else {
+            player.openingPenaltyActive = false;
         }
 
         player.active = card;
@@ -598,6 +781,9 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             const idx = player.hand.findIndex(c => c.id === cardId);
             if (idx === -1) return;
             chosen = player.hand[idx];
+            const view = this.toOptionCardView(chosen);
+            if (!canUseAsBattleSupport(view)) return;
+            if (chosen.cardKind === "option" && !canPlayBattleOption(view, this.state.phase)) return;
             player.hand.splice(idx, 1);
         }
 
@@ -637,8 +823,21 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         if (!active) return;
         const defender = sessions[0] === this.state.activePlayerSessionId ? p2 : p1;
 
-        const activeSupport = active.supportCard;
-        const defenderSupport = defender.supportCard;
+        let activeSupport = active.supportCard;
+        let defenderSupport = defender.supportCard;
+
+        if (activeSupport?.cardKind === "option") {
+            applyBattleOptionToContext(this.toOptionCardView(activeSupport), active.sessionId, this.supportCtx);
+            active.trash.push(activeSupport);
+            active.supportCard = null;
+            activeSupport = null;
+        }
+        if (defenderSupport?.cardKind === "option") {
+            applyBattleOptionToContext(this.toOptionCardView(defenderSupport), defender.sessionId, this.supportCtx);
+            defender.trash.push(defenderSupport);
+            defender.supportCard = null;
+            defenderSupport = null;
+        }
 
         resolveSupportPhase(active, defender, activeSupport, defenderSupport, this.supportCtx);
 

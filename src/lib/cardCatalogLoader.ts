@@ -47,6 +47,14 @@ export const KNOWN_EFFECT_IDS = new Set<string>([
     "support.halve_hp",
     "support.atk_buff",
     "support.hp_heal",
+    "option.prep.gain_dp",
+    "option.prep.draw",
+    "option.prep.heal_active",
+    "option.prep.fetch_trash_digimon",
+    "option.battle.atk_buff",
+    "evolution_option.warp_evolve",
+    "evolution_option.dp_adjust",
+    "evolution_option.restore_full_stats",
 ]);
 
 function toCardKind(rawKind: unknown): CardKind {

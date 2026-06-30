@@ -67,6 +67,7 @@ export interface PlayerState {
   attackLocked?: boolean;
   mulligansRemaining?: number;
   needsOpeningDeploy?: boolean;
+  openingPenaltyActive?: boolean;
 }
 
 export interface GameState {
