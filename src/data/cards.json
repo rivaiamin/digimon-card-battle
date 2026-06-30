@@ -57,7 +57,14 @@
     "attacks": {
       "circle": { "name": "Giga Destroyer", "damage": 450, "type": "circle", "description": "Nuclear missile." },
       "triangle": { "name": "Metal Slash", "damage": 320, "type": "triangle", "description": "Metal claw." },
-      "cross": { "name": "Tera Destroyer", "damage": 280, "type": "cross", "description": "Impact fire." }
+      "cross": {
+        "name": "Tera Destroyer",
+        "damage": 280,
+        "type": "cross",
+        "description": "Impact fire.",
+        "effectId": "cross.counter",
+        "effectArgs": { "targetAttack": "circle", "multiplier": 2 }
+      }
     },
     "supportEffect": {
       "type": "void_enemy_support",
@@ -78,7 +85,14 @@
     "attacks": {
       "circle": { "name": "Gaia Force", "damage": 600, "type": "circle", "description": "Energy blast." },
       "triangle": { "name": "Great Tornado", "damage": 450, "type": "triangle", "description": "Spinning drill." },
-      "cross": { "name": "Brave Shield", "damage": 300, "type": "cross", "description": "Defensive bash." }
+      "cross": {
+        "name": "Brave Shield",
+        "damage": 300,
+        "type": "cross",
+        "description": "Defensive bash.",
+        "effectId": "cross.crash",
+        "effectArgs": {}
+      }
     },
     "supportEffect": {
       "type": "atk_mult",
@@ -340,7 +354,14 @@
     "attacks": {
       "circle": { "name": "Death Claw", "damage": 260, "type": "circle", "description": "Evil claw grab." },
       "triangle": { "name": "Evil Wing", "damage": 180, "type": "triangle", "description": "Shadow flight." },
-      "cross": { "name": "Hell Contract", "damage": 140, "type": "cross", "description": "Dark pact." }
+      "cross": {
+        "name": "Hell Contract",
+        "damage": 140,
+        "type": "cross",
+        "description": "Dark pact.",
+        "effectId": "cross.to_zero",
+        "effectArgs": { "targetAttack": "circle" }
+      }
     },
     "supportEffect": {
       "type": "change_attack",
@@ -383,7 +404,14 @@
     "attacks": {
       "circle": { "name": "Trump Sword", "damage": 550, "type": "circle", "description": "Fly swords." },
       "triangle": { "name": "Clown Trick", "damage": 420, "type": "triangle", "description": "Magic box." },
-      "cross": { "name": "Ending Spell", "damage": 300, "type": "cross", "description": "Final breath." }
+      "cross": {
+        "name": "Ending Spell",
+        "damage": 300,
+        "type": "cross",
+        "description": "Final breath.",
+        "effectId": "cross.eat_up_hp",
+        "effectArgs": {}
+      }
     },
     "supportEffect": {
       "type": "void_enemy_support",

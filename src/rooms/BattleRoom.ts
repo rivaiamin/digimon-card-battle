@@ -33,11 +33,15 @@ import {
 } from "../lib/optionResolver";
 import {
     createSupportBattleContext,
-    getEffectiveAttackDamage,
     resolveSupportPhase,
     type AttackType,
     type SupportBattleContext,
 } from "../lib/supportResolver";
+import {
+    resolveFullBattle,
+    resolveKoScoring,
+    type BattleCombatant,
+} from "../lib/battleEffectEngine";
 
 /** Set `DEBUG_BATTLE_ROOM=0` when starting the server to silence draw/deck-out traces. */
 const DEBUG_BATTLE_ROOM = process.env.DEBUG_BATTLE_ROOM !== "0";
@@ -353,16 +357,28 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         card.circle.damage = Number(attacks?.circle?.damage ?? 0);
         card.circle.type = "circle";
         card.circle.description = String(attacks?.circle?.description ?? "");
+        card.circle.effectId = String(raw.attacks?.circle?.effectId ?? "");
+        card.circle.effectArgsJson = card.circle.effectId
+            ? JSON.stringify(raw.attacks?.circle?.effectArgs ?? {})
+            : "";
 
         card.triangle.name = String(attacks?.triangle?.name ?? "");
         card.triangle.damage = Number(attacks?.triangle?.damage ?? 0);
         card.triangle.type = "triangle";
         card.triangle.description = String(attacks?.triangle?.description ?? "");
+        card.triangle.effectId = String(raw.attacks?.triangle?.effectId ?? "");
+        card.triangle.effectArgsJson = card.triangle.effectId
+            ? JSON.stringify(raw.attacks?.triangle?.effectArgs ?? {})
+            : "";
 
         card.cross.name = String(attacks?.cross?.name ?? "");
         card.cross.damage = Number(attacks?.cross?.damage ?? 0);
         card.cross.type = "cross";
         card.cross.description = String(attacks.cross?.description ?? "");
+        card.cross.effectId = String(raw.attacks?.cross?.effectId ?? "");
+        card.cross.effectArgsJson = card.cross.effectId
+            ? JSON.stringify(raw.attacks?.cross?.effectArgs ?? {})
+            : "";
 
         const rawEffect = raw.supportEffect;
         if (rawEffect) {
@@ -839,7 +855,10 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             defenderSupport = null;
         }
 
-        resolveSupportPhase(active, defender, activeSupport, defenderSupport, this.supportCtx);
+        resolveSupportPhase(active, defender, activeSupport, defenderSupport, this.supportCtx, {
+            activeSessionId: this.state.activePlayerSessionId,
+            sessionOrder: sessions,
+        });
 
         this.state.phase = "battle_attack";
         this.state.message = "Battle Phase: Select Attack";
@@ -852,6 +871,34 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         player.attackLocked = true;
         this.attackChoices.set(sessionId, attack);
         this.maybeResolveBattle();
+    }
+
+    private toBattleCombatant(player: PlayerSchema): BattleCombatant {
+        const active = player.active;
+        return {
+            sessionId: player.sessionId,
+            hp: player.hp,
+            maxHp: active?.maxHp ?? player.hp,
+            active: active
+                ? {
+                      circle: {
+                          damage: active.circle.damage,
+                          effectId: active.circle.effectId,
+                          effectArgsJson: active.circle.effectArgsJson,
+                      },
+                      triangle: {
+                          damage: active.triangle.damage,
+                          effectId: active.triangle.effectId,
+                          effectArgsJson: active.triangle.effectArgsJson,
+                      },
+                      cross: {
+                          damage: active.cross.damage,
+                          effectId: active.cross.effectId,
+                          effectArgsJson: active.cross.effectArgsJson,
+                      },
+                  }
+                : null,
+        };
     }
 
     private maybeResolveBattle() {
@@ -873,27 +920,33 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         this.state.phase = "resolution";
         this.state.message = "Resolving Battle...";
 
-        const d1 = getEffectiveAttackDamage(p1, a1, this.supportCtx);
-        const d2 = getEffectiveAttackDamage(p2, a2, this.supportCtx);
+        const battle = resolveFullBattle(
+            this.toBattleCombatant(p1),
+            this.toBattleCombatant(p2),
+            a1,
+            a2,
+            this.state.activePlayerSessionId,
+            this.supportCtx
+        );
 
-        const p1First = this.supportCtx.firstStrikePlayers.has(p1.sessionId);
-        const p2First = this.supportCtx.firstStrikePlayers.has(p2.sessionId);
+        p1.hp = battle.p1Hp;
+        p2.hp = battle.p2Hp;
 
-        if (p1First && !p2First) {
-            p2.hp = Math.max(0, p2.hp - d1);
-            if (p2.hp > 0) p1.hp = Math.max(0, p1.hp - d2);
-        } else if (p2First && !p1First) {
-            p1.hp = Math.max(0, p1.hp - d2);
-            if (p1.hp > 0) p2.hp = Math.max(0, p2.hp - d1);
-        } else {
-            p2.hp = Math.max(0, p2.hp - d1);
-            p1.hp = Math.max(0, p1.hp - d2);
+        for (const event of battle.events) {
+            this.auditLog.emit({
+                turn: this.state.turn,
+                phase: "resolution",
+                prepSubPhase: "",
+                playerSessionId: event.sessionId ?? "",
+                action: event.type,
+                validation: "ok",
+                detail: event.detail,
+            });
         }
 
         this.resolveKOsAndMaybeEndGame();
         if (this.state.phase === "victory") return;
 
-        // End turn -> next player's draw
         this.endTurn();
     }
 
@@ -903,28 +956,28 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         const pA = this.state.players.get(sessions[0])!;
         const pB = this.state.players.get(sessions[1])!;
 
-        const aKO = pA.hp <= 0;
-        const bKO = pB.hp <= 0;
+        const ko = resolveKoScoring(pA.hp, pB.hp);
+        if (ko.scoreDelta.p1 === 0 && ko.scoreDelta.p2 === 0 && pA.hp > 0 && pB.hp > 0) return;
 
-        if (!aKO && !bKO) return;
-
-        if (aKO && bKO) {
-            // Double KO: trash both stacks; each player redeploys manually on their next prep phase
+        if (ko.isDoubleKo) {
             this.trashEvolutionStack(pA);
             this.trashEvolutionStack(pB);
             this.state.message = "Double KO — deploy a Digimon on your next turn";
             return;
         }
 
-        const winner = aKO ? pB : pA;
-        const loser = aKO ? pA : pB;
-        winner.score += 1;
+        if (pA.hp <= 0 || pB.hp <= 0) {
+            pA.score += ko.scoreDelta.p1;
+            pB.score += ko.scoreDelta.p2;
 
-        this.trashEvolutionStack(loser);
-        this.state.message = "KO — deploy a Digimon from your hand";
+            const loser = pA.hp <= 0 ? pA : pB;
+            const winner = pA.hp <= 0 ? pB : pA;
+            this.trashEvolutionStack(loser);
+            this.state.message = "KO — deploy a Digimon from your hand";
 
-        if (winner.score >= 3) {
-            this.endGame(loser.sessionId, "points");
+            if (winner.score >= 3) {
+                this.endGame(loser.sessionId, "points");
+            }
         }
     }
 

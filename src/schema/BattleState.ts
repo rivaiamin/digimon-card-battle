@@ -5,6 +5,9 @@ export class AttackSchema extends Schema {
     @type("number") damage: number = 0;
     @type("string") type: string = ""; // circle, triangle, cross
     @type("string") description: string = "";
+    /** Cross/special attack effect (e.g. cross.counter). */
+    @type("string") effectId: string = "";
+    @type("string") effectArgsJson: string = "";
 }
 
 export class SupportEffectSchema extends Schema {
