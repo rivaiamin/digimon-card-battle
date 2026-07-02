@@ -3,7 +3,7 @@ import { BattleStateSchema, PlayerSchema, CardSchema, SupportEffectSchema } from
 import cardsData from "../data/cards.json";
 import { getFirebaseAdminAuth } from "../server/firebaseAdmin";
 import { loadCardCatalog, type NormalizedCardCatalogEntry } from "../lib/cardCatalogLoader";
-import { BattleAuditLog } from "../lib/battleAuditLog";
+import { BattleAuditLog, snapshotPlayer, type StateDelta } from "../lib/battleAuditLog";
 import {
     applyOpeningPenalty,
     drawToTarget,
@@ -55,6 +55,7 @@ import {
 } from "../lib/arenaVariant";
 import { buildDefaultDeckCardIds } from "../lib/defaultDeckBuilder";
 import { validateDeck, formatDeckValidationError } from "../lib/deckValidator";
+import { createSeededRng, shuffleInPlace, type Rng } from "../lib/seededRng";
 import {
     AFK_FORFEIT_THRESHOLD,
     shouldForfeitAfk,
@@ -83,6 +84,8 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
     private arenaVariant: ArenaVariant = resolveArenaVariant("standard");
     private pendingDecks = new Map<string, string[]>();
     private auditLog = new BattleAuditLog();
+    private rng: Rng = Math.random;
+    private replaySeed: number | null = null;
 
     /** Pause on reveal so clients can play flip / hologram FX before effects resolve. */
     private static readonly REVEAL_MS = 1600;
@@ -96,6 +99,12 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         this.state = new BattleStateSchema();
         this.state.ruleProfileId = this.ruleProfile.id;
         this.state.arenaVariantId = this.arenaVariant.id;
+
+        if (typeof options?.replaySeed === "number") {
+            this.replaySeed = options.replaySeed;
+            this.rng = createSeededRng(options.replaySeed);
+            this.auditLog.setReplayMode(options.replaySeed);
+        }
 
         this.onMessage("action", (client, message) => {
             const player = this.state.players.get(client.sessionId);
@@ -437,10 +446,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
     }
 
     private shuffle<T>(arr: T[]) {
-        for (let i = arr.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [arr[i], arr[j]] = [arr[j], arr[i]];
-        }
+        shuffleInPlace(arr, this.rng);
     }
 
     // ----------------------------
@@ -1052,7 +1058,11 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
                 playerSessionId: event.sessionId ?? "",
                 action: event.type,
                 validation: "ok",
+                fidelityIds: ["FC-017", "FC-018", "FC-016"],
                 detail: event.detail,
+                stateDelta: {
+                    hp: event.sessionId === p1.sessionId ? battle.p1Hp : battle.p2Hp,
+                },
             });
         }
 
@@ -1075,6 +1085,16 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             this.trashEvolutionStack(pA);
             this.trashEvolutionStack(pB);
             this.state.message = "Double KO — deploy a Digimon on your next turn";
+            this.auditLog.emit({
+                turn: this.state.turn,
+                phase: this.state.phase,
+                prepSubPhase: "",
+                playerSessionId: "",
+                action: "DOUBLE_KO",
+                validation: "ok",
+                fidelityIds: ["FC-005", "FC-019"],
+                detail: { p1Hp: pA.hp, p2Hp: pB.hp },
+            });
             return;
         }
 
@@ -1086,6 +1106,26 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             const winner = pA.hp <= 0 ? pB : pA;
             this.trashEvolutionStack(loser);
             this.state.message = "KO — deploy a Digimon from your hand";
+
+            this.auditLog.emit({
+                turn: this.state.turn,
+                phase: this.state.phase,
+                prepSubPhase: "",
+                playerSessionId: winner.sessionId,
+                action: "KO_SCORE",
+                validation: "ok",
+                fidelityIds: ["FC-005"],
+                stateDelta: {
+                    score: winner.score,
+                },
+                detail: {
+                    winnerSessionId: winner.sessionId,
+                    loserSessionId: loser.sessionId,
+                    p1Score: pA.score,
+                    p2Score: pB.score,
+                    delta: ko.scoreDelta,
+                },
+            });
 
             if (winner.score >= 3) {
                 this.endGame(loser.sessionId, "points");
@@ -1146,6 +1186,10 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             this.state.message = "Match forfeited (AFK)";
         } else {
             this.state.message = "Match Over";
+        }
+
+        if (this.replaySeed != null && DEBUG_BATTLE_ROOM) {
+            console.log("[BattleRoom:replay]", this.auditLog.exportJson());
         }
     }
 
@@ -1415,7 +1459,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             if (player.attackLocked) continue;
             this.auditPhaseTimeout(phaseKey, [player.sessionId], "auto_random_attack");
             if (this.applyTimeoutStrike(player.sessionId)) return;
-            this.lockAttack(player.sessionId, pickRandomAttack());
+            this.lockAttack(player.sessionId, pickRandomAttack(this.rng));
         }
     }
 
@@ -1424,7 +1468,8 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         player: PlayerSchema,
         validation: "ok" | "rejected",
         reason?: string,
-        detail?: Record<string, unknown>
+        detail?: Record<string, unknown>,
+        extra?: { fidelityIds?: string[]; stateDelta?: StateDelta }
     ) {
         this.auditLog.emit({
             turn: this.state.turn,
@@ -1434,9 +1479,14 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             action,
             validation,
             reason,
+            fidelityIds: extra?.fidelityIds,
             handSize: player.hand.length,
             deckSize: player.deck.length,
-            detail,
+            stateDelta: extra?.stateDelta,
+            detail: {
+                ...detail,
+                player: snapshotPlayer(player),
+            },
         });
     }
 
