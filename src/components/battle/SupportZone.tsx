@@ -10,6 +10,8 @@ type SupportZoneProps = {
     supportLocked: boolean;
     /** Client-only face-down preview after locking (before server reveal). */
     committedFaceDown?: DigimonCardData | null;
+    /** Staggered flip order during battle_reveal (defender reveals first). */
+    revealOrder?: "first" | "second" | null;
     onHover?: (data: DigimonCardData | null) => void;
 };
 
@@ -19,9 +21,11 @@ export const SupportZone: React.FC<SupportZoneProps> = ({
     supportCard,
     supportLocked,
     committedFaceDown,
+    revealOrder = null,
     onHover,
 }) => {
     const isReveal = phase === "battle_reveal";
+    const revealDelay = isReveal && revealOrder === "second" ? 0.38 : 0;
     const isSupportPhase = phase === "battle_support";
     const showFaceDown =
         isSupportPhase && supportLocked && !supportCard && committedFaceDown;
@@ -38,15 +42,21 @@ export const SupportZone: React.FC<SupportZoneProps> = ({
             className={`${positionClass} z-20`}
             initial={false}
             animate={{
-                scale: isReveal ? [0.75, 1.05, 1] : 0.75,
-                rotateY: showFaceDown || showOpponentBack ? 180 : 0,
+                scale: isReveal ? [0.6, 1.12, 1] : showRevealed ? 0.85 : 0.75,
+                rotateY: isReveal && showRevealed
+                    ? [180, -8, 0]
+                    : showFaceDown || showOpponentBack
+                      ? 180
+                      : 0,
                 opacity: showRevealed ? 1 : 0.85,
+                y: isReveal && showRevealed ? [24, -6, 0] : 0,
             }}
             transition={{
-                duration: isReveal ? 0.55 : 0.35,
-                ease: "easeOut",
+                duration: isReveal ? 0.65 : 0.35,
+                delay: revealDelay,
+                ease: isReveal ? [0.22, 1, 0.36, 1] : "easeOut",
             }}
-            style={{ transformStyle: "preserve-3d", perspective: 800 }}
+            style={{ transformStyle: "preserve-3d", perspective: 900 }}
         >
             {showRevealed && supportCard && (
                 <>
@@ -59,15 +69,28 @@ export const SupportZone: React.FC<SupportZoneProps> = ({
                                     : "radial-gradient(circle, rgba(255,60,60,0.6) 0%, transparent 70%)",
                         }}
                         initial={{ opacity: 0, scale: 0.5 }}
-                        animate={{ opacity: [0, 0.6, 0.35], scale: [0.5, 1.2, 1] }}
-                        transition={{ duration: 0.8 }}
+                        animate={
+                            isReveal
+                                ? { opacity: [0, 0.85, 0.45], scale: [0.4, 1.35, 1] }
+                                : { opacity: [0, 0.6, 0.35], scale: [0.5, 1.2, 1] }
+                        }
+                        transition={{ duration: isReveal ? 0.9 : 0.8, delay: revealDelay }}
                     />
-                    <DigimonCard
-                        data={supportCard}
-                        variant="mini"
-                        isOpponent={side === "opponent"}
-                        onHover={onHover}
-                    />
+                    <motion.div
+                        animate={
+                            isReveal
+                                ? { rotateZ: [12, -4, 0] }
+                                : { rotateZ: side === "player" ? 12 : -12 }
+                        }
+                        transition={{ duration: 0.55, delay: revealDelay }}
+                    >
+                        <DigimonCard
+                            data={supportCard}
+                            variant="mini"
+                            isOpponent={side === "opponent"}
+                            onHover={onHover}
+                        />
+                    </motion.div>
                 </>
             )}
 

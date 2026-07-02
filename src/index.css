@@ -62,3 +62,31 @@ body {
 .text-ps-red { color: #ff3c3c; }
 .text-ps-blue { color: #3c9bff; }
 .text-ps-yellow { color: #ffcb00; }
+
+.reveal-vignette::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 35%,
+    rgba(60, 155, 255, 0.12) 65%,
+    rgba(255, 60, 60, 0.18) 100%
+  );
+  animation: reveal-vignette-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes reveal-vignette-pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+.timer-critical-shake {
+  animation: timer-critical-shake 0.14s ease-in-out infinite;
+}
+
+@keyframes timer-critical-shake {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-3px, 1px); }
+  75% { transform: translate(3px, -1px); }
+}

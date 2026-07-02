@@ -10,10 +10,13 @@ import { BattleStateSchema } from "../schema/BattleState";
 import { useAudio } from "../context/AudioProvider";
 import { useBattleAudio } from "../hooks/useBattleAudio";
 import { useBattleVfx } from "../hooks/useBattleVfx";
+import { usePhaseTimerCritical } from "../hooks/usePhaseTimerCritical";
 import { ImpactFlash } from "./battle/ImpactFlash";
 import { DamagePopups } from "./battle/DamagePopups";
 import { SupportZone } from "./battle/SupportZone";
 import { PhaseTimer } from "./battle/PhaseTimer";
+import { AttackRevealOverlay } from "./battle/AttackRevealOverlay";
+import { BattleRevealVignette } from "./battle/BattleRevealVignette";
 import { canEvolveDigimon, matchesEvolutionType } from "../lib/evolutionEligibility";
 import { validateDeployDigimon } from "../lib/openingFlow";
 import { getRuleProfile } from "../lib/ruleProfile";
@@ -155,6 +158,26 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
 
     useBattleAudio(gameState, room.sessionId);
     const vfx = useBattleVfx(gameState);
+    const timerCritical = usePhaseTimerCritical(gameState.phaseEndsAtMs);
+
+    const suppressMessageOverlay =
+        vfx.reveal.active ||
+        vfx.isAnimating ||
+        gameState.phase === "battle_reveal";
+
+    /** Defender (non-active player) reveals support first during battle_reveal. */
+    const playerRevealOrder: "first" | "second" | null =
+        gameState.phase === "battle_reveal"
+            ? gameState.isPlayerTurn
+                ? "second"
+                : "first"
+            : null;
+    const opponentRevealOrder: "first" | "second" | null =
+        gameState.phase === "battle_reveal"
+            ? gameState.isPlayerTurn
+                ? "first"
+                : "second"
+            : null;
 
     const displayPlayerHp = vfx.displayPlayerHp ?? gameState.player.hp;
     const displayOpponentHp = vfx.displayOpponentHp ?? gameState.opponent.hp;
@@ -434,10 +457,21 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
     }
 
     return (
-        <div className="relative w-screen h-screen overflow-hidden bg-black flex items-center justify-center perspective-stage">
+        <div className={`relative w-screen h-screen overflow-hidden bg-black flex items-center justify-center perspective-stage ${timerCritical ? "timer-critical-shake" : ""}`}>
             <div className="scanlines" />
 
+            <BattleRevealVignette
+                visible={vfx.reveal.stage === "support"}
+                label="SUPPORT REVEAL"
+            />
+            <AttackRevealOverlay
+                visible={vfx.reveal.stage === "attacks"}
+                playerAttack={vfx.reveal.playerAttack}
+                opponentAttack={vfx.reveal.opponentAttack}
+            />
+
             {/* MESSAGE OVERLAY */}
+            {!suppressMessageOverlay && (
             <div className="absolute top-1/4 left-0 w-full flex justify-center z-[70] pointer-events-none">
                 <motion.div 
                     key={gameState.message}
@@ -450,6 +484,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                     </span>
                 </motion.div>
             </div>
+            )}
 
             {/* ARENA FLOOR */}
             <ImpactFlash color={vfx.flashColor} />
@@ -505,6 +540,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                             supportCard={gameState.player.supportCard}
                             supportLocked={!!gameState.player.supportLocked}
                             committedFaceDown={committedSupport}
+                            revealOrder={playerRevealOrder}
                             onHover={setHoveredCard}
                         />
                     </div>
@@ -526,6 +562,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                             phase={gameState.phase}
                             supportCard={gameState.opponent.supportCard}
                             supportLocked={!!gameState.opponent.supportLocked}
+                            revealOrder={opponentRevealOrder}
                             onHover={setHoveredCard}
                         />
                     </div>
