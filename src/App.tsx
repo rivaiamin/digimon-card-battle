@@ -5,6 +5,7 @@
 
 import { Arena } from "./components/Arena";
 import { AudioSettings } from "./components/AudioSettings";
+import { ThemeToggle } from "./components/ThemeToggle";
 import { HomeScreen } from "./components/HomeScreen";
 import { useAudio } from "./context/AudioProvider";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -72,23 +73,26 @@ export default function App() {
   }, [room]);
 
   return (
-    <div className="w-full h-screen">
-      <AudioSettings className="fixed top-4 right-4 z-[500]" />
+    <div className="w-full h-screen bg-app text-fg">
+      <div className="fixed top-4 right-4 z-[500] flex items-center gap-2">
+        <ThemeToggle />
+        <AudioSettings />
+      </div>
       {screen === "home" && <HomeScreen onJoinMatch={handleJoin} joinError={joinError} />}
 
       {screen === "queueing" && (
-        <div className="relative w-screen h-screen bg-black overflow-hidden flex items-center justify-center">
+        <div className="relative w-screen h-screen jrpg-map-bg overflow-hidden flex items-center justify-center">
           <div className="scanlines" />
-          <div className="digital-grid rounded-2xl border border-white/10 bg-black/60 p-8 text-center">
+          <div className="digital-grid rounded-2xl border border-line bg-surface p-10 text-center shadow-[0_0_60px_rgba(60,155,255,0.12)]">
             <div className="text-4xl font-black italic text-ps-blue tracking-tighter">
               FINDING OPPONENT...
             </div>
-            <div className="mt-3 text-white/40 text-xs font-mono uppercase tracking-widest animate-pulse">
+            <div className="mt-4 text-muted text-sm font-mono uppercase tracking-widest animate-pulse">
               Waiting for another player — no time limit
             </div>
             <button
               onClick={handleCancel}
-              className="mt-10 bg-ps-red text-white px-8 py-4 font-black italic border-4 border-white hover:bg-white hover:text-ps-red"
+              className="mt-10 bg-ps-red text-white px-8 py-4 font-black italic border-4 border-fg hover:bg-fg hover:text-ps-red transition-colors"
             >
               CANCEL
             </button>

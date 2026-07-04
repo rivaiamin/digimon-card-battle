@@ -1,19 +1,79 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Outfit:wght@400;600;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Outfit:wght@400;500;600;900&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --color-app: var(--app);
+  --color-surface: var(--surface);
+  --color-surface-strong: var(--surface-strong);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-inset: var(--inset);
+  --color-panel: var(--panel);
+  --color-overlay: var(--overlay);
 }
 
-:root {
-  --arena-green: #00ff88;
-  --arena-dark: #050a12;
+:root,
+[data-theme="dark"] {
+  --app: #050a12;
+  --surface: rgba(0, 0, 0, 0.82);
+  --surface-strong: rgba(0, 0, 0, 0.95);
+  --fg: #ffffff;
+  --muted: rgba(255, 255, 255, 0.55);
+  --line: rgba(255, 255, 255, 0.18);
+  --inset: rgba(255, 255, 255, 0.06);
+  --panel: rgba(0, 0, 0, 0.88);
+  --overlay: rgba(0, 0, 0, 0.9);
+  --grid-line: rgba(0, 255, 136, 0.1);
+  --scanline-a: rgba(18, 16, 16, 0);
+  --scanline-b: rgba(0, 0, 0, 0.1);
+  --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  --map-fill: #1a2332;
+}
+
+[data-theme="light"] {
+  --app: #f4f5f7;
+  --surface: rgba(255, 255, 255, 0.88);
+  --surface-strong: #ffffff;
+  --fg: #1a1a1a;
+  --muted: #6b7280;
+  --line: rgba(0, 0, 0, 0.12);
+  --inset: rgba(0, 0, 0, 0.04);
+  --panel: rgba(255, 255, 255, 0.92);
+  --overlay: rgba(244, 245, 247, 0.94);
+  --grid-line: rgba(0, 0, 0, 0.06);
+  --scanline-a: rgba(255, 255, 255, 0);
+  --scanline-b: rgba(0, 0, 0, 0.03);
+  --card-shadow: 0 10px 28px rgba(26, 40, 60, 0.12);
+  --map-fill: #e5e7eb;
+}
+
+/* System preference before JS sets data-theme */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    --app: #f4f5f7;
+    --surface: rgba(255, 255, 255, 0.88);
+    --surface-strong: #ffffff;
+    --fg: #1a1a1a;
+    --muted: #6b7280;
+    --line: rgba(0, 0, 0, 0.12);
+    --inset: rgba(0, 0, 0, 0.04);
+    --panel: rgba(255, 255, 255, 0.92);
+    --overlay: rgba(244, 245, 247, 0.94);
+    --grid-line: rgba(0, 0, 0, 0.06);
+    --scanline-a: rgba(255, 255, 255, 0);
+    --scanline-b: rgba(0, 0, 0, 0.03);
+    --card-shadow: 0 10px 28px rgba(26, 40, 60, 0.12);
+    --map-fill: #e5e7eb;
+  }
 }
 
 body {
-  background-color: var(--arena-dark);
-  color: white;
+  background-color: var(--app);
+  color: var(--fg);
   overflow: hidden;
   font-family: var(--font-sans);
 }
@@ -36,32 +96,83 @@ body {
   width: 100%;
   height: 100%;
   background: linear-gradient(
-    rgba(18, 16, 16, 0) 50%,
-    rgba(0, 0, 0, 0.1) 50%
+    var(--scanline-a) 50%,
+    var(--scanline-b) 50%
   );
   background-size: 100% 4px;
   z-index: 100;
   pointer-events: none;
 }
 
+[data-theme="light"] .scanlines {
+  opacity: 0.35;
+}
+
 .digital-grid {
-  background-image: 
-    linear-gradient(to right, rgba(0, 255, 136, 0.1) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(0, 255, 136, 0.1) 1px, transparent 1px);
+  background-image:
+    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
   background-size: 60px 60px;
 }
 
-.card-shadow {
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+/* Faint map silhouette for menu screens (JRPG light reference) */
+.jrpg-map-bg {
+  background-color: var(--app);
+  background-image: url("data:image/svg+xml,%3Csvg width='800' height='400' viewBox='0 0 800 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M100 150 Q 150 100 200 120 T 300 130 T 400 100 T 500 140 T 600 110 T 700 150 Q 750 180 750 250 Q 700 300 600 280 T 500 310 T 400 290 T 300 320 T 200 280 T 100 300 Q 50 250 100 150 Z' fill='%23e5e7eb' opacity='0.45'/%3E%3Cpath d='M450 80 Q 500 50 550 70 T 650 60 Q 680 100 650 140 T 550 120 T 450 140 Q 420 110 450 80 Z' fill='%23e5e7eb' opacity='0.35'/%3E%3C/svg%3E");
+  background-size: 120% auto;
+  background-position: center center;
+  background-repeat: no-repeat;
 }
 
-/* PS1 Palette */
+[data-theme="dark"] .jrpg-map-bg {
+  background-image: url("data:image/svg+xml,%3Csvg width='800' height='400' viewBox='0 0 800 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M100 150 Q 150 100 200 120 T 300 130 T 400 100 T 500 140 T 600 110 T 700 150 Q 750 180 750 250 Q 700 300 600 280 T 500 310 T 400 290 T 300 320 T 200 280 T 100 300 Q 50 250 100 150 Z' fill='%231a2332' opacity='0.5'/%3E%3Cpath d='M450 80 Q 500 50 550 70 T 650 60 Q 680 100 650 140 T 550 120 T 450 140 Q 420 110 450 80 Z' fill='%231a2332' opacity='0.35'/%3E%3C/svg%3E");
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .jrpg-map-bg {
+    background-image: url("data:image/svg+xml,%3Csvg width='800' height='400' viewBox='0 0 800 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M100 150 Q 150 100 200 120 T 300 130 T 400 100 T 500 140 T 600 110 T 700 150 Q 750 180 750 250 Q 700 300 600 280 T 500 310 T 400 290 T 300 320 T 200 280 T 100 300 Q 50 250 100 150 Z' fill='%231a2332' opacity='0.5'/%3E%3Cpath d='M450 80 Q 500 50 550 70 T 650 60 Q 680 100 650 140 T 550 120 T 450 140 Q 420 110 450 80 Z' fill='%231a2332' opacity='0.35'/%3E%3C/svg%3E");
+  }
+}
+
+.card-shadow {
+  box-shadow: var(--card-shadow);
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Theme-aware card art blend: screen on dark, normal on light */
+.card-art-blend {
+  mix-blend-mode: screen;
+}
+
+[data-theme="light"] .card-art-blend {
+  mix-blend-mode: normal;
+  opacity: 0.9;
+}
+
+/* PS1 Palette (fills stay bright; text variants darken in light mode for contrast) */
 .bg-ps-red { background-color: #ff3c3c; }
 .bg-ps-blue { background-color: #3c9bff; }
 .bg-ps-yellow { background-color: #ffcb00; }
+.bg-ps-green { background-color: #00ff88; }
 .text-ps-red { color: #ff3c3c; }
 .text-ps-blue { color: #3c9bff; }
 .text-ps-yellow { color: #ffcb00; }
+.text-ps-green { color: #00ff88; }
+
+[data-theme="light"] .text-ps-red { color: #c41e1e; }
+[data-theme="light"] .text-ps-blue { color: #1a6fd4; }
+[data-theme="light"] .text-ps-yellow { color: #a16207; }
+[data-theme="light"] .text-ps-green { color: #0d7a4a; }
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) .text-ps-red { color: #c41e1e; }
+  :root:not([data-theme]) .text-ps-blue { color: #1a6fd4; }
+  :root:not([data-theme]) .text-ps-yellow { color: #a16207; }
+  :root:not([data-theme]) .text-ps-green { color: #0d7a4a; }
+}
 
 .reveal-vignette::before {
   content: "";
@@ -74,6 +185,15 @@ body {
     rgba(255, 60, 60, 0.18) 100%
   );
   animation: reveal-vignette-pulse 1.4s ease-in-out infinite;
+}
+
+[data-theme="light"] .reveal-vignette::before {
+  background: radial-gradient(
+    ellipse at center,
+    transparent 35%,
+    rgba(60, 155, 255, 0.1) 65%,
+    rgba(255, 60, 60, 0.12) 100%
+  );
 }
 
 @keyframes reveal-vignette-pulse {

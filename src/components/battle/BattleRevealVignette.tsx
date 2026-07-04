@@ -25,8 +25,8 @@ export const BattleRevealVignette: React.FC<BattleRevealVignetteProps> = ({
                     exit={{ y: -20, opacity: 0 }}
                     className="absolute top-[12%] left-1/2 -translate-x-1/2"
                 >
-                    <div className="bg-black/80 border-2 border-white/60 px-12 py-2 skew-x-[-18deg] shadow-[0_0_30px_rgba(60,155,255,0.4)]">
-                        <span className="block skew-x-[18deg] text-2xl font-black italic text-white tracking-[0.2em]">
+                    <div className="bg-surface-strong border-2 border-line px-12 py-2 skew-x-[-18deg] shadow-[0_0_30px_rgba(60,155,255,0.4)]">
+                        <span className="block skew-x-[18deg] text-2xl font-black italic text-fg tracking-[0.2em]">
                             {label}
                         </span>
                     </div>

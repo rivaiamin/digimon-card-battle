@@ -27,7 +27,7 @@ export const DamagePopups: React.FC<{ popups: DamagePopup[] }> = ({ popups }) =>
         >
           <span
             className={`block font-black italic tracking-tighter drop-shadow-[0_0_12px_rgba(255,60,60,0.9)] skew-x-[-12deg] ${
-              popup.isHeavy ? "text-7xl text-ps-yellow" : "text-5xl text-white"
+              popup.isHeavy ? "text-7xl text-ps-yellow" : "text-5xl text-fg"
             }`}
           >
             -{popup.amount}
