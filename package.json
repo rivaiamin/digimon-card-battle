@@ -12,7 +12,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:fidelity": "vitest run src/lib/fidelityScenarios.test.ts --reporter=verbose",
-    "fidelity:report": "tsx scripts/fidelity-report.ts"
+    "fidelity:report": "tsx scripts/fidelity-report.ts",
+    "cards:build": "tsx scripts/buildCardCatalog.ts"
   },
   "dependencies": {
     "@colyseus/core": "0.17.42",
