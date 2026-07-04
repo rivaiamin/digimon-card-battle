@@ -13,7 +13,8 @@
     "test:watch": "vitest",
     "test:fidelity": "vitest run src/lib/fidelityScenarios.test.ts --reporter=verbose",
     "fidelity:report": "tsx scripts/fidelity-report.ts",
-    "cards:build": "tsx scripts/buildCardCatalog.ts && tsx scripts/buildEffectCatalog.ts"
+    "cards:build": "tsx scripts/buildCardCatalog.ts && tsx scripts/buildEffectCatalog.ts",
+    "decks:build": "python3 tools/parse_base_decks.py"
   },
   "dependencies": {
     "@colyseus/core": "0.17.42",

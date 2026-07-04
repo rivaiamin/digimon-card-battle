@@ -2,8 +2,13 @@ import type { NormalizedCardCatalogEntry } from "./cardCatalogLoader";
 import type { ArenaVariant } from "./arenaVariant";
 import {
     CANONICAL_DECK_CONSTRAINTS,
+    UNIQUE_CARD_NAME_NORMS,
     type DeckConstraints,
 } from "./deckConstraints";
+
+function nameNorm(name: string): string {
+    return name.toLowerCase().replace(/[^a-z0-9]+/g, "");
+}
 
 export type DeckValidationResult =
     | { ok: true }
@@ -74,7 +79,8 @@ export function validateDeck(
 
         const next = (copyCounts.get(cardId) ?? 0) + 1;
         copyCounts.set(cardId, next);
-        const maxCopies = constraints.maxCopiesByKind[entry.cardKind] ?? 4;
+        const unique = UNIQUE_CARD_NAME_NORMS.has(nameNorm(entry.name));
+        const maxCopies = unique ? 1 : (constraints.maxCopiesByKind[entry.cardKind] ?? 4);
         if (next > maxCopies) {
             return {
                 ok: false,

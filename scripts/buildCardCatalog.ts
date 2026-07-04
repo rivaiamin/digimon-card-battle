@@ -372,7 +372,8 @@ function optionImage(id: string, fallback: string): string {
 function mapOptionCard(opt: SourceOption): OutCard {
     const id = opt.number.padStart(3, "0");
     const effect = cleanEffectText(opt.effect);
-    const name = opt.name.trim();
+    // Prefer Circle/Triangle/Cross labels; FAQ decks also use O for Circle.
+    const name = cleanEffectText(opt.name).replace(/\bCircle\b/g, "Circle");
     const speed = num(opt.speed);
     const image = optionImage(id, opt.img_src);
 

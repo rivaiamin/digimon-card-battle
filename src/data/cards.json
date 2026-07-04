@@ -8806,7 +8806,7 @@
   },
   {
     "id": "222",
-    "name": "Mega Def. Disk {{button|c}}",
+    "name": "Mega Def. Disk Circle",
     "cardKind": "option",
     "level": "",
     "type": "Rare",
@@ -8824,7 +8824,7 @@
   },
   {
     "id": "223",
-    "name": "Mega Def. Disk {{button|t}}",
+    "name": "Mega Def. Disk Triangle",
     "cardKind": "option",
     "level": "",
     "type": "Rare",
@@ -8842,7 +8842,7 @@
   },
   {
     "id": "224",
-    "name": "Mega Def. Disk {{button|x}}",
+    "name": "Mega Def. Disk Cross",
     "cardKind": "option",
     "level": "",
     "type": "Rare",
@@ -9625,7 +9625,7 @@
   },
   {
     "id": "267",
-    "name": "Attack Disk {{button|c}}",
+    "name": "Attack Disk Circle",
     "cardKind": "option",
     "level": "",
     "type": "Rare",
@@ -9643,7 +9643,7 @@
   },
   {
     "id": "268",
-    "name": "Attack Disk {{button|t}}",
+    "name": "Attack Disk Triangle",
     "cardKind": "option",
     "level": "",
     "type": "Rare",
@@ -9661,7 +9661,7 @@
   },
   {
     "id": "269",
-    "name": "Attack Disk {{button|x}}",
+    "name": "Attack Disk Cross",
     "cardKind": "option",
     "level": "",
     "type": "Rare",
@@ -9679,7 +9679,7 @@
   },
   {
     "id": "270",
-    "name": "Defense Disk {{button|c}}",
+    "name": "Defense Disk Circle",
     "cardKind": "option",
     "level": "",
     "type": "Rare",
@@ -9697,7 +9697,7 @@
   },
   {
     "id": "271",
-    "name": "Defense Disk {{button|t}}",
+    "name": "Defense Disk Triangle",
     "cardKind": "option",
     "level": "",
     "type": "Rare",
@@ -9715,7 +9715,7 @@
   },
   {
     "id": "272",
-    "name": "Defense Disk {{button|x}}",
+    "name": "Defense Disk Cross",
     "cardKind": "option",
     "level": "",
     "type": "Rare",
