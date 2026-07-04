@@ -10,6 +10,8 @@
     "plusDp": 10,
     "evoCost": 60,
     "image": "https://static.wikia.nocookie.net/digimon/images/2/24/Imperialdramon_000_%28DDCB%29.jpg/revision/latest?cb=20160330215248",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Mega Fire",
@@ -31,7 +33,8 @@
         "effectId": "cross.counter",
         "effectArgs": {
           "targetAttack": "circle",
-          "multiplier": 2
+          "multiplier": 2,
+          "priority": 1
         }
       }
     },
@@ -53,6 +56,8 @@
     "plusDp": 20,
     "evoCost": 60,
     "image": "https://digi-api.com/images/digimon/w/Omegamon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Transcendent Sword",
@@ -74,7 +79,8 @@
         "effectId": "cross.counter",
         "effectArgs": {
           "targetAttack": "cross",
-          "multiplier": 2
+          "multiplier": 2,
+          "priority": 1
         }
       }
     },
@@ -96,6 +102,8 @@
     "plusDp": 20,
     "evoCost": 50,
     "image": "https://digi-api.com/images/digimon/w/War_Greymon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Terra Force",
@@ -113,7 +121,10 @@
         "name": "Dramon Cutter",
         "damage": 380,
         "type": "cross",
-        "description": "Ice Foe x3"
+        "description": "Ice Foe x3",
+        "effectArgs": {
+          "priority": 1
+        }
       }
     },
     "supportEffect": {
@@ -134,6 +145,8 @@
     "plusDp": 20,
     "evoCost": 40,
     "image": "https://digi-api.com/images/digimon/w/Hououmon.png",
+    "xEffectSpeed": 2,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Crimson Flame",
@@ -153,7 +166,9 @@
         "type": "cross",
         "description": "Eat-Up HP",
         "effectId": "cross.eat_up_hp",
-        "effectArgs": {}
+        "effectArgs": {
+          "priority": 2
+        }
       }
     },
     "supportEffect": {
@@ -174,6 +189,8 @@
     "plusDp": 10,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Paildramon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Desperado Blaster",
@@ -194,7 +211,8 @@
         "description": "cross to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "cross"
+          "targetAttack": "cross",
+          "priority": 1
         }
       }
     },
@@ -216,6 +234,8 @@
     "plusDp": 10,
     "evoCost": 50,
     "image": "https://digi-api.com/images/digimon/w/Gigadramon.png",
+    "xEffectSpeed": 0,
+    "supportSpeed": 0,
     "attacks": {
       "circle": {
         "name": "Giga Byte Wing",
@@ -248,6 +268,8 @@
     "plusDp": 10,
     "evoCost": 40,
     "image": "https://digi-api.com/images/digimon/w/Metal_Greymon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Terra Destroyer",
@@ -269,7 +291,8 @@
         "effectId": "cross.counter",
         "effectArgs": {
           "targetAttack": "circle",
-          "multiplier": 2
+          "multiplier": 2,
+          "priority": 1
         }
       }
     },
@@ -292,6 +315,8 @@
     "plusDp": 20,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Garudamon.png",
+    "xEffectSpeed": 2,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Wing Blade",
@@ -309,7 +334,10 @@
         "name": "Eagle Claw",
         "damage": 320,
         "type": "cross",
-        "description": "1st Attack"
+        "description": "1st Attack",
+        "effectArgs": {
+          "priority": 2
+        }
       }
     },
     "supportEffect": {
@@ -330,6 +358,8 @@
     "plusDp": 20,
     "evoCost": 50,
     "image": "https://digi-api.com/images/digimon/w/Master_Tyranomon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Master Fire",
@@ -347,7 +377,10 @@
         "name": "Hyper Heat Blast",
         "damage": 370,
         "type": "cross",
-        "description": "Ice Foe x3"
+        "description": "Ice Foe x3",
+        "effectArgs": {
+          "priority": 1
+        }
       }
     },
     "supportEffect": {
@@ -370,6 +403,8 @@
     "plusDp": 10,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Metal_Greymon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Fire Blast",
@@ -391,7 +426,8 @@
         "effectId": "cross.counter",
         "effectArgs": {
           "targetAttack": "circle",
-          "multiplier": 2
+          "multiplier": 2,
+          "priority": 1
         }
       }
     },
@@ -413,6 +449,8 @@
     "plusDp": 20,
     "evoCost": 30,
     "image": "https://static.wikia.nocookie.net/digimon/images/6/64/Vermilimon_010_%28DDCB%29.jpg/revision/latest?cb=20160330213920",
+    "xEffectSpeed": 1,
+    "supportSpeed": 0,
     "attacks": {
       "circle": {
         "name": "Volcano Strike II",
@@ -434,7 +472,8 @@
         "effectId": "cross.counter",
         "effectArgs": {
           "targetAttack": "triangle",
-          "multiplier": 2
+          "multiplier": 2,
+          "priority": 1
         }
       }
     }
@@ -450,6 +489,8 @@
     "plusDp": 10,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Insekimon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Big Bang Blow",
@@ -470,7 +511,8 @@
         "description": "circle to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "circle"
+          "targetAttack": "circle",
+          "priority": 1
         }
       }
     },
@@ -492,6 +534,8 @@
     "plusDp": 10,
     "evoCost": 40,
     "image": "https://digi-api.com/images/digimon/w/XV-mon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Ex-Laser",
@@ -513,7 +557,8 @@
         "effectId": "cross.counter",
         "effectArgs": {
           "targetAttack": "circle",
-          "multiplier": 2
+          "multiplier": 2,
+          "priority": 1
         }
       }
     },
@@ -535,6 +580,8 @@
     "plusDp": 20,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Aquilamon.png",
+    "xEffectSpeed": 2,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Mach Impulse",
@@ -552,7 +599,10 @@
         "name": "Invisible Shot",
         "damage": 200,
         "type": "cross",
-        "description": "1st Attack"
+        "description": "1st Attack",
+        "effectArgs": {
+          "priority": 2
+        }
       }
     },
     "supportEffect": {
@@ -573,6 +623,8 @@
     "plusDp": 10,
     "evoCost": 40,
     "image": "https://digi-api.com/images/digimon/w/Greymon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Nova Blast",
@@ -594,7 +646,8 @@
         "effectId": "cross.counter",
         "effectArgs": {
           "targetAttack": "circle",
-          "multiplier": 2
+          "multiplier": 2,
+          "priority": 1
         }
       }
     },
@@ -616,6 +669,8 @@
     "plusDp": 10,
     "evoCost": 40,
     "image": "https://static.wikia.nocookie.net/digimon/images/6/64/Apemon_015_%28DDCB%29.jpg/revision/latest?cb=20160330214235",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Angry Spike",
@@ -637,7 +692,8 @@
         "effectId": "cross.counter",
         "effectArgs": {
           "targetAttack": "circle",
-          "multiplier": 2
+          "multiplier": 2,
+          "priority": 1
         }
       }
     },
@@ -659,6 +715,8 @@
     "plusDp": 20,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Tyranomon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 0,
     "attacks": {
       "circle": {
         "name": "Blaze Blaster",
@@ -676,7 +734,10 @@
         "name": "Wild Buster",
         "damage": 150,
         "type": "cross",
-        "description": "Nature Foe x3"
+        "description": "Nature Foe x3",
+        "effectArgs": {
+          "priority": 1
+        }
       }
     }
   },
@@ -691,6 +752,8 @@
     "plusDp": 10,
     "evoCost": 40,
     "image": "https://digi-api.com/images/digimon/w/Monochromon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 0,
     "attacks": {
       "circle": {
         "name": "Volcanic Strike",
@@ -711,7 +774,8 @@
         "description": "circle to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "circle"
+          "targetAttack": "circle",
+          "priority": 1
         }
       }
     }
@@ -727,6 +791,8 @@
     "plusDp": 10,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Meramon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Fireball",
@@ -744,7 +810,10 @@
         "name": "Heat Wave",
         "damage": 220,
         "type": "cross",
-        "description": "Ice Foe x3"
+        "description": "Ice Foe x3",
+        "effectArgs": {
+          "priority": 1
+        }
       }
     },
     "supportEffect": {
@@ -765,6 +834,8 @@
     "plusDp": 10,
     "evoCost": 40,
     "image": "https://static.wikia.nocookie.net/digimon/images/a/a3/Centarumon_019_%28DDCB%29.jpg/revision/latest?cb=20160330214557",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Solar Ray",
@@ -782,7 +853,10 @@
         "name": "Heat Uppercut",
         "damage": 220,
         "type": "cross",
-        "description": "Ice Foe x3"
+        "description": "Ice Foe x3",
+        "effectArgs": {
+          "priority": 1
+        }
       }
     },
     "supportEffect": {
@@ -803,6 +877,8 @@
     "plusDp": 10,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Birdramon.png",
+    "xEffectSpeed": 2,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Meteor Wing",
@@ -820,7 +896,10 @@
         "name": "Mach Grinder",
         "damage": 130,
         "type": "cross",
-        "description": "1st Attack"
+        "description": "1st Attack",
+        "effectArgs": {
+          "priority": 2
+        }
       }
     },
     "supportEffect": {
@@ -841,6 +920,8 @@
     "plusDp": 10,
     "evoCost": 40,
     "image": "https://digi-api.com/images/digimon/w/Tankmon.png",
+    "xEffectSpeed": 2,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Hyper Cannon",
@@ -858,7 +939,10 @@
         "name": "Sub Machine Gun",
         "damage": 120,
         "type": "cross",
-        "description": "1st Attack"
+        "description": "1st Attack",
+        "effectArgs": {
+          "priority": 2
+        }
       }
     },
     "supportEffect": {
@@ -879,6 +963,8 @@
     "plusDp": 20,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Red_Vegimon.png",
+    "xEffectSpeed": 0,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Rotten Rainballs",
@@ -917,6 +1003,8 @@
     "plusDp": 20,
     "evoCost": 40,
     "image": "https://digi-api.com/images/digimon/w/Pidmon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Fire Feather",
@@ -937,7 +1025,8 @@
         "description": "circle to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "circle"
+          "targetAttack": "circle",
+          "priority": 1
         }
       }
     },
@@ -959,6 +1048,8 @@
     "plusDp": 10,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Akatorimon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Chicken Red Eyes",
@@ -979,7 +1070,8 @@
         "description": "circle to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "circle"
+          "targetAttack": "circle",
+          "priority": 1
         }
       }
     },
@@ -1002,6 +1094,8 @@
     "plusDp": 10,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Bomber_Nanimon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Free Throw Bomb",
@@ -1021,7 +1115,9 @@
         "type": "cross",
         "description": "Crash",
         "effectId": "cross.crash",
-        "effectArgs": {}
+        "effectArgs": {
+          "priority": 1
+        }
       }
     },
     "supportEffect": {
@@ -1042,6 +1138,8 @@
     "plusDp": 10,
     "evoCost": 20,
     "image": "https://digi-api.com/images/digimon/w/Flare_Lizamon.png",
+    "xEffectSpeed": 0,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Blaze Buster",
@@ -1080,6 +1178,8 @@
     "plusDp": 20,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Agumon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Pepper Breath",
@@ -1100,7 +1200,8 @@
         "description": "circle to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "circle"
+          "targetAttack": "circle",
+          "priority": 1
         }
       }
     },
@@ -1123,6 +1224,8 @@
     "plusDp": 20,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Solarmon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 0,
     "attacks": {
       "circle": {
         "name": "Solar Flare",
@@ -1142,7 +1245,9 @@
         "type": "cross",
         "description": "Crash",
         "effectId": "cross.crash",
-        "effectArgs": {}
+        "effectArgs": {
+          "priority": 1
+        }
       }
     }
   },
@@ -1157,6 +1262,8 @@
     "plusDp": 20,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Piyomon.png",
+    "xEffectSpeed": 2,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Spiral Twister",
@@ -1174,7 +1281,10 @@
         "name": "Turbo Pecker",
         "damage": 130,
         "type": "cross",
-        "description": "1st Attack"
+        "description": "1st Attack",
+        "effectArgs": {
+          "priority": 2
+        }
       }
     },
     "supportEffect": {
@@ -1196,6 +1306,8 @@
     "plusDp": 20,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Muchomon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Tropical Beak",
@@ -1217,7 +1329,8 @@
         "effectId": "cross.counter",
         "effectArgs": {
           "targetAttack": "cross",
-          "multiplier": 2
+          "multiplier": 2,
+          "priority": 1
         }
       }
     },
@@ -1240,6 +1353,8 @@
     "plusDp": 20,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Candmon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Flame Bomber",
@@ -1261,7 +1376,8 @@
         "effectId": "cross.counter",
         "effectArgs": {
           "targetAttack": "circle",
-          "multiplier": 2
+          "multiplier": 2,
+          "priority": 1
         }
       }
     },
@@ -1284,6 +1400,8 @@
     "plusDp": 20,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Otamamon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Boiling Bubble",
@@ -1301,7 +1419,10 @@
         "name": "Magma Stream",
         "damage": 150,
         "type": "cross",
-        "description": "Ice Foe x3."
+        "description": "Ice Foe x3.",
+        "effectArgs": {
+          "priority": 1
+        }
       }
     },
     "supportEffect": {
@@ -1322,6 +1443,8 @@
     "plusDp": 20,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Goburimon.png",
+    "xEffectSpeed": 0,
+    "supportSpeed": 0,
     "attacks": {
       "circle": {
         "name": "Goburi Bomb",
@@ -1354,6 +1477,8 @@
     "plusDp": 10,
     "evoCost": 50,
     "image": "https://digi-api.com/images/digimon/w/Vikemon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 0,
     "attacks": {
       "circle": {
         "name": "Artic Blizzard",
@@ -1374,7 +1499,8 @@
         "description": "circle to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "circle"
+          "targetAttack": "circle",
+          "priority": 1
         }
       }
     }
@@ -1390,6 +1516,8 @@
     "plusDp": 10,
     "evoCost": 60,
     "image": "https://digi-api.com/images/digimon/w/Omegamon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Transcendent Sword",
@@ -1411,7 +1539,8 @@
         "effectId": "cross.counter",
         "effectArgs": {
           "targetAttack": "cross",
-          "multiplier": 2
+          "multiplier": 2,
+          "priority": 1
         }
       }
     },
@@ -1433,6 +1562,8 @@
     "plusDp": 20,
     "evoCost": 50,
     "image": "https://digi-api.com/images/digimon/w/Metal_Seadramon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 3,
     "attacks": {
       "circle": {
         "name": "River of Power",
@@ -1450,7 +1581,10 @@
         "name": "Poseidon's Divide",
         "damage": 400,
         "type": "cross",
-        "description": "Fire Foe x3"
+        "description": "Fire Foe x3",
+        "effectArgs": {
+          "priority": 1
+        }
       }
     },
     "supportEffect": {
@@ -1471,6 +1605,8 @@
     "plusDp": 20,
     "evoCost": 50,
     "image": "https://digi-api.com/images/digimon/w/Metal_Garurumon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Metal Wolf Claw",
@@ -1488,7 +1624,10 @@
         "name": "Giga Cross Freezer",
         "damage": 400,
         "type": "cross",
-        "description": "Fire Foe x3"
+        "description": "Fire Foe x3",
+        "effectArgs": {
+          "priority": 1
+        }
       }
     },
     "supportEffect": {
@@ -1509,6 +1648,8 @@
     "plusDp": 20,
     "evoCost": 30,
     "image": "https://static.wikia.nocookie.net/digimon/images/7/79/MarineAngemon_038_%28DDCB%29.jpg/revision/latest?cb=20160401013724",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Ocean Love",
@@ -1529,7 +1670,8 @@
         "description": "circle to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "circle"
+          "targetAttack": "circle",
+          "priority": 1
         }
       }
     },
@@ -1551,6 +1693,8 @@
     "plusDp": 20,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Were_Garurumon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Wolf Claw",
@@ -1572,7 +1716,8 @@
         "effectId": "cross.counter",
         "effectArgs": {
           "targetAttack": "triangle",
-          "multiplier": 2
+          "multiplier": 2,
+          "priority": 1
         }
       }
     },
@@ -1594,6 +1739,8 @@
     "plusDp": 20,
     "evoCost": 40,
     "image": "https://digi-api.com/images/digimon/w/Zudomon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Vulcan's Hammer",
@@ -1614,7 +1761,8 @@
         "description": "circle to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "circle"
+          "targetAttack": "circle",
+          "priority": 1
         }
       }
     },
@@ -1636,6 +1784,8 @@
     "plusDp": 20,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Panjyamon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "The Fist of Ice",
@@ -1657,7 +1807,8 @@
         "effectId": "cross.counter",
         "effectArgs": {
           "targetAttack": "triangle",
-          "multiplier": 2
+          "multiplier": 2,
+          "priority": 1
         }
       }
     },
@@ -1679,6 +1830,8 @@
     "plusDp": 20,
     "evoCost": 40,
     "image": "https://digi-api.com/images/digimon/w/Mega_Seadramon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Mail Storm",
@@ -1700,7 +1853,8 @@
         "effectId": "cross.counter",
         "effectArgs": {
           "targetAttack": "circle",
-          "multiplier": 2
+          "multiplier": 2,
+          "priority": 1
         }
       }
     },
@@ -1722,6 +1876,8 @@
     "plusDp": 10,
     "evoCost": 40,
     "image": "https://digi-api.com/images/digimon/w/Waru_Seadramon.png",
+    "xEffectSpeed": 3,
+    "supportSpeed": 3,
     "attacks": {
       "circle": {
         "name": "Dark Blast",
@@ -1739,7 +1895,10 @@
         "name": "Strange Mist",
         "damage": 200,
         "type": "cross",
-        "description": "Jamming"
+        "description": "Jamming",
+        "effectArgs": {
+          "priority": 3
+        }
       }
     },
     "supportEffect": {
@@ -1760,6 +1919,8 @@
     "plusDp": 20,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Brachimon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Brachio Bubble",
@@ -1780,7 +1941,8 @@
         "description": "circle to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "circle"
+          "targetAttack": "circle",
+          "priority": 1
         }
       }
     },
@@ -1802,6 +1964,8 @@
     "plusDp": 10,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Blue_Meramon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Ice Phantom",
@@ -1822,7 +1986,8 @@
         "description": "cross to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "cross"
+          "targetAttack": "cross",
+          "priority": 1
         }
       }
     },
@@ -1844,6 +2009,8 @@
     "plusDp": 10,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Garurumon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Howling Blaster",
@@ -1865,7 +2032,8 @@
         "effectId": "cross.counter",
         "effectArgs": {
           "targetAttack": "circle",
-          "multiplier": 2
+          "multiplier": 2,
+          "priority": 1
         }
       }
     },
@@ -1888,6 +2056,8 @@
     "plusDp": 20,
     "evoCost": 40,
     "image": "https://digi-api.com/images/digimon/w/Ikkakumon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Harpoon Torpedo",
@@ -1905,7 +2075,10 @@
         "name": "Northen Light",
         "damage": 200,
         "type": "cross",
-        "description": "Fire Foe x3"
+        "description": "Fire Foe x3",
+        "effectArgs": {
+          "priority": 1
+        }
       }
     },
     "supportEffect": {
@@ -1926,6 +2099,8 @@
     "plusDp": 20,
     "evoCost": 40,
     "image": "https://static.wikia.nocookie.net/digimon/images/5/51/Dolphmon_048_%28DDCB%29.jpg/revision/latest?cb=20160401015044",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Pulse Blast",
@@ -1946,7 +2121,8 @@
         "description": "cross to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "cross"
+          "targetAttack": "cross",
+          "priority": 1
         }
       }
     },
@@ -1968,6 +2144,8 @@
     "plusDp": 20,
     "evoCost": 40,
     "image": "https://digi-api.com/images/digimon/w/Whamon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Tidal Wave",
@@ -1988,7 +2166,8 @@
         "description": "triangle to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "triangle"
+          "targetAttack": "triangle",
+          "priority": 1
         }
       }
     },
@@ -2010,6 +2189,8 @@
     "plusDp": 20,
     "evoCost": 40,
     "image": "https://digi-api.com/images/digimon/w/Seadramon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Ice Blast",
@@ -2030,7 +2211,8 @@
         "description": "circle to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "circle"
+          "targetAttack": "circle",
+          "priority": 1
         }
       }
     },
@@ -2052,6 +2234,8 @@
     "plusDp": 10,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Gesomon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 0,
     "attacks": {
       "circle": {
         "name": "Coral Crusher",
@@ -2072,7 +2256,8 @@
         "description": "circle to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "circle"
+          "targetAttack": "circle",
+          "priority": 1
         }
       }
     }
@@ -2088,6 +2273,8 @@
     "plusDp": 20,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Yukidarumon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Subzero Ice Punch",
@@ -2105,7 +2292,10 @@
         "name": "Snowball",
         "damage": 170,
         "type": "cross",
-        "description": "Fire Foe x3"
+        "description": "Fire Foe x3",
+        "effectArgs": {
+          "priority": 1
+        }
       }
     },
     "supportEffect": {
@@ -2126,6 +2316,8 @@
     "plusDp": 20,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Gekomon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Symphony Crusher",
@@ -2146,7 +2338,8 @@
         "description": "circle to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "circle"
+          "targetAttack": "circle",
+          "priority": 1
         }
       }
     },
@@ -2168,6 +2361,8 @@
     "plusDp": 10,
     "evoCost": 50,
     "image": "https://digi-api.com/images/digimon/w/Coelamon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Fossil Bite",
@@ -2188,7 +2383,8 @@
         "description": "circle to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "circle"
+          "targetAttack": "circle",
+          "priority": 1
         }
       }
     },
@@ -2210,6 +2406,8 @@
     "plusDp": 20,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Mojyamon.png",
+    "xEffectSpeed": 0,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Icicle Fire",
@@ -2248,6 +2446,8 @@
     "plusDp": 10,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Shellmon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Hydro Blaster",
@@ -2268,7 +2468,8 @@
         "description": "circle to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "circle"
+          "targetAttack": "circle",
+          "priority": 1
         }
       }
     },
@@ -2290,6 +2491,8 @@
     "plusDp": 10,
     "evoCost": 40,
     "image": "https://digi-api.com/images/digimon/w/Sorcerimon.png",
+    "xEffectSpeed": 3,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Crystal Cloud",
@@ -2307,7 +2510,10 @@
         "name": "Ice Illusion",
         "damage": 170,
         "type": "cross",
-        "description": "Jamming"
+        "description": "Jamming",
+        "effectArgs": {
+          "priority": 3
+        }
       }
     },
     "supportEffect": {
@@ -2328,6 +2534,8 @@
     "plusDp": 10,
     "evoCost": 40,
     "image": "https://digi-api.com/images/digimon/w/Ice_Devimon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Frost Claw",
@@ -2345,7 +2553,10 @@
         "name": "Sub Zero Freeze",
         "damage": 180,
         "type": "cross",
-        "description": "Fire Foe x3"
+        "description": "Fire Foe x3",
+        "effectArgs": {
+          "priority": 1
+        }
       }
     },
     "supportEffect": {
@@ -2366,6 +2577,8 @@
     "plusDp": 10,
     "evoCost": 40,
     "image": "https://digi-api.com/images/digimon/w/Amon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 0,
     "attacks": {
       "circle": {
         "name": "Icy Cudgel",
@@ -2387,7 +2600,8 @@
         "effectId": "cross.counter",
         "effectArgs": {
           "targetAttack": "circle",
-          "multiplier": 2
+          "multiplier": 2,
+          "priority": 1
         }
       }
     }
@@ -2403,6 +2617,8 @@
     "plusDp": 20,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Icemon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 0,
     "attacks": {
       "circle": {
         "name": "Iceball Bomb",
@@ -2424,7 +2640,8 @@
         "effectId": "cross.counter",
         "effectArgs": {
           "targetAttack": "cross",
-          "multiplier": 2
+          "multiplier": 2,
+          "priority": 1
         }
       }
     }
@@ -2440,6 +2657,8 @@
     "plusDp": 20,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Gomamon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Marching Fishes",
@@ -2460,7 +2679,8 @@
         "description": "triangle to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "triangle"
+          "targetAttack": "triangle",
+          "priority": 1
         }
       }
     },
@@ -2482,6 +2702,8 @@
     "plusDp": 20,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Gabumon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 0,
     "attacks": {
       "circle": {
         "name": "Blue Blaster",
@@ -2502,7 +2724,8 @@
         "description": "circle to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "circle"
+          "targetAttack": "circle",
+          "priority": 1
         }
       }
     }
@@ -2518,6 +2741,8 @@
     "plusDp": 20,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Betamon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Electric Shock",
@@ -2538,7 +2763,8 @@
         "description": "circle to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "circle"
+          "targetAttack": "circle",
+          "priority": 1
         }
       }
     },
@@ -2560,6 +2786,8 @@
     "plusDp": 20,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Penmon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Eternal Slapping",
@@ -2580,7 +2808,8 @@
         "description": "circle to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "circle"
+          "targetAttack": "circle",
+          "priority": 1
         }
       }
     },
@@ -2602,6 +2831,8 @@
     "plusDp": 20,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Gizamon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Spiral Saw",
@@ -2619,7 +2850,10 @@
         "name": "Water Cure",
         "damage": 150,
         "type": "cross",
-        "description": "Fire Foe x3"
+        "description": "Fire Foe x3",
+        "effectArgs": {
+          "priority": 1
+        }
       }
     },
     "supportEffect": {
@@ -2640,6 +2874,8 @@
     "plusDp": 20,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Otamamon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Stun Bubble",
@@ -2660,7 +2896,8 @@
         "description": "circle to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "circle"
+          "targetAttack": "circle",
+          "priority": 1
         }
       }
     },
@@ -2682,6 +2919,8 @@
     "plusDp": 20,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Yuki_Agumon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Hail Storm",
@@ -2702,7 +2941,8 @@
         "description": "cross to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "cross"
+          "targetAttack": "cross",
+          "priority": 1
         }
       }
     },
@@ -2724,6 +2964,8 @@
     "plusDp": 20,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Snow_Goburimon.png",
+    "xEffectSpeed": 0,
+    "supportSpeed": 0,
     "attacks": {
       "circle": {
         "name": "Bolt Strike",
@@ -2756,6 +2998,8 @@
     "plusDp": 20,
     "evoCost": 50,
     "image": "https://digi-api.com/images/digimon/w/Valkyrimon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Feral Sword",
@@ -2776,7 +3020,8 @@
         "description": "circle to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "circle"
+          "targetAttack": "circle",
+          "priority": 1
         }
       }
     },
@@ -2799,6 +3044,8 @@
     "plusDp": 20,
     "evoCost": 50,
     "image": "https://digi-api.com/images/digimon/w/Seraphimon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Seventh Heaven",
@@ -2816,7 +3063,10 @@
         "name": "Divine Breaker",
         "damage": 420,
         "type": "cross",
-        "description": "Dark Foe x3"
+        "description": "Dark Foe x3",
+        "effectArgs": {
+          "priority": 1
+        }
       }
     },
     "supportEffect": {
@@ -2837,6 +3087,8 @@
     "plusDp": 20,
     "evoCost": 50,
     "image": "https://static.wikia.nocookie.net/digimon/images/8/8a/Magnadramon_071_%28DDCB%29.jpg/revision/latest?cb=20160401020653",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Fire Tornado",
@@ -2857,7 +3109,8 @@
         "description": "cross to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "cross"
+          "targetAttack": "cross",
+          "priority": 1
         }
       }
     },
@@ -2879,6 +3132,8 @@
     "plusDp": 20,
     "evoCost": 40,
     "image": "https://static.wikia.nocookie.net/digimon/images/c/cb/AeroVeedramon_072_%28DDCB%29.jpg/revision/latest?cb=20160401020714",
+    "xEffectSpeed": 2,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "V Wing Blade",
@@ -2896,7 +3151,10 @@
         "name": "Magnum Clash",
         "damage": 360,
         "type": "cross",
-        "description": "1st Attack"
+        "description": "1st Attack",
+        "effectArgs": {
+          "priority": 2
+        }
       }
     },
     "supportEffect": {
@@ -2917,6 +3175,8 @@
     "plusDp": 30,
     "evoCost": 40,
     "image": "https://digi-api.com/images/digimon/w/Rosemon.png",
+    "xEffectSpeed": 2,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Thorny Whipping",
@@ -2936,7 +3196,9 @@
         "type": "cross",
         "description": "Eat-Up HP",
         "effectId": "cross.eat_up_hp",
-        "effectArgs": {}
+        "effectArgs": {
+          "priority": 2
+        }
       }
     },
     "supportEffect": {
@@ -2957,6 +3219,8 @@
     "plusDp": 20,
     "evoCost": 40,
     "image": "https://digi-api.com/images/digimon/w/Herakle_Kabuterimon.png",
+    "xEffectSpeed": 2,
+    "supportSpeed": 0,
     "attacks": {
       "circle": {
         "name": "Giga Scissor Claw",
@@ -2974,7 +3238,10 @@
         "name": "Horn Buster II",
         "damage": 250,
         "type": "cross",
-        "description": "1st Attack"
+        "description": "1st Attack",
+        "effectArgs": {
+          "priority": 2
+        }
       }
     }
   },
@@ -2989,6 +3256,8 @@
     "plusDp": 20,
     "evoCost": 40,
     "image": "https://static.wikia.nocookie.net/digimon/images/4/4e/MagnaAngemon_075_%28DDCB%29.jpg/revision/latest?cb=20160401020820",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "The Gate of Destiny",
@@ -3006,7 +3275,10 @@
         "name": "Soul Vanisher",
         "damage": 370,
         "type": "cross",
-        "description": "Darkness Foe x3"
+        "description": "Darkness Foe x3",
+        "effectArgs": {
+          "priority": 1
+        }
       }
     },
     "supportEffect": {
@@ -3027,6 +3299,8 @@
     "plusDp": 20,
     "evoCost": 40,
     "image": "https://digi-api.com/images/digimon/w/Silphymon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Top Gun",
@@ -3047,7 +3321,8 @@
         "description": "triangle to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "triangle"
+          "targetAttack": "triangle",
+          "priority": 1
         }
       }
     },
@@ -3069,6 +3344,8 @@
     "plusDp": 30,
     "evoCost": 40,
     "image": "https://digi-api.com/images/digimon/w/Angewomon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Celestial Arrow",
@@ -3086,7 +3363,10 @@
         "name": "Holy Air",
         "damage": 330,
         "type": "cross",
-        "description": "Darkness Foe x3"
+        "description": "Darkness Foe x3",
+        "effectArgs": {
+          "priority": 1
+        }
       }
     },
     "supportEffect": {
@@ -3107,6 +3387,8 @@
     "plusDp": 30,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Lilimon.png",
+    "xEffectSpeed": 2,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Flower Cannon",
@@ -3126,7 +3408,9 @@
         "type": "cross",
         "description": "Eat-Up HP",
         "effectId": "cross.eat_up_hp",
-        "effectArgs": {}
+        "effectArgs": {
+          "priority": 2
+        }
       }
     },
     "supportEffect": {
@@ -3147,6 +3431,8 @@
     "plusDp": 20,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Kabuterimon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 0,
     "attacks": {
       "circle": {
         "name": "Horn Buster",
@@ -3168,7 +3454,8 @@
         "effectId": "cross.counter",
         "effectArgs": {
           "targetAttack": "circle",
-          "multiplier": 2
+          "multiplier": 2,
+          "priority": 1
         }
       }
     }
@@ -3184,6 +3471,8 @@
     "plusDp": 30,
     "evoCost": 40,
     "image": "https://digi-api.com/images/digimon/w/Piccolomon.png",
+    "xEffectSpeed": 0,
+    "supportSpeed": 3,
     "attacks": {
       "circle": {
         "name": "BIT Bomb",
@@ -3222,6 +3511,8 @@
     "plusDp": 20,
     "evoCost": 40,
     "image": "https://static.wikia.nocookie.net/digimon/images/2/23/Veedramon_081_%28DDCB%29.jpg/revision/latest?cb=20160401021054",
+    "xEffectSpeed": 2,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "V-Nova Blast",
@@ -3239,7 +3530,10 @@
         "name": "Cutting Shoot",
         "damage": 200,
         "type": "cross",
-        "description": "1st Attack"
+        "description": "1st Attack",
+        "effectArgs": {
+          "priority": 2
+        }
       }
     },
     "supportEffect": {
@@ -3260,6 +3554,8 @@
     "plusDp": 20,
     "evoCost": 40,
     "image": "https://digi-api.com/images/digimon/w/Angemon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Hand of Fate",
@@ -3277,7 +3573,10 @@
         "name": "Holy Rod",
         "damage": 260,
         "type": "cross",
-        "description": "Darkness Foe x3"
+        "description": "Darkness Foe x3",
+        "effectArgs": {
+          "priority": 1
+        }
       }
     },
     "supportEffect": {
@@ -3298,6 +3597,8 @@
     "plusDp": 20,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Tailmon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Lightning Paw",
@@ -3318,7 +3619,8 @@
         "description": "cross to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "cross"
+          "targetAttack": "cross",
+          "priority": 1
         }
       }
     },
@@ -3340,6 +3642,8 @@
     "plusDp": 30,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Togemon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Needle Spray",
@@ -3360,7 +3664,8 @@
         "description": "triangle to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "triangle"
+          "targetAttack": "triangle",
+          "priority": 1
         }
       }
     },
@@ -3383,6 +3688,8 @@
     "plusDp": 20,
     "evoCost": 40,
     "image": "https://digi-api.com/images/digimon/w/Leomon.png",
+    "xEffectSpeed": 0,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Beast King's Fist",
@@ -3421,6 +3728,8 @@
     "plusDp": 20,
     "evoCost": 40,
     "image": "https://digi-api.com/images/digimon/w/Kabuterimon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 0,
     "attacks": {
       "circle": {
         "name": "Electro Shocker",
@@ -3442,7 +3751,8 @@
         "effectId": "cross.counter",
         "effectArgs": {
           "targetAttack": "circle",
-          "multiplier": 2
+          "multiplier": 2,
+          "priority": 1
         }
       }
     }
@@ -3458,6 +3768,8 @@
     "plusDp": 20,
     "evoCost": 40,
     "image": "https://digi-api.com/images/digimon/w/Airdramon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Spinning Needle",
@@ -3478,7 +3790,8 @@
         "description": "circle to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "circle"
+          "targetAttack": "circle",
+          "priority": 1
         }
       }
     },
@@ -3500,6 +3813,8 @@
     "plusDp": 20,
     "evoCost": 40,
     "image": "https://digi-api.com/images/digimon/w/Unimon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Aerial Attack",
@@ -3520,7 +3835,8 @@
         "description": "circle to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "circle"
+          "targetAttack": "circle",
+          "priority": 1
         }
       }
     },
@@ -3542,6 +3858,8 @@
     "plusDp": 30,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Amon.png",
+    "xEffectSpeed": 2,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Ninja Knife Throw",
@@ -3559,7 +3877,10 @@
         "name": "Ninja Jujitsu",
         "damage": 250,
         "type": "cross",
-        "description": "1st Attack"
+        "description": "1st Attack",
+        "effectArgs": {
+          "priority": 2
+        }
       }
     },
     "supportEffect": {
@@ -3580,6 +3901,8 @@
     "plusDp": 20,
     "evoCost": 40,
     "image": "https://digi-api.com/images/digimon/w/Kuwagamon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 0,
     "attacks": {
       "circle": {
         "name": "Scissor Claw",
@@ -3601,7 +3924,8 @@
         "effectId": "cross.counter",
         "effectArgs": {
           "targetAttack": "triangle",
-          "multiplier": 2
+          "multiplier": 2,
+          "priority": 1
         }
       }
     }
@@ -3617,6 +3941,8 @@
     "plusDp": 20,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Drimogemon.png",
+    "xEffectSpeed": 0,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Iron Drill Spin",
@@ -3656,6 +3982,8 @@
     "plusDp": 20,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Vegimon.png",
+    "xEffectSpeed": 3,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Compost Bomber",
@@ -3673,7 +4001,10 @@
         "name": "Sweet Whisper",
         "damage": 100,
         "type": "cross",
-        "description": "Jamming"
+        "description": "Jamming",
+        "effectArgs": {
+          "priority": 3
+        }
       }
     },
     "supportEffect": {
@@ -3694,6 +4025,8 @@
     "plusDp": 20,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Cockatrimon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Frozen Fire Shot",
@@ -3714,7 +4047,8 @@
         "description": "circle to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "circle"
+          "targetAttack": "circle",
+          "priority": 1
         }
       }
     },
@@ -3736,6 +4070,8 @@
     "plusDp": 20,
     "evoCost": 20,
     "image": "https://digi-api.com/images/digimon/w/Yanmamon.png",
+    "xEffectSpeed": 2,
+    "supportSpeed": 0,
     "attacks": {
       "circle": {
         "name": "Thunder Ray",
@@ -3753,7 +4089,10 @@
         "name": "Somersault Attack",
         "damage": 170,
         "type": "cross",
-        "description": "1st Attack"
+        "description": "1st Attack",
+        "effectArgs": {
+          "priority": 2
+        }
       }
     }
   },
@@ -3768,6 +4107,8 @@
     "plusDp": 30,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Mojyamon.png",
+    "xEffectSpeed": 0,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Jungle Punch",
@@ -3806,6 +4147,8 @@
     "plusDp": 30,
     "evoCost": 40,
     "image": "https://digi-api.com/images/digimon/w/Mori_Shellmon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Shell Pile",
@@ -3826,7 +4169,8 @@
         "description": "circle to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "circle"
+          "targetAttack": "circle",
+          "priority": 1
         }
       }
     },
@@ -3848,6 +4192,8 @@
     "plusDp": 30,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Tentomon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 0,
     "attacks": {
       "circle": {
         "name": "Blue Blaster",
@@ -3868,7 +4214,8 @@
         "description": "circle to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "circle"
+          "targetAttack": "circle",
+          "priority": 1
         }
       }
     }
@@ -3884,6 +4231,8 @@
     "plusDp": 30,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Palmon.png",
+    "xEffectSpeed": 2,
+    "supportSpeed": 0,
     "attacks": {
       "circle": {
         "name": "Poison Ivy",
@@ -3903,7 +4252,9 @@
         "type": "cross",
         "description": "Eat-Up HP",
         "effectId": "cross.eat_up_hp",
-        "effectArgs": {}
+        "effectArgs": {
+          "priority": 2
+        }
       }
     }
   },
@@ -3918,6 +4269,8 @@
     "plusDp": 30,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Amon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Puppy Howling",
@@ -3939,7 +4292,8 @@
         "effectId": "cross.counter",
         "effectArgs": {
           "targetAttack": "triangle",
-          "multiplier": 2
+          "multiplier": 2,
+          "priority": 1
         }
       }
     },
@@ -3961,6 +4315,8 @@
     "plusDp": 20,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Elecmon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Super Thunder Strike",
@@ -3978,7 +4334,10 @@
         "name": "Lightning Knife",
         "damage": 130,
         "type": "cross",
-        "description": "Ice Foe x3"
+        "description": "Ice Foe x3",
+        "effectArgs": {
+          "priority": 1
+        }
       }
     },
     "supportEffect": {
@@ -3999,6 +4358,8 @@
     "plusDp": 20,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Umon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Rock Fist",
@@ -4019,7 +4380,8 @@
         "description": "cross to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "cross"
+          "targetAttack": "cross",
+          "priority": 1
         }
       }
     },
@@ -4041,6 +4403,8 @@
     "plusDp": 20,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Kunemon.png",
+    "xEffectSpeed": 3,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Electric Thread",
@@ -4058,7 +4422,10 @@
         "name": "Speeding Thread",
         "damage": 190,
         "type": "cross",
-        "description": "Jamming"
+        "description": "Jamming",
+        "effectArgs": {
+          "priority": 3
+        }
       }
     },
     "supportEffect": {
@@ -4079,6 +4446,8 @@
     "plusDp": 0,
     "evoCost": 70,
     "image": "https://digi-api.com/images/digimon/w/Apocalymon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Darkness Zone",
@@ -4098,7 +4467,9 @@
         "type": "cross",
         "description": "Crash",
         "effectId": "cross.crash",
-        "effectArgs": {}
+        "effectArgs": {
+          "priority": 1
+        }
       }
     },
     "supportEffect": {
@@ -4119,6 +4490,8 @@
     "plusDp": 10,
     "evoCost": 50,
     "image": "https://digi-api.com/images/digimon/w/Gran_Kuwagamon.png",
+    "xEffectSpeed": 0,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "X-Scissor Claw",
@@ -4157,6 +4530,8 @@
     "plusDp": 0,
     "evoCost": 70,
     "image": "https://digi-api.com/images/digimon/w/Diablomon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Inferno Missile",
@@ -4176,7 +4551,9 @@
         "type": "cross",
         "description": "Crash",
         "effectId": "cross.crash",
-        "effectArgs": {}
+        "effectArgs": {
+          "priority": 1
+        }
       }
     },
     "supportEffect": {
@@ -4197,6 +4574,8 @@
     "plusDp": 0,
     "evoCost": 60,
     "image": "https://digi-api.com/images/digimon/w/Venom_Vamdemon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 0,
     "attacks": {
       "circle": {
         "name": "Venom Infusion",
@@ -4214,7 +4593,10 @@
         "name": "Chaos Flame",
         "damage": 400,
         "type": "cross",
-        "description": "Nature Foe x3"
+        "description": "Nature Foe x3",
+        "effectArgs": {
+          "priority": 1
+        }
       }
     }
   },
@@ -4229,6 +4611,8 @@
     "plusDp": 10,
     "evoCost": 50,
     "image": "https://digi-api.com/images/digimon/w/Piemon.png",
+    "xEffectSpeed": 3,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Trump Sword",
@@ -4246,7 +4630,10 @@
         "name": "Clown's Trick",
         "damage": 400,
         "type": "cross",
-        "description": "Jamming"
+        "description": "Jamming",
+        "effectArgs": {
+          "priority": 3
+        }
       }
     },
     "supportEffect": {
@@ -4267,6 +4654,8 @@
     "plusDp": 0,
     "evoCost": 60,
     "image": "https://static.wikia.nocookie.net/digimon/images/5/5e/Machinedramon_108_%28DDCB%29.jpg/revision/latest?cb=20160331021457",
+    "xEffectSpeed": 1,
+    "supportSpeed": 0,
     "attacks": {
       "circle": {
         "name": "Giga Cannon",
@@ -4286,7 +4675,9 @@
         "type": "cross",
         "description": "Crash",
         "effectId": "cross.crash",
-        "effectArgs": {}
+        "effectArgs": {
+          "priority": 1
+        }
       }
     }
   },
@@ -4301,6 +4692,8 @@
     "plusDp": 0,
     "evoCost": 20,
     "image": "https://digi-api.com/images/digimon/w/Infermon.png",
+    "xEffectSpeed": 3,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Hades' Grenade",
@@ -4318,7 +4711,10 @@
         "name": "Virus Shot",
         "damage": 180,
         "type": "cross",
-        "description": "Jamming"
+        "description": "Jamming",
+        "effectArgs": {
+          "priority": 3
+        }
       }
     },
     "supportEffect": {
@@ -4339,6 +4735,8 @@
     "plusDp": 20,
     "evoCost": 40,
     "image": "https://digi-api.com/images/digimon/w/Lady_Devimon.png",
+    "xEffectSpeed": 2,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Darkness Wave",
@@ -4358,7 +4756,9 @@
         "type": "cross",
         "description": "Eat-Up HP",
         "effectId": "cross.eat_up_hp",
-        "effectArgs": {}
+        "effectArgs": {
+          "priority": 2
+        }
       }
     },
     "supportEffect": {
@@ -4379,6 +4779,8 @@
     "plusDp": 20,
     "evoCost": 50,
     "image": "https://digi-api.com/images/digimon/w/Vamdemon.png",
+    "xEffectSpeed": 2,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Grisly Wing",
@@ -4398,7 +4800,9 @@
         "type": "cross",
         "description": "Eat-Up HP",
         "effectId": "cross.eat_up_hp",
-        "effectArgs": {}
+        "effectArgs": {
+          "priority": 2
+        }
       }
     },
     "supportEffect": {
@@ -4419,6 +4823,8 @@
     "plusDp": 0,
     "evoCost": 50,
     "image": "https://digi-api.com/images/digimon/w/Megadramon.png",
+    "xEffectSpeed": 2,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Darkside Attack",
@@ -4436,7 +4842,10 @@
         "name": "Ultimate Attack",
         "damage": 300,
         "type": "cross",
-        "description": "1st Attack"
+        "description": "1st Attack",
+        "effectArgs": {
+          "priority": 2
+        }
       }
     },
     "supportEffect": {
@@ -4457,6 +4866,8 @@
     "plusDp": 0,
     "evoCost": 50,
     "image": "https://digi-api.com/images/digimon/w/Skull_Greymon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Dark Shot II",
@@ -4474,7 +4885,10 @@
         "name": "Buffalo Breathe",
         "damage": 450,
         "type": "cross",
-        "description": "Nature Foe x3"
+        "description": "Nature Foe x3",
+        "effectArgs": {
+          "priority": 1
+        }
       }
     },
     "supportEffect": {
@@ -4495,6 +4909,8 @@
     "plusDp": 0,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Fantomon.png",
+    "xEffectSpeed": 2,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Shadow Scythe",
@@ -4514,7 +4930,9 @@
         "type": "cross",
         "description": "Eat-Up HP",
         "effectId": "cross.eat_up_hp",
-        "effectArgs": {}
+        "effectArgs": {
+          "priority": 2
+        }
       }
     },
     "supportEffect": {
@@ -4535,6 +4953,8 @@
     "plusDp": 0,
     "evoCost": 40,
     "image": "https://digi-api.com/images/digimon/w/Waru_Monzaemon.png",
+    "xEffectSpeed": 3,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Heart Break Attack",
@@ -4552,7 +4972,10 @@
         "name": "Nasty Step",
         "damage": 200,
         "type": "cross",
-        "description": "Jamming"
+        "description": "Jamming",
+        "effectArgs": {
+          "priority": 3
+        }
       }
     },
     "supportEffect": {
@@ -4573,6 +4996,8 @@
     "plusDp": 10,
     "evoCost": 40,
     "image": "https://digi-api.com/images/digimon/w/Andromon.png",
+    "xEffectSpeed": 0,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Lightning Blade",
@@ -4611,6 +5036,8 @@
     "plusDp": 10,
     "evoCost": 40,
     "image": "https://digi-api.com/images/digimon/w/Stingmon.png",
+    "xEffectSpeed": 2,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Spiking Strike",
@@ -4630,7 +5057,9 @@
         "type": "cross",
         "description": "Eat-Up HP",
         "effectId": "cross.eat_up_hp",
-        "effectArgs": {}
+        "effectArgs": {
+          "priority": 2
+        }
       }
     },
     "supportEffect": {
@@ -4651,6 +5080,8 @@
     "plusDp": 10,
     "evoCost": 40,
     "image": "https://digi-api.com/images/digimon/w/Wizarmon.png",
+    "xEffectSpeed": 3,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Thunder Ball",
@@ -4668,7 +5099,10 @@
         "name": "Vision of Terror",
         "damage": 220,
         "type": "cross",
-        "description": "Jamming"
+        "description": "Jamming",
+        "effectArgs": {
+          "priority": 3
+        }
       }
     },
     "supportEffect": {
@@ -4689,6 +5123,8 @@
     "plusDp": 10,
     "evoCost": 50,
     "image": "https://digi-api.com/images/digimon/w/Devidramon.png",
+    "xEffectSpeed": 0,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Crimson Claw",
@@ -4727,6 +5163,8 @@
     "plusDp": 10,
     "evoCost": 40,
     "image": "https://digi-api.com/images/digimon/w/Devimon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Evil Wing",
@@ -4744,7 +5182,10 @@
         "name": "Dungeon Curse",
         "damage": 250,
         "type": "cross",
-        "description": "Nature Foe x3"
+        "description": "Nature Foe x3",
+        "effectArgs": {
+          "priority": 1
+        }
       }
     },
     "supportEffect": {
@@ -4765,6 +5206,8 @@
     "plusDp": 10,
     "evoCost": 40,
     "image": "https://digi-api.com/images/digimon/w/Tuskmon.png",
+    "xEffectSpeed": 0,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Slamming Tusk",
@@ -4803,6 +5246,8 @@
     "plusDp": 10,
     "evoCost": 40,
     "image": "https://digi-api.com/images/digimon/w/Orgemon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Pummel Whack",
@@ -4824,7 +5269,8 @@
         "effectId": "cross.counter",
         "effectArgs": {
           "targetAttack": "triangle",
-          "multiplier": 2
+          "multiplier": 2,
+          "priority": 1
         }
       }
     },
@@ -4846,6 +5292,8 @@
     "plusDp": 10,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Bakemon.png",
+    "xEffectSpeed": 2,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Dark Claw",
@@ -4865,7 +5313,9 @@
         "type": "cross",
         "description": "Eat-Up HP",
         "effectId": "cross.eat_up_hp",
-        "effectArgs": {}
+        "effectArgs": {
+          "priority": 2
+        }
       }
     },
     "supportEffect": {
@@ -4886,6 +5336,8 @@
     "plusDp": 10,
     "evoCost": 20,
     "image": "https://digi-api.com/images/digimon/w/Guardromon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Protect Grenade",
@@ -4905,7 +5357,9 @@
         "type": "cross",
         "description": "Crash",
         "effectId": "cross.crash",
-        "effectArgs": {}
+        "effectArgs": {
+          "priority": 1
+        }
       }
     },
     "supportEffect": {
@@ -4926,6 +5380,8 @@
     "plusDp": 10,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Tekkamon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Electronic Blast Sword",
@@ -4945,7 +5401,9 @@
         "type": "cross",
         "description": "Crash",
         "effectId": "cross.crash",
-        "effectArgs": {}
+        "effectArgs": {
+          "priority": 1
+        }
       }
     },
     "supportEffect": {
@@ -4966,6 +5424,8 @@
     "plusDp": 10,
     "evoCost": 40,
     "image": "https://digi-api.com/images/digimon/w/Gururumon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Chaos Blaster",
@@ -4986,7 +5446,8 @@
         "description": "circle to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "circle"
+          "targetAttack": "circle",
+          "priority": 1
         }
       }
     },
@@ -5008,6 +5469,8 @@
     "plusDp": 0,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Soulmon.png",
+    "xEffectSpeed": 2,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Necro Magic",
@@ -5027,7 +5490,9 @@
         "type": "cross",
         "description": "Eat-Up HP",
         "effectId": "cross.eat_up_hp",
-        "effectArgs": {}
+        "effectArgs": {
+          "priority": 2
+        }
       }
     },
     "supportEffect": {
@@ -5048,6 +5513,8 @@
     "plusDp": 10,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Fugamon.png",
+    "xEffectSpeed": 0,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Evil Hurricane",
@@ -5086,6 +5553,8 @@
     "plusDp": 10,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Saberdramon.png",
+    "xEffectSpeed": 2,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Black Saber",
@@ -5103,7 +5572,10 @@
         "name": "Mach Shadow",
         "damage": 240,
         "type": "cross",
-        "description": "1st Attack"
+        "description": "1st Attack",
+        "effectArgs": {
+          "priority": 2
+        }
       }
     },
     "supportEffect": {
@@ -5124,6 +5596,8 @@
     "plusDp": 10,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Dark_Lizamon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Dark Flare",
@@ -5144,7 +5618,8 @@
         "description": "circle to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "circle"
+          "targetAttack": "circle",
+          "priority": 1
         }
       }
     },
@@ -5166,6 +5641,8 @@
     "plusDp": 0,
     "evoCost": 20,
     "image": "https://digi-api.com/images/digimon/w/Zassoumon.png",
+    "xEffectSpeed": 0,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Deadly Ivy",
@@ -5204,6 +5681,8 @@
     "plusDp": 20,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Devimon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Demi Dart",
@@ -5221,7 +5700,10 @@
         "name": "Butt Smasher",
         "damage": 190,
         "type": "cross",
-        "description": "Nature Foe x3"
+        "description": "Nature Foe x3",
+        "effectArgs": {
+          "priority": 1
+        }
       }
     },
     "supportEffect": {
@@ -5242,6 +5724,8 @@
     "plusDp": 20,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Black_Tailmon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Lightning Paw",
@@ -5262,7 +5746,8 @@
         "description": "cross to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "cross"
+          "targetAttack": "cross",
+          "priority": 1
         }
       }
     },
@@ -5284,6 +5769,8 @@
     "plusDp": 20,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Kokuwamon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Mini Scissor Claws",
@@ -5304,7 +5791,8 @@
         "description": "triangle to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "triangle"
+          "targetAttack": "triangle",
+          "priority": 1
         }
       }
     },
@@ -5326,6 +5814,8 @@
     "plusDp": 20,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Tukaimon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Evil Spell",
@@ -5346,7 +5836,8 @@
         "description": "circle to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "circle"
+          "targetAttack": "circle",
+          "priority": 1
         }
       }
     },
@@ -5368,6 +5859,8 @@
     "plusDp": 20,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Dokunemon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Worm Venom",
@@ -5385,7 +5878,10 @@
         "name": "Capturing Net",
         "damage": 190,
         "type": "cross",
-        "description": "Rare Foe x3"
+        "description": "Rare Foe x3",
+        "effectArgs": {
+          "priority": 1
+        }
       }
     },
     "supportEffect": {
@@ -5406,6 +5902,8 @@
     "plusDp": 20,
     "evoCost": 0,
     "image": "https://static.wikia.nocookie.net/digimon/images/1/11/Aruraumon_137_%28DDCB%29.jpg/revision/latest?cb=20160331023409",
+    "xEffectSpeed": 2,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Nemesis Ivy",
@@ -5425,7 +5923,9 @@
         "type": "cross",
         "description": "Eat-Up HP",
         "effectId": "cross.eat_up_hp",
-        "effectArgs": {}
+        "effectArgs": {
+          "priority": 2
+        }
       }
     },
     "supportEffect": {
@@ -5446,6 +5946,8 @@
     "plusDp": 20,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Armamon.png",
+    "xEffectSpeed": 3,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Sharma Hammer",
@@ -5463,7 +5965,10 @@
         "name": "Dancing Bone",
         "damage": 100,
         "type": "cross",
-        "description": "Jamming"
+        "description": "Jamming",
+        "effectArgs": {
+          "priority": 3
+        }
       }
     },
     "supportEffect": {
@@ -5484,6 +5989,8 @@
     "plusDp": 10,
     "evoCost": 50,
     "image": "https://static.wikia.nocookie.net/digimon/images/f/f2/Puppetmon_139_%28DDCB%29.jpg/revision/latest?cb=20160401023126",
+    "xEffectSpeed": 3,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Puppet Pummel",
@@ -5501,7 +6008,10 @@
         "name": "Big Liar",
         "damage": 380,
         "type": "cross",
-        "description": "Jamming"
+        "description": "Jamming",
+        "effectArgs": {
+          "priority": 3
+        }
       }
     },
     "supportEffect": {
@@ -5522,6 +6032,8 @@
     "plusDp": 20,
     "evoCost": 40,
     "image": "https://digi-api.com/images/digimon/w/Superstarmon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Comet Cluster",
@@ -5539,7 +6051,10 @@
         "name": "Super Star Seeker",
         "damage": 380,
         "type": "cross",
-        "description": "Rare Foe x3"
+        "description": "Rare Foe x3",
+        "effectArgs": {
+          "priority": 1
+        }
       }
     },
     "supportEffect": {
@@ -5560,6 +6075,8 @@
     "plusDp": 10,
     "evoCost": 50,
     "image": "https://digi-api.com/images/digimon/w/Metal_Etemon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Banana Slip",
@@ -5581,7 +6098,8 @@
         "effectId": "cross.counter",
         "effectArgs": {
           "targetAttack": "circle",
-          "multiplier": 2
+          "multiplier": 2,
+          "priority": 1
         }
       }
     },
@@ -5603,6 +6121,8 @@
     "plusDp": 20,
     "evoCost": 40,
     "image": "https://digi-api.com/images/digimon/w/Shakkoumon.png",
+    "xEffectSpeed": 3,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Clay Bomb",
@@ -5620,7 +6140,10 @@
         "name": "Super Spirit",
         "damage": 300,
         "type": "cross",
-        "description": "Jamming"
+        "description": "Jamming",
+        "effectArgs": {
+          "priority": 3
+        }
       }
     },
     "supportEffect": {
@@ -5641,6 +6164,8 @@
     "plusDp": 20,
     "evoCost": 40,
     "image": "https://digi-api.com/images/digimon/w/Jijimon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Dark Noose",
@@ -5661,7 +6186,8 @@
         "description": "triangle to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "triangle"
+          "targetAttack": "triangle",
+          "priority": 1
         }
       }
     },
@@ -5683,6 +6209,8 @@
     "plusDp": 10,
     "evoCost": 50,
     "image": "https://digi-api.com/images/digimon/w/Digitamamon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Nightmare Syndromer",
@@ -5703,7 +6231,8 @@
         "description": "circle to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "circle"
+          "targetAttack": "circle",
+          "priority": 1
         }
       }
     },
@@ -5725,6 +6254,8 @@
     "plusDp": 10,
     "evoCost": 40,
     "image": "https://digi-api.com/images/digimon/w/Vademon.png",
+    "xEffectSpeed": 3,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Alien Ray",
@@ -5742,7 +6273,10 @@
         "name": "Evil Kiss",
         "damage": 200,
         "type": "cross",
-        "description": "Jamming"
+        "description": "Jamming",
+        "effectArgs": {
+          "priority": 3
+        }
       }
     },
     "supportEffect": {
@@ -5763,6 +6297,8 @@
     "plusDp": 10,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Giromon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Big Bang Boom",
@@ -5782,7 +6318,9 @@
         "type": "cross",
         "description": "Crash",
         "effectId": "cross.crash",
-        "effectArgs": {}
+        "effectArgs": {
+          "priority": 1
+        }
       }
     },
     "supportEffect": {
@@ -5804,6 +6342,8 @@
     "plusDp": 20,
     "evoCost": 50,
     "image": "https://digi-api.com/images/digimon/w/Monzaemon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Hearts Attack",
@@ -5821,7 +6361,10 @@
         "name": "Silent Bear Hug",
         "damage": 430,
         "type": "cross",
-        "description": "Darkness Foe x3"
+        "description": "Darkness Foe x3",
+        "effectArgs": {
+          "priority": 1
+        }
       }
     },
     "supportEffect": {
@@ -5842,6 +6385,8 @@
     "plusDp": 10,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Metal_Mamemon.png",
+    "xEffectSpeed": 2,
+    "supportSpeed": 0,
     "attacks": {
       "circle": {
         "name": "Energetic Bomb",
@@ -5859,7 +6404,10 @@
         "name": "Shaft Spike",
         "damage": 280,
         "type": "cross",
-        "description": "1st Attack"
+        "description": "1st Attack",
+        "effectArgs": {
+          "priority": 2
+        }
       }
     }
   },
@@ -5874,6 +6422,8 @@
     "plusDp": 10,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Mamemon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 0,
     "attacks": {
       "circle": {
         "name": "Smiley Bomb",
@@ -5895,7 +6445,8 @@
         "effectId": "cross.counter",
         "effectArgs": {
           "targetAttack": "circle",
-          "multiplier": 2
+          "multiplier": 2,
+          "priority": 1
         }
       }
     }
@@ -5911,6 +6462,8 @@
     "plusDp": 20,
     "evoCost": 40,
     "image": "https://digi-api.com/images/digimon/w/Etemon.png",
+    "xEffectSpeed": 3,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Dark Network",
@@ -5928,7 +6481,10 @@
         "name": "Concert Crush",
         "damage": 150,
         "type": "cross",
-        "description": "Jamming"
+        "description": "Jamming",
+        "effectArgs": {
+          "priority": 3
+        }
       }
     },
     "supportEffect": {
@@ -5949,6 +6505,8 @@
     "plusDp": 10,
     "evoCost": 40,
     "image": "https://digi-api.com/images/digimon/w/Ankylomon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Tail Hammer",
@@ -5969,7 +6527,8 @@
         "description": "circle to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "circle"
+          "targetAttack": "circle",
+          "priority": 1
         }
       }
     },
@@ -5991,6 +6550,8 @@
     "plusDp": 10,
     "evoCost": 40,
     "image": "https://digi-api.com/images/digimon/w/Starmon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 3,
     "attacks": {
       "circle": {
         "name": "Meteor Stream",
@@ -6008,7 +6569,10 @@
         "name": "Star Seeker",
         "damage": 230,
         "type": "cross",
-        "description": "Darkness Foe x3"
+        "description": "Darkness Foe x3",
+        "effectArgs": {
+          "priority": 1
+        }
       }
     },
     "supportEffect": {
@@ -6029,6 +6593,8 @@
     "plusDp": 10,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Thunderballmon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Thunder Volt",
@@ -6050,7 +6616,8 @@
         "effectId": "cross.counter",
         "effectArgs": {
           "targetAttack": "cross",
-          "multiplier": 2
+          "multiplier": 2,
+          "priority": 1
         }
       }
     },
@@ -6072,6 +6639,8 @@
     "plusDp": 10,
     "evoCost": 40,
     "image": "https://digi-api.com/images/digimon/w/Platinum_Sukamon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Metal Bomber",
@@ -6092,7 +6661,8 @@
         "description": "circle to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "circle"
+          "targetAttack": "circle",
+          "priority": 1
         }
       }
     },
@@ -6114,6 +6684,8 @@
     "plusDp": 10,
     "evoCost": 30,
     "image": "https://static.wikia.nocookie.net/digimon/images/0/05/ShellNumemon_155_%28DDCB%29.jpg/revision/latest?cb=20160401033957",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Shell's Attack",
@@ -6134,7 +6706,8 @@
         "description": "circle to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "circle"
+          "targetAttack": "circle",
+          "priority": 1
         }
       }
     },
@@ -6156,6 +6729,8 @@
     "plusDp": 0,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Nanimon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Power Punch",
@@ -6177,7 +6752,8 @@
         "effectId": "cross.counter",
         "effectArgs": {
           "targetAttack": "cross",
-          "multiplier": 2
+          "multiplier": 2,
+          "priority": 1
         }
       }
     },
@@ -6199,6 +6775,8 @@
     "plusDp": 10,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Numemon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Party Time",
@@ -6219,7 +6797,8 @@
         "description": "cross to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "cross"
+          "targetAttack": "cross",
+          "priority": 1
         }
       }
     },
@@ -6241,6 +6820,8 @@
     "plusDp": 10,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Sukamon.png",
+    "xEffectSpeed": 3,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Poop Blast",
@@ -6258,7 +6839,10 @@
         "name": "Quick Poop Shot",
         "damage": 200,
         "type": "cross",
-        "description": "Jamming"
+        "description": "Jamming",
+        "effectArgs": {
+          "priority": 3
+        }
       }
     },
     "supportEffect": {
@@ -6279,6 +6863,8 @@
     "plusDp": 10,
     "evoCost": 40,
     "image": "https://digi-api.com/images/digimon/w/Gottsumon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Guardian Bomb",
@@ -6296,7 +6882,10 @@
         "name": "Gigantic Press",
         "damage": 250,
         "type": "cross",
-        "description": "Rare Foe x3"
+        "description": "Rare Foe x3",
+        "effectArgs": {
+          "priority": 1
+        }
       }
     },
     "supportEffect": {
@@ -6317,6 +6906,8 @@
     "plusDp": 10,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Geremon.png",
+    "xEffectSpeed": 0,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Dirty Puddle",
@@ -6355,6 +6946,8 @@
     "plusDp": 10,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Nise_Drimogemon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Bogus Iron Drill Spin",
@@ -6372,7 +6965,10 @@
         "name": "Fake Special Attack",
         "damage": 220,
         "type": "cross",
-        "description": "Rare Foe x3"
+        "description": "Rare Foe x3",
+        "effectArgs": {
+          "priority": 1
+        }
       }
     },
     "supportEffect": {
@@ -6394,6 +6990,8 @@
     "plusDp": 10,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Shima_Unimon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 0,
     "attacks": {
       "circle": {
         "name": "Striped Blaster",
@@ -6415,7 +7013,8 @@
         "effectId": "cross.counter",
         "effectArgs": {
           "targetAttack": "circle",
-          "multiplier": 2
+          "multiplier": 2,
+          "priority": 1
         }
       }
     }
@@ -6431,6 +7030,8 @@
     "plusDp": 10,
     "evoCost": 30,
     "image": "https://digi-api.com/images/digimon/w/Tuchidarumon.png",
+    "xEffectSpeed": 0,
+    "supportSpeed": 0,
     "attacks": {
       "circle": {
         "name": "Heavy Punch",
@@ -6463,6 +7064,8 @@
     "plusDp": 10,
     "evoCost": 20,
     "image": "https://digi-api.com/images/digimon/w/Sand_Yanmamon.png",
+    "xEffectSpeed": 2,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Desert Storm",
@@ -6480,7 +7083,10 @@
         "name": "Bottom Cutter",
         "damage": 210,
         "type": "cross",
-        "description": "1st Attack"
+        "description": "1st Attack",
+        "effectArgs": {
+          "priority": 2
+        }
       }
     },
     "supportEffect": {
@@ -6501,6 +7107,8 @@
     "plusDp": 20,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Toy_Agumon.png",
+    "xEffectSpeed": 0,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Toy Flame",
@@ -6539,6 +7147,8 @@
     "plusDp": 20,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Hagurumon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Darkness Gear",
@@ -6558,7 +7168,9 @@
         "type": "cross",
         "description": "Crash",
         "effectId": "cross.crash",
-        "effectArgs": {}
+        "effectArgs": {
+          "priority": 1
+        }
       }
     },
     "supportEffect": {
@@ -6579,6 +7191,8 @@
     "plusDp": 20,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Toy_Agumon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Toy Flame",
@@ -6600,7 +7214,8 @@
         "effectId": "cross.counter",
         "effectArgs": {
           "targetAttack": "triangle",
-          "multiplier": 2
+          "multiplier": 2,
+          "priority": 1
         }
       }
     },
@@ -6622,6 +7237,8 @@
     "plusDp": 20,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Clear_Agumon.png",
+    "xEffectSpeed": 3,
+    "supportSpeed": 3,
     "attacks": {
       "circle": {
         "name": "Precious Flame",
@@ -6639,7 +7256,10 @@
         "name": "Wonder Light",
         "damage": 50,
         "type": "cross",
-        "description": "Jamming"
+        "description": "Jamming",
+        "effectArgs": {
+          "priority": 3
+        }
       }
     },
     "supportEffect": {
@@ -6660,6 +7280,8 @@
     "plusDp": 20,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Elecmon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 0,
     "attacks": {
       "circle": {
         "name": "Jamming Thunder",
@@ -6677,7 +7299,10 @@
         "name": "Assassin Bolt",
         "damage": 190,
         "type": "cross",
-        "description": "Rare Foe x3"
+        "description": "Rare Foe x3",
+        "effectArgs": {
+          "priority": 1
+        }
       }
     }
   },
@@ -6692,6 +7317,8 @@
     "plusDp": 20,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Psychemon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Colored Sparkle",
@@ -6712,7 +7339,8 @@
         "description": "circle to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "circle"
+          "targetAttack": "circle",
+          "priority": 1
         }
       }
     },
@@ -6734,6 +7362,8 @@
     "plusDp": 10,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Modoki_Betamon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Electric Shock",
@@ -6754,7 +7384,8 @@
         "description": "circle to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "circle"
+          "targetAttack": "circle",
+          "priority": 1
         }
       }
     },
@@ -6776,6 +7407,8 @@
     "plusDp": 0,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Fladramon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Fire Rocket",
@@ -6797,7 +7430,8 @@
         "effectId": "cross.counter",
         "effectArgs": {
           "targetAttack": "circle",
-          "multiplier": 2
+          "multiplier": 2,
+          "priority": 1
         }
       }
     },
@@ -6819,6 +7453,8 @@
     "plusDp": 0,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Magnamon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Plasma Shot",
@@ -6839,7 +7475,8 @@
         "description": "circle to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "circle"
+          "targetAttack": "circle",
+          "priority": 1
         }
       }
     },
@@ -6861,6 +7498,8 @@
     "plusDp": 0,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Baromon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Dancing Meteor",
@@ -6881,7 +7520,8 @@
         "description": "circle to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "circle"
+          "targetAttack": "circle",
+          "priority": 1
         }
       }
     },
@@ -6903,6 +7543,8 @@
     "plusDp": 20,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/V-mon.png",
+    "xEffectSpeed": 0,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Vee Head Butt",
@@ -6942,6 +7584,8 @@
     "plusDp": 0,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Submarimon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Submarine Attack",
@@ -6962,7 +7606,8 @@
         "description": "circle to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "circle"
+          "targetAttack": "circle",
+          "priority": 1
         }
       }
     },
@@ -6984,6 +7629,8 @@
     "plusDp": 0,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Holsmon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Freezing Wave",
@@ -7005,7 +7652,8 @@
         "effectId": "cross.counter",
         "effectArgs": {
           "targetAttack": "cross",
-          "multiplier": 2
+          "multiplier": 2,
+          "priority": 1
         }
       }
     },
@@ -7027,6 +7675,8 @@
     "plusDp": 0,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Tylomon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Torpedo Attack",
@@ -7044,7 +7694,10 @@
         "name": "Eraser Beam",
         "damage": 250,
         "type": "cross",
-        "description": "Fire Foe x3"
+        "description": "Fire Foe x3",
+        "effectArgs": {
+          "priority": 1
+        }
       }
     },
     "supportEffect": {
@@ -7065,6 +7718,8 @@
     "plusDp": 0,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Holsmon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Tempest Wing",
@@ -7085,7 +7740,8 @@
         "description": "circle to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "circle"
+          "targetAttack": "circle",
+          "priority": 1
         }
       }
     },
@@ -7107,6 +7763,8 @@
     "plusDp": 0,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Pegasmon.png",
+    "xEffectSpeed": 2,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Star Shower",
@@ -7124,7 +7782,10 @@
         "name": "Needle Rain",
         "damage": 200,
         "type": "cross",
-        "description": "1st Attack"
+        "description": "1st Attack",
+        "effectArgs": {
+          "priority": 2
+        }
       }
     },
     "supportEffect": {
@@ -7145,6 +7806,8 @@
     "plusDp": 0,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Nefertimon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Rocking Stone",
@@ -7165,7 +7828,8 @@
         "description": "circle to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "circle"
+          "targetAttack": "circle",
+          "priority": 1
         }
       }
     },
@@ -7187,6 +7851,8 @@
     "plusDp": 30,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Hawkmon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Hawk Beam",
@@ -7208,7 +7874,8 @@
         "effectId": "cross.counter",
         "effectArgs": {
           "targetAttack": "circle",
-          "multiplier": 2
+          "multiplier": 2,
+          "priority": 1
         }
       }
     },
@@ -7231,6 +7898,8 @@
     "plusDp": 30,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Patamon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Boom Bubble",
@@ -7252,7 +7921,8 @@
         "effectId": "cross.counter",
         "effectArgs": {
           "targetAttack": "circle",
-          "multiplier": 2
+          "multiplier": 2,
+          "priority": 1
         }
       }
     },
@@ -7275,6 +7945,8 @@
     "plusDp": 30,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Tailmon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Lightning Paw",
@@ -7296,7 +7968,8 @@
         "effectId": "cross.counter",
         "effectArgs": {
           "targetAttack": "triangle",
-          "multiplier": 2
+          "multiplier": 2,
+          "priority": 1
         }
       }
     },
@@ -7319,6 +7992,8 @@
     "plusDp": 0,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Lighdramon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Lightning Blast",
@@ -7339,7 +8014,8 @@
         "description": "triangle to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "triangle"
+          "targetAttack": "triangle",
+          "priority": 1
         }
       }
     },
@@ -7361,6 +8037,8 @@
     "plusDp": 0,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Shadramon.png",
+    "xEffectSpeed": 3,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Flare Buster",
@@ -7378,7 +8056,10 @@
         "name": "Psychic Wave",
         "damage": 150,
         "type": "cross",
-        "description": "Jamming"
+        "description": "Jamming",
+        "effectArgs": {
+          "priority": 3
+        }
       }
     },
     "supportEffect": {
@@ -7399,6 +8080,8 @@
     "plusDp": 20,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Wormmon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 1,
     "attacks": {
       "circle": {
         "name": "Sticky Net",
@@ -7419,7 +8102,8 @@
         "description": "circle to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "circle"
+          "targetAttack": "circle",
+          "priority": 1
         }
       }
     },
@@ -7442,6 +8126,8 @@
     "plusDp": 0,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Shurimon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Double Stars",
@@ -7462,7 +8148,8 @@
         "description": "cross to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "cross"
+          "targetAttack": "cross",
+          "priority": 1
         }
       }
     },
@@ -7484,6 +8171,8 @@
     "plusDp": 0,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Digmon.png",
+    "xEffectSpeed": 0,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Gold Rush",
@@ -7522,6 +8211,8 @@
     "plusDp": 20,
     "evoCost": 0,
     "image": "https://digi-api.com/images/digimon/w/Armadimon.png",
+    "xEffectSpeed": 1,
+    "supportSpeed": 2,
     "attacks": {
       "circle": {
         "name": "Diamond Shell",
@@ -7542,7 +8233,8 @@
         "description": "circle to 0",
         "effectId": "cross.to_zero",
         "effectArgs": {
-          "targetAttack": "circle"
+          "targetAttack": "circle",
+          "priority": 1
         }
       }
     },
@@ -7564,7 +8256,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Golden_banana_card.png",
+    "image": "/cards/options/191.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -7582,7 +8274,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Devil_chip_card.png",
+    "image": "/cards/options/192.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -7600,7 +8292,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Whistle_card.png",
+    "image": "/cards/options/193.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -7618,7 +8310,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Giga_hand_card.png",
+    "image": "/cards/options/194.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -7636,7 +8328,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Metallic_banana_card.png",
+    "image": "/cards/options/195.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -7654,7 +8346,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Shining_mane_card.png",
+    "image": "/cards/options/196.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -7672,7 +8364,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Mega_rec_floppy_card.png",
+    "image": "/cards/options/197.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -7690,7 +8382,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Mega_atk_chip_card.png",
+    "image": "/cards/options/198.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -7708,7 +8400,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Dark_lord_cape_card.png",
+    "image": "/cards/options/199.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -7726,7 +8418,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Fake_sevens_card.png",
+    "image": "/cards/options/200.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -7744,7 +8436,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Net_worm_card.png",
+    "image": "/cards/options/201.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -7762,7 +8454,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Missile_pod_card.png",
+    "image": "/cards/options/202.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -7780,7 +8472,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/297_shoguns_order_ddcb.png",
+    "image": "/cards/options/203.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -7798,7 +8490,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Beetle_diamond_card.png",
+    "image": "/cards/options/204.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -7816,7 +8508,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Dark_bone_card.png",
+    "image": "/cards/options/205.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -7834,7 +8526,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Red_digivice_card.png",
+    "image": "/cards/options/206.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -7852,7 +8544,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Blue_digivice_card.png",
+    "image": "/cards/options/207.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -7870,7 +8562,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Green_digivice_card.png",
+    "image": "/cards/options/208.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -7888,7 +8580,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Black_digivice_card.png",
+    "image": "/cards/options/209.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -7906,7 +8598,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Yellow_digivice_card.png",
+    "image": "/cards/options/210.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -7924,7 +8616,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Pink_digivice_card.png",
+    "image": "/cards/options/211.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -7942,7 +8634,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Another_dimension_card.png",
+    "image": "/cards/options/212.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -7960,7 +8652,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Uninstall_card.png",
+    "image": "/cards/options/213.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -7978,7 +8670,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Evil_program_card.png",
+    "image": "/cards/options/214.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -7996,7 +8688,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Coliseum_card.png",
+    "image": "/cards/options/215.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8014,7 +8706,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Fire_altar_card.png",
+    "image": "/cards/options/216.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8032,7 +8724,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Ice_altar_card.png",
+    "image": "/cards/options/217.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8050,7 +8742,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Nature_altar_card.png",
+    "image": "/cards/options/218.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8068,7 +8760,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Dark_altar_cafrd.png",
+    "image": "/cards/options/219.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8086,7 +8778,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Rare_altar_card.png",
+    "image": "/cards/options/220.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8104,7 +8796,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Large_recovery_floppy_card.png",
+    "image": "/cards/options/221.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8122,7 +8814,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Mega_circle_defense.png",
+    "image": "/cards/options/222.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8140,7 +8832,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Mega_triangle_defense.png",
+    "image": "/cards/options/223.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8158,7 +8850,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Mega_x_defense.png",
+    "image": "/cards/options/224.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8176,7 +8868,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Heap_of_junk_card.png",
+    "image": "/cards/options/225.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8194,7 +8886,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Ray_gun_card.png",
+    "image": "/cards/options/226.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8212,7 +8904,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Chainsaw_card.png",
+    "image": "/cards/options/227.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8230,7 +8922,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Metal_parts_card.png",
+    "image": "/cards/options/228.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8248,7 +8940,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Metal_armor_card.png",
+    "image": "/cards/options/229.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8266,7 +8958,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Mega_hand_card.png",
+    "image": "/cards/options/230.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8284,7 +8976,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Level_balancer_card.png",
+    "image": "/cards/options/231.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8302,7 +8994,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Level_manager_card.png",
+    "image": "/cards/options/232.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8320,7 +9012,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Level_booster_card.png",
+    "image": "/cards/options/233.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8338,7 +9030,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Armor_clash_card.png",
+    "image": "/cards/options/234.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8356,7 +9048,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Silver_ball_card.png",
+    "image": "/cards/options/235.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8374,7 +9066,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Coral_charm_card.png",
+    "image": "/cards/options/236.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8392,7 +9084,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Patch_of_love_card.png",
+    "image": "/cards/options/237.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8410,7 +9102,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Mystery_egg_card.png",
+    "image": "/cards/options/238.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8428,7 +9120,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Miracle_ruby_card.png",
+    "image": "/cards/options/239.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8446,7 +9138,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Cyber_parts_card.png",
+    "image": "/cards/options/240.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8464,7 +9156,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Liquid_crystal_card.png",
+    "image": "/cards/options/241.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8482,7 +9174,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/300_deluxe_mushroom_ddcb.png",
+    "image": "/cards/options/242.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8500,7 +9192,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Lucky_mushroom_card.png",
+    "image": "/cards/options/243.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8518,7 +9210,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Premium_steak_card.png",
+    "image": "/cards/options/244.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8536,7 +9228,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Short_lance_card.png",
+    "image": "/cards/options/245.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8554,7 +9246,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Medium_recovery_floppy_card.png",
+    "image": "/cards/options/246.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8572,7 +9264,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Digimon_analyzer_card.png",
+    "image": "/cards/options/247.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8590,7 +9282,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Training_manual_card.png",
+    "image": "/cards/options/248.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8608,7 +9300,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Circle_hitter_card.png",
+    "image": "/cards/options/249.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8626,7 +9318,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Triangle_hitter_card.png",
+    "image": "/cards/options/250.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8644,7 +9336,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Cross_hitter_card.png",
+    "image": "/cards/options/251.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8662,7 +9354,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Suka_curse_card.png",
+    "image": "/cards/options/252.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8680,7 +9372,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Cherrymon_mist_card.png",
+    "image": "/cards/options/253.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8698,7 +9390,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Hacking_card.png",
+    "image": "/cards/options/254.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8716,7 +9408,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Digimon_grave_card.png",
+    "image": "/cards/options/255.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8734,7 +9426,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Data_copy_card.png",
+    "image": "/cards/options/256.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8752,7 +9444,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Partner_finder_card.png",
+    "image": "/cards/options/257.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8770,7 +9462,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Fire_spot_card.png",
+    "image": "/cards/options/258.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8788,7 +9480,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Ice_crystal_card.png",
+    "image": "/cards/options/259.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8806,7 +9498,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Earth_charm_card.png",
+    "image": "/cards/options/260.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8824,7 +9516,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Black_gear_card.png",
+    "image": "/cards/options/261.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8842,7 +9534,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Stuffed_animal_card.png",
+    "image": "/cards/options/262.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8860,7 +9552,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Disrupt_ray_card.png",
+    "image": "/cards/options/263.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8883,7 +9575,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Attack_chip_card.png",
+    "image": "/cards/options/264.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8901,7 +9593,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/High_speed_disk_card.png",
+    "image": "/cards/options/265.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8923,7 +9615,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Recovery_floppy_card.png",
+    "image": "/cards/options/266.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8941,7 +9633,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Attack_disk_circle_card.png",
+    "image": "/cards/options/267.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8959,7 +9651,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Attack_disk_triangle_card.png",
+    "image": "/cards/options/268.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8977,7 +9669,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Attack_disk_cross_card.png",
+    "image": "/cards/options/269.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -8995,7 +9687,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Defense_disk_circle_card.png",
+    "image": "/cards/options/270.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -9013,7 +9705,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Defense_disk_triangle_card.png",
+    "image": "/cards/options/271.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -9031,7 +9723,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Defense_disk_cross_card.png",
+    "image": "/cards/options/272.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -9054,7 +9746,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Digi_garnet_card.png",
+    "image": "/cards/options/273.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -9076,7 +9768,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Digi_amethyst_card.png",
+    "image": "/cards/options/274.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -9094,7 +9786,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Digi_aquamarine_card.png",
+    "image": "/cards/options/275.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -9116,7 +9808,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Digi_diamond_card.png",
+    "image": "/cards/options/276.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -9134,7 +9826,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Digi_emerald_card.png",
+    "image": "/cards/options/277.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -9152,7 +9844,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Digi_pearl_card.png",
+    "image": "/cards/options/278.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -9170,7 +9862,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Digi_ruby_card.png",
+    "image": "/cards/options/279.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -9188,7 +9880,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Digi_sardnyx_card.png",
+    "image": "/cards/options/280.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -9206,7 +9898,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Digi_sapphire_card.png",
+    "image": "/cards/options/281.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -9224,7 +9916,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Digi_opal_card.png",
+    "image": "/cards/options/282.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -9242,7 +9934,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Digi_topaz_card.png",
+    "image": "/cards/options/283.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -9260,7 +9952,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Digi_turquoise_card.png",
+    "image": "/cards/options/284.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -9278,7 +9970,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Wild_sevens_card.png",
+    "image": "/cards/options/285.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -9300,7 +9992,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Holy_sevens_card.png",
+    "image": "/cards/options/286.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -9318,7 +10010,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Dark_sevens_card.png",
+    "image": "/cards/options/287.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -9336,7 +10028,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Ground_sevens_card.png",
+    "image": "/cards/options/288.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -9354,7 +10046,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Misty_sevens_card.png",
+    "image": "/cards/options/289.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -9372,7 +10064,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Speed_sevens_card.png",
+    "image": "/cards/options/290.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -9390,7 +10082,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Reverse_sevens_card.png",
+    "image": "/cards/options/291.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -9408,7 +10100,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Rosemon_lure_card.png",
+    "image": "/cards/options/292.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -9426,7 +10118,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Download_evolution_card.png",
+    "image": "/cards/options/293.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -9444,7 +10136,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Armor_crush_evolution_card.png",
+    "image": "/cards/options/294.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -9466,7 +10158,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Special_evolution_card.png",
+    "image": "/cards/options/295.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -9484,7 +10176,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Mutant_evolution_card.png",
+    "image": "/cards/options/296.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -9506,7 +10198,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Warp_evolution_card.png",
+    "image": "/cards/options/297.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -9524,7 +10216,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/De_armor_evolution_card.png",
+    "image": "/cards/options/298.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -9546,7 +10238,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Speed_evolution_card.png",
+    "image": "/cards/options/299.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,
@@ -9564,7 +10256,7 @@
     "maxHp": 0,
     "plusDp": 0,
     "evoCost": 0,
-    "image": "https://cdn.staticneo.com/w/digimon/Digi_devolve_card.png",
+    "image": "/cards/options/300.png",
     "supportEffect": {
       "type": "catalog_text",
       "value": 0,

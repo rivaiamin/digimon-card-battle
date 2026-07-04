@@ -54,6 +54,7 @@ import {
     type ArenaVariant,
 } from "../lib/arenaVariant";
 import { buildDefaultDeckCardIds } from "../lib/defaultDeckBuilder";
+import { migrateDeckCardIds } from "../lib/legacyCardIds";
 import { validateDeck, formatDeckValidationError } from "../lib/deckValidator";
 import { createSeededRng, shuffleInPlace, type Rng } from "../lib/seededRng";
 import {
@@ -431,7 +432,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             const playerIndex = this.state.players.size;
             return buildDefaultDeckCardIds(CARD_CATALOG, playerIndex);
         }
-        return raw as string[];
+        return migrateDeckCardIds(raw as string[]);
     }
 
     private buildDeckFromCardIds(playerIndex: number, cardIds: string[]): CardSchema[] {

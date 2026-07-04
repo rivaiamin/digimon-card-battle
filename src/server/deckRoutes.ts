@@ -4,6 +4,7 @@ import { loadCardCatalog, type NormalizedCardCatalogEntry } from "../lib/cardCat
 import { listArenaVariants, resolveArenaVariant } from "../lib/arenaVariant";
 import { buildDefaultDeckCardIds } from "../lib/defaultDeckBuilder";
 import { validateDeck } from "../lib/deckValidator";
+import { migrateDeckCardIds } from "../lib/legacyCardIds";
 import { getRuleProfile, type RuleProfileId } from "../lib/ruleProfile";
 import { CANONICAL_DECK_SIZE } from "../lib/deckConstraints";
 
@@ -35,8 +36,11 @@ export function registerDeckRoutes(app: Express) {
             return;
         }
 
-        const result = validateDeck(cardIds, CATALOG_BY_ID, arenaVariant);
-        res.status(result.ok ? 200 : 400).json(result);
+        const migrated = migrateDeckCardIds(cardIds);
+        const result = validateDeck(migrated, CATALOG_BY_ID, arenaVariant);
+        res.status(result.ok ? 200 : 400).json(
+            result.ok ? { ...result, cardIds: migrated } : result
+        );
     });
 
     app.get("/api/match/config", (_req: Request, res: Response) => {

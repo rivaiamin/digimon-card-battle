@@ -1,12 +1,17 @@
 /**
  * Build `src/data/cards.json` from the US Digimon Digital Card Battle catalog
- * (GameFAQs / community card list) and Digimon portraits in `src/data/digimon.json`.
+ * and Digimon portraits in `src/data/digimon.json`.
  *
- * Sources:
- * - scripts/data/ddcb-source-cards.json — full 301-card DDCB stats + attack names
+ * Sources (vendored from AsyrafKZ/digital-card-battle-clone-data-collection):
+ * - scripts/data/asyrafkz/cards.json — full 301-card stats + attack names
+ * - scripts/data/asyrafkz/result.json — per-card X / support speeds
+ * - scripts/data/asyrafkz/optionCards.json — option slice (via cards.json)
+ * - public/cards/options/*.png — option card art
  * - src/data/digimon.json — Digimon portraits (digi-api URLs)
  *
- * Run: pnpm exec tsx scripts/buildCardCatalog.ts
+ * Effect vocabulary: `pnpm exec tsx scripts/buildEffectCatalog.ts` → src/data/effects.json
+ *
+ * Run: pnpm cards:build
  */
 
 import fs from "node:fs";
@@ -35,7 +40,10 @@ type SourceMonster = {
     img_src: string;
     isPartner?: boolean;
     support_speed?: string;
+    x_effect_speed?: string;
 };
+
+type SpeedRow = { number: number; x_speed: string; support_speed: string };
 
 type SourceOption = {
     name: string;
@@ -355,11 +363,18 @@ function mapSupportEffect(support: string, speed: number): SupportOut | null {
     return { ...base, type: "catalog_text" };
 }
 
+function optionImage(id: string, fallback: string): string {
+    const local = path.join(ROOT, "public/cards/options", `${id}.png`);
+    if (fs.existsSync(local)) return `/cards/options/${id}.png`;
+    return fallback || "";
+}
+
 function mapOptionCard(opt: SourceOption): OutCard {
     const id = opt.number.padStart(3, "0");
     const effect = cleanEffectText(opt.effect);
     const name = opt.name.trim();
     const speed = num(opt.speed);
+    const image = optionImage(id, opt.img_src);
 
     // Evolution option cards (293–300 in US catalog).
     const evoId = Number(opt.number);
@@ -376,7 +391,7 @@ function mapOptionCard(opt: SourceOption): OutCard {
             maxHp: 0,
             plusDp: 0,
             evoCost: 0,
-            image: opt.img_src || "",
+            image,
             supportEffect: {
                 type: "catalog_text",
                 value: 0,
@@ -398,7 +413,7 @@ function mapOptionCard(opt: SourceOption): OutCard {
         maxHp: 0,
         plusDp: 0,
         evoCost: 0,
-        image: opt.img_src || "",
+        image,
         supportEffect: {
             type: "catalog_text",
             value: 0,
@@ -432,9 +447,7 @@ function mapBattleOption(
     name: string,
     effect: string
 ): { effectId?: string; effectArgs?: Record<string, string | number> } {
-    const text = effect.toLowerCase();
-
-    // Simple battle attack buffs
+    // Patterns drawn from AsyrafKZ effectList2.txt (unique option/support vocabulary).
     const atkBoost = effect.match(/^boost own attack power \+?(\d+)\.?$/i);
     if (atkBoost) {
         return {
@@ -442,14 +455,28 @@ function mapBattleOption(
             effectArgs: { targetAttack: "all", value: Number(atkBoost[1]) },
         };
     }
-    if (/^digi-garnet$/i.test(name)) {
+    const atkO = effect.match(/^boost own circle attack power \+?(\d+)\.?$/i);
+    if (atkO) {
         return {
             effectId: "option.battle.atk_buff",
-            effectArgs: { targetAttack: "all", value: 100 },
+            effectArgs: { targetAttack: "circle", value: Number(atkO[1]) },
+        };
+    }
+    const atkT = effect.match(/^boost own triangle attack power \+?(\d+)\.?$/i);
+    if (atkT) {
+        return {
+            effectId: "option.battle.atk_buff",
+            effectArgs: { targetAttack: "triangle", value: Number(atkT[1]) },
+        };
+    }
+    const atkX = effect.match(/^boost own cross attack power \+?(\d+)\.?$/i);
+    if (atkX) {
+        return {
+            effectId: "option.battle.atk_buff",
+            effectArgs: { targetAttack: "cross", value: Number(atkX[1]) },
         };
     }
 
-    // Simple heals / draws as prep options (usable in preparation when implemented as prep.*)
     const heal = effect.match(/^recover own hp (?:by )?\+?(\d+)\.?$/i);
     if (heal) {
         return {
@@ -457,31 +484,52 @@ function mapBattleOption(
             effectArgs: { value: Number(heal[1]) },
         };
     }
-    if (/^digi-amethyst$/i.test(name)) {
-        return { effectId: "option.prep.heal_active", effectArgs: { value: 100 } };
-    }
 
-    const draw = effect.match(/^draw (\d+) cards?(?: from online deck)?\.?$/i);
+    const draw = effect.match(/^draw (\d+) cards?(?: from (?:own )?online deck)?\.?$/i);
     if (draw) {
         return { effectId: "option.prep.draw", effectArgs: { count: Number(draw[1]) } };
+    }
+
+    // Named gems / chips with single-clause effects (effectList / optionCards).
+    if (/^digi-garnet$/i.test(name)) {
+        return {
+            effectId: "option.battle.atk_buff",
+            effectArgs: { targetAttack: "all", value: 100 },
+        };
+    }
+    if (/^digi-amethyst$/i.test(name) || /^recovery floppy$/i.test(name)) {
+        return { effectId: "option.prep.heal_active", effectArgs: { value: name.toLowerCase().includes("recovery") ? 300 : 100 } };
     }
     if (/^digi-diamond$/i.test(name)) {
         return { effectId: "option.prep.draw", effectArgs: { count: 2 } };
     }
+    if (/^attack chip$/i.test(name)) {
+        return {
+            effectId: "option.battle.atk_buff",
+            effectArgs: { targetAttack: "all", value: 300 },
+        };
+    }
+    if (/^holy sevens$/i.test(name)) {
+        return { effectId: "option.prep.heal_active", effectArgs: { value: 1000 } };
+    }
 
-    void name;
-    void text;
     return {};
 }
 
-function mapMonster(m: SourceMonster, portraits: Map<string, DigimonPortrait>): OutCard {
+function mapMonster(
+    m: SourceMonster,
+    portraits: Map<string, DigimonPortrait>,
+    speeds: Map<number, SpeedRow>
+): OutCard {
     const id = m.number.padStart(3, "0");
     const level = LEVEL_MAP[m.level] ?? m.level;
     const type = TYPE_MAP[m.specialty] ?? m.specialty;
     const hp = num(m.hp);
     const evoCost = num(m.dp);
     const plusDp = num(m.pp);
-    const speed = num(m.support_speed);
+    const speedRow = speeds.get(Number(m.number));
+    const speed = num(m.support_speed ?? speedRow?.support_speed);
+    const xSpeed = num(m.x_effect_speed ?? speedRow?.x_speed);
     const cross = mapCrossEffect(m.x_effect || "");
     const support = mapSupportEffect(cleanEffectText(m.support || ""), speed);
 
@@ -497,7 +545,9 @@ function mapMonster(m: SourceMonster, portraits: Map<string, DigimonPortrait>): 
     };
     if (cross.effectId) {
         crossAttack.effectId = cross.effectId;
-        crossAttack.effectArgs = cross.effectArgs ?? {};
+        crossAttack.effectArgs = { ...(cross.effectArgs ?? {}), priority: xSpeed };
+    } else if (xSpeed) {
+        crossAttack.effectArgs = { priority: xSpeed };
     }
 
     const card: OutCard = {
@@ -511,6 +561,8 @@ function mapMonster(m: SourceMonster, portraits: Map<string, DigimonPortrait>): 
         plusDp,
         evoCost,
         image: resolveImage(m.name, m.img_src || "", portraits),
+        xEffectSpeed: xSpeed,
+        supportSpeed: speed,
         attacks: {
             circle: {
                 name: m.c_attack || "Circle",
@@ -540,7 +592,8 @@ function mapMonster(m: SourceMonster, portraits: Map<string, DigimonPortrait>): 
 }
 
 function main() {
-    const sourcePath = path.join(ROOT, "scripts/data/ddcb-source-cards.json");
+    const sourcePath = path.join(ROOT, "scripts/data/asyrafkz/cards.json");
+    const speedsPath = path.join(ROOT, "scripts/data/asyrafkz/result.json");
     const portraitsPath = path.join(ROOT, "src/data/digimon.json");
     const outPath = path.join(ROOT, "src/data/cards.json");
 
@@ -548,11 +601,15 @@ function main() {
         monster_cards: SourceMonster[];
         option_cards: SourceOption[];
     };
+    const speedRows = (
+        JSON.parse(fs.readFileSync(speedsPath, "utf8")) as { cards: SpeedRow[] }
+    ).cards;
+    const speeds = new Map(speedRows.map(r => [r.number, r]));
     const portraits = buildPortraitIndex(
         JSON.parse(fs.readFileSync(portraitsPath, "utf8")) as DigimonPortrait[]
     );
 
-    const monsters = source.monster_cards.map(m => mapMonster(m, portraits));
+    const monsters = source.monster_cards.map(m => mapMonster(m, portraits, speeds));
     const options = source.option_cards.map(mapOptionCard);
     const cards = [...monsters, ...options];
 
