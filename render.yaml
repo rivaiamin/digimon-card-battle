@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: digimon-card-battle
+    runtime: node
+    plan: free
+    buildCommand: corepack enable && pnpm install && pnpm build
+    startCommand: NODE_ENV=production pnpm exec tsx server.ts
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: FIREBASE_SERVICE_ACCOUNT_JSON
+        sync: false
