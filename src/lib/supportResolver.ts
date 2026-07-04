@@ -1,4 +1,5 @@
 import type { CardSchema, PlayerSchema, SupportEffectSchema } from "../schema/BattleState";
+import { sortEffectsByConflictPolicy } from "./effectConflictResolver";
 
 export type AttackType = "circle" | "triangle" | "cross";
 
@@ -220,7 +221,8 @@ export function resolveSupportPhase(
     defender: PlayerSchema,
     activeSupport: CardSchema | null,
     defenderSupport: CardSchema | null,
-    ctx: SupportBattleContext
+    ctx: SupportBattleContext,
+    tieBreak?: { activeSessionId: string; sessionOrder: string[] }
 ): void {
     const activeEffect = activeSupport?.supportEffect ?? null;
     const defenderEffect = defenderSupport?.supportEffect ?? null;
@@ -256,19 +258,34 @@ export function resolveSupportPhase(
     enqueue(active, defender, activeVoided ? null : activeSupport, activeVoided, true);
     enqueue(defender, active, defenderVoided ? null : defenderSupport, defenderVoided, false);
 
-    queue.sort((a, b) => {
-        if (a.priority !== b.priority) return a.priority - b.priority;
-        if (a.isActivePlayer !== b.isActivePlayer) return a.isActivePlayer ? -1 : 1;
-        return 0;
-    });
+    const sessionOrder = tieBreak?.sessionOrder ?? [];
+    const ordered = sortEffectsByConflictPolicy(
+        queue.map(entry => ({
+            effect: entry,
+            priority: entry.priority,
+            sessionId: entry.source.sessionId,
+            isActivePlayer: entry.isActivePlayer,
+            hasFirstStrike: ctx.firstStrikePlayers.has(entry.source.sessionId),
+        })),
+        sessionOrder
+    );
 
-    for (const entry of queue) {
+    for (const { effect: entry } of ordered) {
         applySingleEffect(entry.source, entry.target, entry.effect, ctx);
     }
 }
 
+export type DamageSourcePlayer = {
+    sessionId: string;
+    active: {
+        circle: { damage: number };
+        triangle: { damage: number };
+        cross: { damage: number };
+    } | null;
+};
+
 export function getEffectiveAttackDamage(
-    player: PlayerSchema,
+    player: DamageSourcePlayer,
     attack: AttackType,
     ctx: SupportBattleContext
 ): number {

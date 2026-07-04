@@ -5,6 +5,9 @@ export class AttackSchema extends Schema {
     @type("number") damage: number = 0;
     @type("string") type: string = ""; // circle, triangle, cross
     @type("string") description: string = "";
+    /** Cross/special attack effect (e.g. cross.counter). */
+    @type("string") effectId: string = "";
+    @type("string") effectArgsJson: string = "";
 }
 
 export class SupportEffectSchema extends Schema {
@@ -64,17 +67,37 @@ export class PlayerSchema extends Schema {
     /** Revealed after both players lock in (hidden choices kept server-side). */
     @type("string") selectedAttack: string | null = null;
     @type("boolean") attackLocked: boolean = false;
+
+    /** Opening mulligan redraws remaining (fidelity_ps1). */
+    @type("number") mulligansRemaining: number = 0;
+    /** True until the player's first battle Digimon is deployed this match. */
+    @type("boolean") needsOpeningDeploy: boolean = true;
+    /** Active Digimon was deployed with opening level C/U penalties. */
+    @type("boolean") openingPenaltyActive: boolean = false;
+    /** Consecutive phase timeouts without voluntary action (FC-023). */
+    @type("number") afkStrikes: number = 0;
 }
 
 export class BattleStateSchema extends Schema {
     @type({ map: PlayerSchema }) players = new MapSchema<PlayerSchema>();
     @type("string") phase: string = "waiting"; // waiting, draw, preparation, battle_support, battle_reveal, battle_attack, resolution, victory
-    /** During preparation: "discard" then "evolve". Empty until active Digimon is deployed. */
+    /** fidelity_ps1 | legacy_online */
+    @type("string") ruleProfileId: string = "fidelity_ps1";
+    /** standard | no_options — explicit arena variant (FC-029). */
+    @type("string") arenaVariantId: string = "standard";
+    /** During preparation: mulligan → deploy → discard → evolve */
     @type("string") prepSubPhase: string = "";
     @type("number") turn: number = 1;
     @type("string") activePlayerSessionId: string = "";
     @type("string") message: string = "Waiting for players...";
 
     @type("string") winnerSessionId: string = "";
-    @type("string") loserReason: string = ""; // points | deck_out | disconnect
+    @type("string") loserReason: string = ""; // points | deck_out | disconnect | afk
+    /**
+     * During battle_support (fidelity_ps1): session id allowed to lock support next.
+     * Empty = simultaneous pick (legacy) or both committed.
+     */
+    @type("string") supportPickSessionId: string = "";
+    /** Server wall-clock ms when the current interactive phase ends (FC-021). */
+    @type("number") phaseEndsAtMs: number = 0;
 }

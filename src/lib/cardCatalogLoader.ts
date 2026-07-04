@@ -32,9 +32,9 @@ export type NormalizedCardCatalogEntry = {
     evoCost: number;
     image: string;
     attacks: {
-        circle: { name: string; damage: number; type: "circle"; description: string };
-        triangle: { name: string; damage: number; type: "triangle"; description: string };
-        cross: { name: string; damage: number; type: "cross"; description: string };
+        circle: { name: string; damage: number; type: "circle"; description: string; effectId: string; effectArgs: EffectArgs };
+        triangle: { name: string; damage: number; type: "triangle"; description: string; effectId: string; effectArgs: EffectArgs };
+        cross: { name: string; damage: number; type: "cross"; description: string; effectId: string; effectArgs: EffectArgs };
     };
     supportEffect: NormalizedSupportEffect | null;
 };
@@ -47,6 +47,18 @@ export const KNOWN_EFFECT_IDS = new Set<string>([
     "support.halve_hp",
     "support.atk_buff",
     "support.hp_heal",
+    "option.prep.gain_dp",
+    "option.prep.draw",
+    "option.prep.heal_active",
+    "option.prep.fetch_trash_digimon",
+    "option.battle.atk_buff",
+    "evolution_option.warp_evolve",
+    "evolution_option.dp_adjust",
+    "evolution_option.restore_full_stats",
+    "cross.counter",
+    "cross.to_zero",
+    "cross.crash",
+    "cross.eat_up_hp",
 ]);
 
 function toCardKind(rawKind: unknown): CardKind {
@@ -194,17 +206,55 @@ function toNormalizedEffectDescriptor(cardId: string, raw: {
     }
 }
 
-function normalizeAttack(
+function normalizeAttack<T extends "circle" | "triangle" | "cross">(
     rawAttack: unknown,
-    type: "circle" | "triangle" | "cross"
-): { name: string; damage: number; type: "circle" | "triangle" | "cross"; description: string } {
+    type: T
+): {
+    name: string;
+    damage: number;
+    type: T;
+    description: string;
+    effectId: string;
+    effectArgs: EffectArgs;
+} {
     const a = rawAttack && typeof rawAttack === "object" ? (rawAttack as Record<string, unknown>) : {};
+    let effectId = typeof a.effectId === "string" ? a.effectId.trim() : "";
+    let effectArgs = normalizeEffectArgs(a.effectArgs);
+    if (effectId) {
+        assertKnownEffectId(effectId, `attack:${type}`);
+    }
     return {
         name: String(a.name ?? ""),
         damage: Number(a.damage ?? 0),
         type,
         description: String(a.description ?? ""),
+        effectId,
+        effectArgs,
     };
+}
+
+function legacyCrossEffect(cardId: string, raw: Record<string, unknown>): { effectId: string; effectArgs: EffectArgs } | null {
+    const legacy = typeof raw.x_effect === "string" ? raw.x_effect.trim() : "";
+    if (!legacy || legacy === "none") return null;
+    if (legacy === "counter_o") {
+        return { effectId: "cross.counter", effectArgs: { targetAttack: "circle", multiplier: 2 } };
+    }
+    if (legacy === "counter_t") {
+        return { effectId: "cross.counter", effectArgs: { targetAttack: "triangle", multiplier: 2 } };
+    }
+    if (legacy === "counter_x") {
+        return { effectId: "cross.counter", effectArgs: { targetAttack: "cross", multiplier: 2 } };
+    }
+    if (legacy === "x_to_zero") {
+        return { effectId: "cross.to_zero", effectArgs: { targetAttack: "circle" } };
+    }
+    if (legacy === "crash") {
+        return { effectId: "cross.crash", effectArgs: {} };
+    }
+    if (legacy === "eat_up_hp" || legacy === "eat-up-hp") {
+        return { effectId: "cross.eat_up_hp", effectArgs: {} };
+    }
+    throw new Error(`[cardCatalogLoader] Unsupported legacy x_effect "${legacy}" on card "${cardId}".`);
 }
 
 export function loadCardCatalog(rawCatalog: unknown): NormalizedCardCatalogEntry[] {
@@ -223,6 +273,14 @@ export function loadCardCatalog(rawCatalog: unknown): NormalizedCardCatalogEntry
         );
 
         const attacks = r.attacks && typeof r.attacks === "object" ? (r.attacks as Record<string, unknown>) : {};
+        const crossNorm = normalizeAttack(attacks.cross, "cross");
+        const legacyCross = legacyCrossEffect(String(r.id), r);
+        if (!crossNorm.effectId && legacyCross) {
+            assertKnownEffectId(legacyCross.effectId, String(r.id));
+            crossNorm.effectId = legacyCross.effectId;
+            crossNorm.effectArgs = legacyCross.effectArgs;
+        }
+
         const effect = toNormalizedEffectDescriptor(String(r.id), {
             effectId: r.effectId,
             effectArgs: r.effectArgs,
@@ -246,7 +304,7 @@ export function loadCardCatalog(rawCatalog: unknown): NormalizedCardCatalogEntry
             attacks: {
                 circle: normalizeAttack(attacks.circle, "circle"),
                 triangle: normalizeAttack(attacks.triangle, "triangle"),
-                cross: normalizeAttack(attacks.cross, "cross"),
+                cross: crossNorm,
             },
             supportEffect: support,
         });
