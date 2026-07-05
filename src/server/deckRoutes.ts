@@ -3,7 +3,9 @@ import cardsData from "../data/cards.json";
 import { loadCardCatalog, type NormalizedCardCatalogEntry } from "../lib/cardCatalogLoader";
 import { listArenaVariants, resolveArenaVariant } from "../lib/arenaVariant";
 import { buildDefaultDeckCardIds } from "../lib/defaultDeckBuilder";
+import { getBaseDeckById, listBaseDecks, listPlayableBaseDecks } from "../lib/baseDecks";
 import { validateDeck } from "../lib/deckValidator";
+import { migrateDeckCardIds } from "../lib/legacyCardIds";
 import { getRuleProfile, type RuleProfileId } from "../lib/ruleProfile";
 import { CANONICAL_DECK_SIZE } from "../lib/deckConstraints";
 
@@ -21,6 +23,42 @@ export function registerDeckRoutes(app: Express) {
         res.json({ cardIds, size: cardIds.length });
     });
 
+    app.get("/api/decks", (req: Request, res: Response) => {
+        const validOnly = req.query.validOnly !== "0" && req.query.validOnly !== "false";
+        const playable = req.query.playable === "1" || req.query.playable === "true";
+        const ruleProfileId = parseRuleProfileId(req.query.ruleProfile);
+        const arenaVariant = resolveArenaVariant(req.query.arenaVariant, ruleProfileId);
+
+        const decks = playable
+            ? listPlayableBaseDecks(CATALOG_BY_ID, arenaVariant)
+            : listBaseDecks({ validOnly });
+
+        res.json({
+            count: decks.length,
+            decks: decks.map(d => ({
+                id: d.id,
+                name: d.name,
+                aka: d.aka,
+                colors: d.colors,
+                owner: d.owner,
+                size: d.size,
+                valid: d.valid,
+            })),
+        });
+    });
+
+    app.get("/api/decks/:id", (req: Request, res: Response) => {
+        const deck = getBaseDeckById(String(req.params.id));
+        if (!deck) {
+            res.status(404).json({ ok: false, reason: "not_found", message: "Unknown deck id" });
+            return;
+        }
+        const ruleProfileId = parseRuleProfileId(req.query.ruleProfile);
+        const arenaVariant = resolveArenaVariant(req.query.arenaVariant, ruleProfileId);
+        const validation = validateDeck(deck.cardIds, CATALOG_BY_ID, arenaVariant);
+        res.json({ ...deck, validation });
+    });
+
     app.post("/api/decks/validate", (req: Request, res: Response) => {
         const cardIds = req.body?.cardIds;
         const ruleProfileId = parseRuleProfileId(req.body?.ruleProfile);
@@ -35,8 +73,11 @@ export function registerDeckRoutes(app: Express) {
             return;
         }
 
-        const result = validateDeck(cardIds, CATALOG_BY_ID, arenaVariant);
-        res.status(result.ok ? 200 : 400).json(result);
+        const migrated = migrateDeckCardIds(cardIds);
+        const result = validateDeck(migrated, CATALOG_BY_ID, arenaVariant);
+        res.status(result.ok ? 200 : 400).json(
+            result.ok ? { ...result, cardIds: migrated } : result
+        );
     });
 
     app.get("/api/match/config", (_req: Request, res: Response) => {

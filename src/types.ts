@@ -42,7 +42,9 @@ export interface DigimonCardData {
       | 'atk_mult'
       | 'halve_hp'
       | 'atk_buff'
-      | 'hp_heal';
+      | 'hp_heal'
+      /** Catalog text only — shown in UI, not resolved mechanically. */
+      | 'catalog_text';
     targetAttack?: 'circle' | 'triangle' | 'cross' | 'all';
     value: number;
     description: string;

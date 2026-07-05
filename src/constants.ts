@@ -1,4 +1,5 @@
-import { DigimonCardData } from "./types";
+import cardsData from "./data/cards.json";
+import type { DigimonCardData } from "./types";
 
 /** When `attacks` is missing (e.g. partial Colyseus state). */
 export const DEFAULT_CARD_ATTACKS: NonNullable<DigimonCardData["attacks"]> = {
@@ -7,156 +8,105 @@ export const DEFAULT_CARD_ATTACKS: NonNullable<DigimonCardData["attacks"]> = {
     cross: { name: "—", damage: 0, type: "cross", description: "" },
 };
 
-export const AGUMON: DigimonCardData = {
-  id: "agumon",
-  name: "AGUMON",
-  cardKind: "digimon",
-  level: "Rookie",
-  type: "Fire",
-  hp: 380,
-  maxHp: 380,
-  dp: 0,
-  plusDp: 10,
-  evoCost: 0,
-  image: "A",
-  attacks: {
-    circle: { name: "Pepper Breath", damage: 150, type: "circle", description: "Fires a small fireball from the mouth." },
-    triangle: { name: "Sharp Claw", damage: 100, type: "triangle", description: "Slashes with sharp claws." },
-    cross: { name: "Spitfire", damage: 120, type: "cross", description: "Breathes out a continuous stream of fire." }
-  },
-  supportEffect: { type: "atk_buff", targetAttack: "circle", value: 100, description: "Boosts Circle attack by 100 damage if the user is a Fire attribute Digimon." }
-};
+type RawCatalogCard = (typeof cardsData)[number];
 
-export const GREYMON: DigimonCardData = {
-  id: "greymon",
-  name: "GREYMON",
-  cardKind: "digimon",
-  level: "Champion",
-  type: "Fire",
-  hp: 650,
-  maxHp: 650,
-  dp: 0,
-  plusDp: 20,
-  evoCost: 30,
-  image: "G",
-  attacks: {
-    circle: { name: "Mega Flame", damage: 280, type: "circle", description: "Exhales an ultra-high-temperature flame that burns everything to ash." },
-    triangle: { name: "Great Horn", damage: 200, type: "triangle", description: "Charges the opponent with legendary horns." },
-    cross: { name: "Tail Whip", damage: 180, type: "cross", description: "A powerful tail strike that can knock back foes." }
-  },
-  supportEffect: { type: "atk_buff", targetAttack: "all", value: 50, description: "Increases all attack power by 50. If opponent is level Rookie, bonus increases to +100." }
-};
+function toCardData(raw: RawCatalogCard): DigimonCardData {
+    const attacks = "attacks" in raw && raw.attacks ? raw.attacks : null;
+    const support = "supportEffect" in raw ? raw.supportEffect : undefined;
 
-export const METALGREYMON: DigimonCardData = {
-  id: "metalgreymon",
-  name: "METALGREYMON",
-  cardKind: "digimon",
-  level: "Ultimate",
-  type: "Fire",
-  hp: 950,
-  maxHp: 950,
-  dp: 0,
-  plusDp: 30,
-  evoCost: 50,
-  image: "MG",
-  attacks: {
-    circle: { name: "Giga Destroyer", damage: 450, type: "circle", description: "Missile." },
-    triangle: { name: "Metal Slash", damage: 320, type: "triangle", description: "Claw." },
-    cross: { name: "Tera Destroyer", damage: 280, type: "cross", description: "Impact." }
-  }
-};
+    return {
+        id: raw.id,
+        name: raw.name,
+        cardKind: ("cardKind" in raw && raw.cardKind ? raw.cardKind : "digimon") as DigimonCardData["cardKind"],
+        effectId: "effectId" in raw ? raw.effectId : undefined,
+        effectArgs: "effectArgs" in raw ? (raw.effectArgs as DigimonCardData["effectArgs"]) : undefined,
+        level: (raw.level || "Rookie") as DigimonCardData["level"],
+        type: (raw.type || "Fire") as DigimonCardData["type"],
+        hp: Number(raw.hp ?? 0),
+        maxHp: Number(raw.maxHp ?? raw.hp ?? 0),
+        dp: 0,
+        plusDp: Number(raw.plusDp ?? 0),
+        evoCost: Number(raw.evoCost ?? 0),
+        image: String(raw.image ?? ""),
+        attacks: attacks
+            ? {
+                  circle: {
+                      name: attacks.circle.name,
+                      damage: attacks.circle.damage,
+                      type: "circle",
+                      description: attacks.circle.description ?? "",
+                      effect: "effectId" in attacks.circle ? String(attacks.circle.effectId ?? "") : undefined,
+                  },
+                  triangle: {
+                      name: attacks.triangle.name,
+                      damage: attacks.triangle.damage,
+                      type: "triangle",
+                      description: attacks.triangle.description ?? "",
+                      effect: "effectId" in attacks.triangle ? String(attacks.triangle.effectId ?? "") : undefined,
+                  },
+                  cross: {
+                      name: attacks.cross.name,
+                      damage: attacks.cross.damage,
+                      type: "cross",
+                      description: attacks.cross.description ?? "",
+                      effect: "effectId" in attacks.cross ? String(attacks.cross.effectId ?? "") : undefined,
+                  },
+              }
+            : null,
+        supportEffect: support
+            ? {
+                  type: support.type as NonNullable<DigimonCardData["supportEffect"]>["type"],
+                  targetAttack: "targetAttack" in support
+                      ? (support.targetAttack as NonNullable<DigimonCardData["supportEffect"]>["targetAttack"])
+                      : undefined,
+                  value: Number(support.value ?? 0),
+                  description: String(support.description ?? ""),
+                  requireType: "requireType" in support ? support.requireType : undefined,
+                  priority: "priority" in support ? Number(support.priority ?? 0) : undefined,
+              }
+            : undefined,
+    };
+}
 
-export const WARGREYMON: DigimonCardData = {
-  id: "wargreymon",
-  name: "WARGREYMON",
-  cardKind: "digimon",
-  level: "Mega",
-  type: "Fire",
-  hp: 1200,
-  maxHp: 1200,
-  dp: 0,
-  plusDp: 40,
-  evoCost: 80,
-  image: "WG",
-  attacks: {
-    circle: { name: "Gaia Force", damage: 600, type: "circle", description: "Nova." },
-    triangle: { name: "Great Tornado", damage: 450, type: "triangle", description: "Drill." },
-    cross: { name: "Brave Shield", damage: 300, type: "cross", description: "Block." }
-  }
-};
+function cardById(id: string): DigimonCardData {
+    const raw = cardsData.find(c => c.id === id);
+    if (!raw) {
+        throw new Error(`[constants] Missing catalog card "${id}"`);
+    }
+    return toCardData(raw);
+}
 
-export const TENTOMON: DigimonCardData = {
-  id: "tentomon",
-  name: "TENTOMON",
-  cardKind: "digimon",
-  level: "Rookie",
-  type: "Nature",
-  hp: 350,
-  maxHp: 350,
-  dp: 0,
-  plusDp: 10,
-  evoCost: 0,
-  image: "T",
-  attacks: {
-    circle: { name: "Super Shocker", damage: 140, type: "circle", description: "Electric." },
-    triangle: { name: "Horn Attack", damage: 110, type: "triangle", description: "Sharp." },
-    cross: { name: "Talon Twist", damage: 90, type: "cross", description: "Agile." }
-  },
-  supportEffect: { type: "hp_heal", value: 150, description: "Recover 150 HP" }
-};
-
-export const KABUTERIMON: DigimonCardData = {
-  id: "kabuterimon",
-  name: "KABUTERIMON",
-  cardKind: "digimon",
-  level: "Champion",
-  type: "Nature",
-  hp: 600,
-  maxHp: 600,
-  dp: 0,
-  plusDp: 20,
-  evoCost: 30,
-  image: "K",
-  attacks: {
-    circle: { name: "Mega Blaster", damage: 260, type: "circle", description: "Beam." },
-    triangle: { name: "Beetle Horn", damage: 190, type: "triangle", description: "Ram." },
-    cross: { name: "Insect Breath", damage: 150, type: "cross", description: "Gas." }
-  },
-  supportEffect: { type: "atk_buff", targetAttack: "triangle", value: 100, description: "Triangle +100" }
-};
-
-export const GABUMON: DigimonCardData = {
-  id: "gabumon",
-  name: "GABUMON",
-  cardKind: "digimon",
-  level: "Rookie",
-  type: "Ice",
-  hp: 360,
-  maxHp: 360,
-  dp: 0,
-  plusDp: 10,
-  evoCost: 0,
-  image: "Gb",
-  attacks: {
-    circle: { name: "Blue Blaster", damage: 140, type: "circle", description: "Ice." },
-    triangle: { name: "Horn Attack", damage: 100, type: "triangle", description: "Sharp." },
-    cross: { name: "Petit Fire", damage: 90, type: "cross", description: "Small." }
-  }
-};
+/** Official DDCB catalog ids (see `src/data/cards.json`). */
+export const AGUMON = cardById("027");
+export const GREYMON = cardById("014");
+export const METALGREYMON = cardById("009");
+export const WARGREYMON = cardById("002");
+export const TENTOMON = cardById("097");
+export const KABUTERIMON = cardById("086");
+export const GABUMON = cardById("062");
 
 export const SAMPLE_PLAYER_DIGIMON = AGUMON;
 export const SAMPLE_OPPONENT_DIGIMON = TENTOMON;
 
+/** Demo decks use instance ids; base stats come from the official catalog. */
 export const INITIAL_DECK: DigimonCardData[] = [
-    { ...AGUMON, id: "p_a1" }, { ...GREYMON, id: "p_g1" },
-    { ...METALGREYMON, id: "p_m1" }, { ...WARGREYMON, id: "p_w1" },
-    { ...TENTOMON, id: "p_t1" }, { ...KABUTERIMON, id: "p_k1" },
-    { ...GABUMON, id: "p_gb1" }, { ...AGUMON, id: "p_a2" },
-    { ...GREYMON, id: "p_g2" }, { ...METALGREYMON, id: "p_m2" }
+    { ...AGUMON, id: "p_a1" },
+    { ...GREYMON, id: "p_g1" },
+    { ...METALGREYMON, id: "p_m1" },
+    { ...WARGREYMON, id: "p_w1" },
+    { ...TENTOMON, id: "p_t1" },
+    { ...KABUTERIMON, id: "p_k1" },
+    { ...GABUMON, id: "p_gb1" },
+    { ...AGUMON, id: "p_a2" },
+    { ...GREYMON, id: "p_g2" },
+    { ...METALGREYMON, id: "p_m2" },
 ];
 
 export const OPPONENT_DECK: DigimonCardData[] = [
-    { ...TENTOMON, id: "o_t1" }, { ...KABUTERIMON, id: "o_k1" },
-    { ...AGUMON, id: "o_a1" }, { ...GREYMON, id: "o_g1" },
-    { ...TENTOMON, id: "o_t2" }, { ...KABUTERIMON, id: "o_k2" }
+    { ...TENTOMON, id: "o_t1" },
+    { ...KABUTERIMON, id: "o_k1" },
+    { ...AGUMON, id: "o_a1" },
+    { ...GREYMON, id: "o_g1" },
+    { ...TENTOMON, id: "o_t2" },
+    { ...KABUTERIMON, id: "o_k2" },
 ];

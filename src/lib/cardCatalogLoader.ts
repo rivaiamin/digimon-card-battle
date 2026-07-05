@@ -199,6 +199,9 @@ function toNormalizedEffectDescriptor(cardId: string, raw: {
             };
         case "hp_heal":
             return { effectId: "support.hp_heal", effectArgs: { value } };
+        case "catalog_text":
+            // Display-only support text from the full catalog; no mechanical effect yet.
+            return { effectId: "", effectArgs: {} };
         default:
             throw new Error(
                 `[cardCatalogLoader] Unsupported legacy supportEffect.type "${type}" on card "${cardId}". Add a normalized mapping first.`
