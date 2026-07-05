@@ -45,7 +45,7 @@ export function isRookieLevel(level: string): boolean {
 }
 
 export function isDigimonCard(card: MinimalCard): boolean {
-    const kind = card.cardKind ?? "digimon";
+    const kind = card.cardKind?.trim() || "digimon";
     return kind === "digimon";
 }
 
@@ -177,4 +177,13 @@ export function shouldDeckOutOnDraw(
     target: number
 ): boolean {
     return hasActive && isHandBelowTarget(handSize, target) && deckSize <= 0;
+}
+
+/** True when the player has at least one deployable Digimon in hand. */
+export function hasLegalDeployInHand(
+    hand: { some(predicate: (c: MinimalCard) => boolean): boolean },
+    profile: RuleProfile,
+    isOpeningDeploy: boolean
+): boolean {
+    return hand.some(c => validateDeployDigimon(c, profile, isOpeningDeploy).ok);
 }

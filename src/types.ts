@@ -87,6 +87,8 @@ export interface GameState {
     | 'victory';
   turn: number;
   isPlayerTurn: boolean;
+  /** Turn owner session id (attacker this exchange). */
+  activePlayerSessionId?: string;
   message: string;
   ruleProfileId?: string;
   arenaVariantId?: string;

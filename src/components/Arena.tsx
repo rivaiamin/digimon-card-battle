@@ -14,12 +14,13 @@ import { usePhaseTimerCritical } from "../hooks/usePhaseTimerCritical";
 import { ImpactFlash } from "./battle/ImpactFlash";
 import { DamagePopups } from "./battle/DamagePopups";
 import { SupportZone } from "./battle/SupportZone";
-import { PhaseTimer } from "./battle/PhaseTimer";
+import { MatchHeader } from "./battle/MatchHeader";
 import { AttackRevealOverlay } from "./battle/AttackRevealOverlay";
 import { BattleRevealVignette } from "./battle/BattleRevealVignette";
 import { canEvolveDigimon, matchesEvolutionType } from "../lib/evolutionEligibility";
 import { validateDeployDigimon } from "../lib/openingFlow";
 import { getRuleProfile } from "../lib/ruleProfile";
+import { getBattleRole, shouldShowFlashMessage } from "../lib/battleRoles";
 import {
     canPlayEvolutionOption,
     canPlayPrepOption,
@@ -144,6 +145,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
         phase: 'waiting',
         turn: 1,
         isPlayerTurn: true,
+        activePlayerSessionId: "",
         message: "CONNECTING TO SERVER...",
         prepSubPhase: "",
         hasDiscarded: false,
@@ -163,7 +165,8 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
     const suppressMessageOverlay =
         vfx.reveal.active ||
         vfx.isAnimating ||
-        gameState.phase === "battle_reveal";
+        gameState.phase === "battle_reveal" ||
+        !shouldShowFlashMessage(gameState.message, gameState.phase);
 
     /** Defender (non-active player) reveals support first during battle_reveal. */
     const playerRevealOrder: "first" | "second" | null =
@@ -205,6 +208,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                 phase: state.phase as any,
                 turn: state.turn,
                 isPlayerTurn: state.activePlayerSessionId === room.sessionId,
+                activePlayerSessionId: state.activePlayerSessionId ?? "",
                 message: state.message,
                 prepSubPhase: (
                     state.prepSubPhase === "discard" ||
@@ -266,11 +270,9 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
 
     // --- SERVER-AUTHORITATIVE ACTIONS ---
 
-    const handleDraw = () => {
+    const handleDigForDeploy = () => {
         audio.playSfx("chime");
-        const stamp = new Date().toLocaleTimeString();
-        setClickDebug(`[${stamp}] click: sent DRAW (phase=${gameState.phase}, myTurn=${gameState.isPlayerTurn})`);
-        room.send("action", { type: "DRAW" });
+        room.send("action", { type: "DIG_FOR_DEPLOY" });
     };
 
     const handleDiscardForDP = (cardId: string) => {
@@ -345,18 +347,22 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
             !gameState.supportPickSessionId ||
             gameState.supportPickSessionId === room.sessionId);
 
+    const yourBattleRole = gameState.activePlayerSessionId
+        ? getBattleRole(room.sessionId, gameState.activePlayerSessionId)
+        : null;
+
     const supportPhaseHint = (() => {
         if (gameState.phase !== "battle_support") return "";
-        if (gameState.player.supportLocked) return "Waiting for opponent...";
+        if (gameState.player.supportLocked) return "Support locked.";
         if (ruleProfile.battle.supportPickDefenderFirst && gameState.supportPickSessionId) {
             if (gameState.supportPickSessionId === room.sessionId) {
-                return ruleProfile.battle.attackLockBeforeSupport
-                    ? "Your turn — lock support (attacks already committed)."
-                    : "Your turn — lock support.";
+                return yourBattleRole === "defender"
+                    ? "Your pick — support first."
+                    : "Your pick — support.";
             }
-            return "Waiting for opponent to place support...";
+            return "Waiting for opponent.";
         }
-        return "Lock support or battle option (or none).";
+        return "Pick support or pass.";
     })();
 
     const handleEvolution = (cardId: string) => {
@@ -470,16 +476,15 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                 opponentAttack={vfx.reveal.opponentAttack}
             />
 
-            {/* MESSAGE OVERLAY */}
-            {!suppressMessageOverlay && (
-            <div className="absolute top-1/4 left-0 w-full flex justify-center z-[70] pointer-events-none">
+            {!suppressMessageOverlay && gameState.message && (
+            <div className="absolute top-[28%] left-0 w-full flex justify-center z-[70] pointer-events-none px-4">
                 <motion.div 
                     key={gameState.message}
-                    initial={{ scale: 2, opacity: 0 }}
+                    initial={{ scale: 1.05, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    className="bg-ps-blue px-12 py-2 skew-x-[-20deg] border-y-2 border-fg"
+                    className="bg-ps-blue/95 px-8 py-3 rounded border border-fg/20 shadow-lg max-w-lg"
                 >
-                    <span className="text-4xl font-black italic tracking-tighter text-white skew-x-[20deg] block">
+                    <span className="text-xl font-bold text-white text-center block text-balance">
                         {gameState.message}
                     </span>
                 </motion.div>
@@ -592,40 +597,17 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
             />
 
             {/* PHASE CONTROLS (Hand) */}
-            <div className="fixed bottom-4 left-4 z-[1000] flex flex-col gap-3 pointer-events-auto isolate text-fg">
-                 {gameState.phase === 'draw' && gameState.isPlayerTurn && (
-                     <button 
-                        onClick={handleDraw}
-                        className="pointer-events-auto bg-ps-blue text-white px-8 py-4 font-black italic border-4 border-fg hover:bg-surface-strong hover:text-ps-blue"
-                     >
-                        START DRAW PHASE
-                     </button>
-                 )}
-
+            <div className="fixed bottom-4 left-4 z-[1000] flex flex-col gap-3 pointer-events-auto isolate text-fg max-w-[min(100vw-2rem,42rem)]">
                  {clickDebug && (
                     <div className="mt-2 bg-panel p-3 text-muted text-xs border border-line font-mono uppercase pointer-events-none max-w-[320px]">
                         {clickDebug}
                     </div>
                  )}
                  
-                 {gameState.phase === 'draw' && !gameState.isPlayerTurn && (
-                     <div className="bg-panel p-3 text-muted text-sm border border-line uppercase pointer-events-none">
-                         Opponent is drawing...
-                     </div>
-                 )}
-
                  {gameState.phase === 'preparation' && (
                      <div className="flex flex-col gap-5">
                         {gameState.prepSubPhase === 'mulligan' && gameState.isPlayerTurn && (
                             <div className="flex flex-col gap-3">
-                                <div className="bg-panel p-3 text-fg text-sm border border-ps-yellow uppercase">
-                                    Opening hand ({ruleProfile.handTarget} cards) — keep or mulligan?
-                                    {gameState.player.mulligansRemaining != null && gameState.player.mulligansRemaining > 0 && (
-                                        <span className="ml-2 text-ps-yellow">
-                                            ({gameState.player.mulligansRemaining} redraw{gameState.player.mulligansRemaining === 1 ? "" : "s"} left)
-                                        </span>
-                                    )}
-                                </div>
                                 <div className="flex gap-2 flex-wrap">
                                     {gameState.player.hand.map(c => (
                                         <DigimonCard key={`mull_${c.id}`} data={c} variant="mini" onHover={setHoveredCard} />
@@ -643,7 +625,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                                             onClick={handleMulligan}
                                             className="pointer-events-auto bg-ps-yellow text-black font-black px-4 py-2 border-2 border-fg hover:bg-surface-strong"
                                         >
-                                            MULLIGAN
+                                            Mulligan ({gameState.player.mulligansRemaining})
                                         </button>
                                     )}
                                 </div>
@@ -652,11 +634,6 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
 
                         {gameState.prepSubPhase === 'deploy' && !gameState.player.active && gameState.isPlayerTurn && (
                             <div className="flex flex-col gap-3">
-                                <div className="bg-panel p-3 text-fg text-sm border border-ps-green uppercase">
-                                    {gameState.player.needsOpeningDeploy
-                                        ? "Deploy battle Digimon (Champion/Ultimate get HP/ATK penalties)"
-                                        : "Deploy Digimon: Choose a Rookie from your hand"}
-                                </div>
                                 <div className="flex gap-2 flex-wrap">
                                     {deployableHandCards.map(c => (
                                         <div
@@ -671,7 +648,17 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                                         </div>
                                     ))}
                                     {deployableHandCards.length === 0 && (
-                                        <span className="text-muted text-sm uppercase">No legal deploy cards</span>
+                                        <div className="flex flex-col gap-2">
+                                            <span className="text-muted text-sm uppercase">No legal deploy cards</span>
+                                            {gameState.isPlayerTurn && (
+                                                <button
+                                                    onClick={handleDigForDeploy}
+                                                    className="pointer-events-auto bg-ps-yellow text-black font-black px-4 py-2 border-2 border-fg hover:bg-surface-strong w-fit"
+                                                >
+                                                    DIG DECK
+                                                </button>
+                                            )}
+                                        </div>
                                     )}
                                 </div>
                             </div>
@@ -679,14 +666,10 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
 
                         {gameState.player.active && gameState.prepSubPhase === 'discard' && (
                             <div className="flex flex-col gap-3">
-                                <div className="bg-panel p-3 text-fg text-sm border border-ps-red uppercase flex items-center justify-between gap-4">
-                                    <span>
-                                        Step 1 — Discard for DP
-                                        {gameState.isPlayerTurn
-                                            ? " (click cards to discard, then continue)"
-                                            : ""}
+                                <div className="flex items-center justify-between gap-4">
+                                    <span className="text-sm font-semibold text-muted tabular-nums">
+                                        {gameState.player.dp} DP
                                     </span>
-                                    <span className="text-ps-yellow font-black shrink-0">{gameState.player.dp} DP</span>
                                     {gameState.isPlayerTurn && (
                                         <button
                                             onClick={handleEndDiscard}
@@ -737,20 +720,16 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
 
                         {gameState.player.active && gameState.prepSubPhase === 'evolve' && (
                             <div className="flex flex-col gap-3">
-                                <div className="bg-panel p-3 text-fg text-sm border border-ps-blue uppercase flex items-center justify-between gap-4">
-                                    <span>
-                                        Step 2 — Evolution
-                                        {gameState.isPlayerTurn
-                                            ? ` (same ${gameState.player.active?.type ?? "type"} only — optional)`
-                                            : ""}
+                                <div className="flex items-center justify-between gap-4">
+                                    <span className="text-sm font-semibold text-muted tabular-nums">
+                                        {gameState.player.dp} DP
                                     </span>
-                                    <span className="text-ps-yellow font-black shrink-0">{gameState.player.dp} DP</span>
                                     {gameState.isPlayerTurn && (
                                         <button
                                             onClick={handleEndPrep}
                                             className="pointer-events-auto bg-ps-yellow text-black font-black px-4 py-2 border-2 border-fg hover:bg-surface-strong disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
                                         >
-                                            END PREP
+                                            End prep
                                         </button>
                                     )}
                                 </div>
@@ -824,27 +803,15 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                             </div>
                         )}
 
-                        {gameState.phase === 'preparation' && !gameState.isPlayerTurn && (
-                            <div className="bg-panel p-3 text-muted text-sm border border-line uppercase pointer-events-none">
-                                Opponent is preparing...
-                            </div>
-                        )}
                      </div>
                  )}
 
                  {(gameState.phase === 'battle_support' || gameState.phase === 'battle_reveal') && (
-                     <div className="flex flex-col gap-5">
-                        <div className="bg-panel p-3 text-fg text-sm border border-line uppercase flex items-center justify-between gap-4">
-                            <span>
-                                {gameState.phase === 'battle_reveal'
-                                    ? 'Revealing support...'
-                                    : supportPhaseHint}
-                            </span>
-                            {gameState.player.supportLocked && gameState.phase === 'battle_support' && (
-                                <span className="text-muted">LOCKED</span>
-                            )}
-                        </div>
-                        <div className="flex gap-2">
+                     <div className="flex flex-col gap-3">
+                        {gameState.phase === 'battle_support' && !gameState.player.supportLocked && (
+                            <p className="text-xs text-muted">{supportPhaseHint}</p>
+                        )}
+                        <div className="flex gap-2 flex-wrap">
                              <button onClick={() => handleSupportChoice(null)} disabled={!canPickSupport} className="pointer-events-auto bg-panel text-fg border border-line p-4 disabled:opacity-40">NO SUPPORT</button>
                              {battleSupportCards.map(c => (
                                  <div key={c.id} onClick={() => canPickSupport && handleSupportChoice(c.id)} className={`pointer-events-auto cursor-pointer group relative ${!canPickSupport ? 'opacity-40 pointer-events-none' : ''}`}>
@@ -869,22 +836,21 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                  )}
             </div>
 
-            <PhaseTimer phase={gameState.phase} phaseEndsAtMs={gameState.phaseEndsAtMs} />
-
-            {/* SCORE COUNTER */}
-            <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] flex gap-8">
-                <div className="flex gap-2">
-                    {[...Array(3)].map((_, i) => (
-                        <div key={i} className={`w-4 h-4 rotate-45 border-2 ${i < gameState.player.score ? 'bg-ps-blue border-fg shadow-[0_0_10px_#3c9bff]' : 'bg-transparent border-ps-blue/40'}`} />
-                    ))}
-                </div>
-                <div className="text-muted font-black italic">VS</div>
-                <div className="flex gap-2">
-                    {[...Array(3)].map((_, i) => (
-                        <div key={i} className={`w-4 h-4 rotate-45 border-2 ${i < gameState.opponent.score ? 'bg-ps-red border-fg shadow-[0_0_10px_#ff3c3c]' : 'bg-transparent border-ps-red/40'}`} />
-                    ))}
-                </div>
-            </div>
+            <MatchHeader
+                turn={gameState.turn}
+                phase={gameState.phase}
+                prepSubPhase={gameState.prepSubPhase}
+                isYourTurn={gameState.isPlayerTurn}
+                yourSessionId={room.sessionId}
+                activePlayerSessionId={gameState.activePlayerSessionId ?? ""}
+                supportPickDefenderFirst={ruleProfile.battle.supportPickDefenderFirst}
+                supportPickSessionId={gameState.supportPickSessionId ?? ""}
+                attackLocked={!!gameState.player.attackLocked}
+                phaseEndsAtMs={gameState.phaseEndsAtMs ?? 0}
+                handTarget={ruleProfile.handTarget}
+                playerScore={gameState.player.score}
+                opponentScore={gameState.opponent.score}
+            />
 
             {/* CARD DETAIL OVERLAY */}
             <AnimatePresence>

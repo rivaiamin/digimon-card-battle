@@ -8,6 +8,7 @@ import {
     applyOpeningPenalty,
     drawToTarget,
     hasDigimonInHand,
+    hasLegalDeployInHand,
     isRookieLevel,
     mulliganHand,
     resolveInitialPrepSubPhase,
@@ -87,6 +88,10 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
     private auditLog = new BattleAuditLog();
     private rng: Rng = Math.random;
     private replaySeed: number | null = null;
+    /** Turn owner when the current battle phase began (for post-battle handoff). */
+    private battleTurnOwnerSessionId = "";
+    /** Players still waiting to redeploy after a KO (server-only queue). */
+    private koRedeployQueue: string[] = [];
 
     /** Pause on reveal so clients can play flip / hologram FX before effects resolve. */
     private static readonly REVEAL_MS = 1600;
@@ -188,6 +193,25 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
                     this.recordVoluntaryAction(client.sessionId);
                     this.deployDigimon(player, message.cardId);
                     break;
+                case "DIG_FOR_DEPLOY": {
+                    if (!isMyTurn || this.state.phase !== "preparation") return;
+                    if (this.state.prepSubPhase !== "deploy" || this.getActive(player)) return;
+                    this.recordVoluntaryAction(client.sessionId);
+                    if (hasLegalDeployInHand(player.hand, this.ruleProfile, player.needsOpeningDeploy)) {
+                        this.audit("DIG_FOR_DEPLOY", player, "rejected", "legal_deploy_in_hand");
+                        return;
+                    }
+                    if (!this.tryRecoverDigimonFromDeck(player)) {
+                        this.audit("DIG_FOR_DEPLOY", player, "rejected", "deck_out_no_digimon");
+                        this.endGame(player.sessionId, "deck_out");
+                        return;
+                    }
+                    this.logDrawSnapshot("DIG_FOR_DEPLOY after recovery", player);
+                    this.audit("DIG_FOR_DEPLOY", player, "ok");
+                    this.state.message = "Deck dig — deploy a Digimon from your hand";
+                    this.syncPhaseTimer();
+                    break;
+                }
                 case "PLAY_PREP_OPTION":
                     if (!isMyTurn || this.state.phase !== "preparation") return;
                     if (typeof message.cardId !== "string") return;
@@ -357,9 +381,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         });
 
         if (this.state.phase !== "victory") {
-            this.state.phase = "draw";
-            this.state.message = "Draw Phase";
-            this.syncPhaseTimer();
+            this.beginDrawPhaseForActivePlayer();
         }
     }
 
@@ -712,14 +734,22 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         player.active = card;
         player.hp = card.maxHp;
         player.needsOpeningDeploy = false;
-        this.state.prepSubPhase = "discard";
-        this.state.message = "Step 1: Discard cards for DP";
         this.audit("DEPLOY_DIGIMON", player, "ok", undefined, {
             cardId,
             level: card.level,
             penaltyApplied,
             penaltyLevel: validation.penaltyLevel,
+            koRedeploy: this.isKoRedeployFor(player.sessionId),
         });
+
+        if (this.isKoRedeployFor(player.sessionId)) {
+            this.koRedeployQueue.shift();
+            this.advanceKoRedeploy();
+            return;
+        }
+
+        this.state.prepSubPhase = "discard";
+        this.state.message = "Step 1: Discard cards for DP";
         this.syncPhaseTimer();
     }
 
@@ -733,6 +763,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
     }
 
     private beginBattlePhaseAfterPrep() {
+        this.battleTurnOwnerSessionId = this.state.activePlayerSessionId;
         if (this.ruleProfile.battle.attackLockBeforeSupport) {
             this.beginAttackSelection();
         } else {
@@ -1069,8 +1100,54 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
 
         this.resolveKOsAndMaybeEndGame();
         if (this.state.phase === "victory") return;
+        if (this.koRedeployQueue.length > 0) return;
 
-        this.endTurn();
+        this.finishBattleTurn();
+    }
+
+    private isKoRedeployFor(sessionId: string): boolean {
+        return this.koRedeployQueue.length > 0 && this.koRedeployQueue[0] === sessionId;
+    }
+
+    private beginKoRedeploy(sessionIds: string[]) {
+        this.koRedeployQueue = sessionIds.filter(id => {
+            const player = this.state.players.get(id);
+            return player && !this.getActive(player);
+        });
+        this.advanceKoRedeploy();
+    }
+
+    private advanceKoRedeploy() {
+        while (this.koRedeployQueue.length > 0) {
+            const sessionId = this.koRedeployQueue[0];
+            const player = this.state.players.get(sessionId);
+            if (!player) {
+                this.koRedeployQueue.shift();
+                continue;
+            }
+            if (this.getActive(player)) {
+                this.koRedeployQueue.shift();
+                continue;
+            }
+
+            const isOpening = player.needsOpeningDeploy;
+            if (!hasLegalDeployInHand(player.hand, this.ruleProfile, isOpening)) {
+                if (!this.tryRecoverDigimonFromDeck(player)) {
+                    this.koRedeployQueue.shift();
+                    this.endGame(sessionId, "deck_out");
+                    return;
+                }
+            }
+
+            this.state.activePlayerSessionId = sessionId;
+            this.state.phase = "preparation";
+            this.state.prepSubPhase = "deploy";
+            this.state.message = "KO — deploy a Rookie from your hand";
+            this.syncPhaseTimer();
+            return;
+        }
+
+        this.finishBattleTurn();
     }
 
     private resolveKOsAndMaybeEndGame() {
@@ -1085,7 +1162,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         if (ko.isDoubleKo) {
             this.trashEvolutionStack(pA);
             this.trashEvolutionStack(pB);
-            this.state.message = "Double KO — deploy a Digimon on your next turn";
+            this.state.message = "Double KO — deploy a Digimon from your hand";
             this.auditLog.emit({
                 turn: this.state.turn,
                 phase: this.state.phase,
@@ -1096,6 +1173,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
                 fidelityIds: ["FC-005", "FC-019"],
                 detail: { p1Hp: pA.hp, p2Hp: pB.hp },
             });
+            this.beginKoRedeploy([pA.sessionId, pB.sessionId]);
             return;
         }
 
@@ -1106,7 +1184,6 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             const loser = pA.hp <= 0 ? pA : pB;
             const winner = pA.hp <= 0 ? pB : pA;
             this.trashEvolutionStack(loser);
-            this.state.message = "KO — deploy a Digimon from your hand";
 
             this.auditLog.emit({
                 turn: this.state.turn,
@@ -1130,7 +1207,10 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
 
             if (winner.score >= 3) {
                 this.endGame(loser.sessionId, "points");
+                return;
             }
+
+            this.beginKoRedeploy([loser.sessionId]);
         }
     }
 
@@ -1153,10 +1233,32 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         const currentIndex = sessions.indexOf(this.state.activePlayerSessionId);
         this.state.activePlayerSessionId = sessions[(currentIndex + 1) % 2];
         this.state.turn += 1;
+        this.beginDrawPhaseForActivePlayer();
+    }
+
+    /** After battle resolves: defender draws next (GDD / FC-004). */
+    private finishBattleTurn() {
+        const sessions = Array.from(this.state.players.keys());
+        const turnOwner = this.battleTurnOwnerSessionId || this.state.activePlayerSessionId;
+        const defender = getDefenderSessionId(turnOwner, sessions);
+        this.state.activePlayerSessionId = defender;
+        this.state.turn += 1;
+        this.battleTurnOwnerSessionId = "";
+        this.beginDrawPhaseForActivePlayer();
+    }
+
+    /** Enter draw phase and immediately refill the active player's hand. */
+    private beginDrawPhaseForActivePlayer() {
+        this.koRedeployQueue = [];
         this.state.phase = "draw";
         this.state.prepSubPhase = "";
         this.state.message = "Draw Phase";
-        this.syncPhaseTimer();
+        const player = this.state.players.get(this.state.activePlayerSessionId);
+        if (!player) {
+            this.syncPhaseTimer();
+            return;
+        }
+        this.executeDrawPhase(player, true);
     }
 
     private endGame(loserSessionId: string, reason: "points" | "deck_out" | "disconnect" | "afk") {
@@ -1394,6 +1496,11 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
     private autoDeployDigimon(player: PlayerSchema) {
         if (this.state.prepSubPhase !== "deploy" && this.state.prepSubPhase !== "") return;
         if (this.getActive(player)) {
+            if (this.isKoRedeployFor(player.sessionId)) {
+                this.koRedeployQueue.shift();
+                this.advanceKoRedeploy();
+                return;
+            }
             this.autoEndPrep(player);
             return;
         }
@@ -1404,12 +1511,16 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
                 return;
             }
         }
-        if (!hasDigimonInHand(player.hand)) {
+        if (!hasLegalDeployInHand(player.hand, this.ruleProfile, player.needsOpeningDeploy)) {
             if (!this.tryRecoverDigimonFromDeck(player)) {
                 this.endGame(player.sessionId, "deck_out");
                 return;
             }
             this.autoDeployDigimon(player);
+            return;
+        }
+        if (this.isKoRedeployFor(player.sessionId)) {
+            this.endGame(player.sessionId, "deck_out");
             return;
         }
         this.autoEndPrep(player);

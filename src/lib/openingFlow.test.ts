@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
     applyOpeningPenalty,
     drawToTarget,
+    hasLegalDeployInHand,
+    isDigimonCard,
     mulliganHand,
     resolveInitialPrepSubPhase,
     shouldDeckOutOnDraw,
@@ -112,5 +114,19 @@ describe("deck-out on draw (FC-005)", () => {
         expect(shouldDeckOutOnDraw(true, 2, 0, 4)).toBe(true);
         expect(shouldDeckOutOnDraw(true, 4, 0, 4)).toBe(false);
         expect(shouldDeckOutOnDraw(false, 0, 0, 4)).toBe(false);
+    });
+});
+
+describe("post-KO deploy helpers (FC-003)", () => {
+    const profile = getRuleProfile("fidelity_ps1");
+
+    it("treats empty cardKind as digimon", () => {
+        expect(isDigimonCard({ ...baseCard("Rookie"), cardKind: "" })).toBe(true);
+    });
+
+    it("detects legal post-KO rookie deploy in hand", () => {
+        const hand = [makeCard("Champion"), makeCard("Rookie")];
+        expect(hasLegalDeployInHand(hand, profile, false)).toBe(true);
+        expect(hasLegalDeployInHand([makeCard("Champion")], profile, false)).toBe(false);
     });
 });
