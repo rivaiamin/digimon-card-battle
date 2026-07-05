@@ -5,6 +5,7 @@ export type OptionPhase = "preparation" | "battle_support";
 export interface OptionCardLike {
     cardKind: string;
     effectId: string;
+    supportEffect?: { type?: string } | null;
 }
 
 export function isPrepOptionCard(card: OptionCardLike): boolean {
@@ -37,6 +38,22 @@ export function canPlayBattleOption(card: OptionCardLike, phase: string): boolea
     return phase === "battle_support" && isBattleOptionCard(card);
 }
 
+/** Option floppy with battle support text but no normalized effectId yet. */
+export function isLegacyBattleOptionCard(card: OptionCardLike): boolean {
+    return (
+        card.cardKind === "option" &&
+        !isPrepOptionCard(card) &&
+        !isEvolutionOptionCard(card) &&
+        !!card.supportEffect
+    );
+}
+
 export function canUseAsBattleSupport(card: OptionCardLike): boolean {
-    return card.cardKind === "digimon" || isBattleOptionCard(card);
+    if (card.cardKind === "digimon") {
+        return !!card.supportEffect;
+    }
+    if (card.cardKind === "option") {
+        return isBattleOptionCard(card) || isLegacyBattleOptionCard(card);
+    }
+    return false;
 }

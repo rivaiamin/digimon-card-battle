@@ -1,0 +1,132 @@
+import { describe, expect, it } from "vitest";
+import { getHandCardInteraction, type HandInteractionContext } from "./handCardInteraction";
+import type { DigimonCardData } from "../types";
+import { getRuleProfile } from "./ruleProfile";
+import { parseEvolutionModifiers } from "./optionResolver";
+
+function baseCtx(overrides: Partial<HandInteractionContext> = {}): HandInteractionContext {
+    return {
+        phase: "preparation",
+        prepSubPhase: "discard",
+        isYourTurn: true,
+        hasActive: true,
+        playerDp: 500,
+        activeDigimon: null,
+        selectedEvoOptionId: null,
+        evoModifiers: parseEvolutionModifiers(null),
+        canPickSupport: false,
+        supportLocked: false,
+        ruleProfile: getRuleProfile("fidelity_ps1"),
+        needsOpeningDeploy: false,
+        selectedEvoOption: null,
+        ...overrides,
+    };
+}
+
+function digimon(id: string, level: DigimonCardData["level"] = "Rookie"): DigimonCardData {
+    return {
+        id,
+        name: id,
+        cardKind: "digimon",
+        level,
+        type: "Fire",
+        hp: 500,
+        maxHp: 500,
+        dp: 0,
+        plusDp: 100,
+        evoCost: 200,
+        image: "",
+        attacks: {
+            circle: { name: "A", damage: 400, type: "circle", description: "" },
+            triangle: { name: "B", damage: 300, type: "triangle", description: "" },
+            cross: { name: "C", damage: 100, type: "cross", description: "" },
+        },
+    };
+}
+
+function prepOption(id: string): DigimonCardData {
+    return {
+        ...digimon(id),
+        cardKind: "option",
+        effectId: "option.prep.draw",
+        attacks: null,
+    };
+}
+
+describe("getHandCardInteraction", () => {
+    it("shows all cards as view-only during mulligan", () => {
+        const ctx = baseCtx({ prepSubPhase: "mulligan" });
+        expect(getHandCardInteraction(digimon("d1"), ctx).mode).toBe("view");
+        expect(getHandCardInteraction(prepOption("o1"), ctx).mode).toBe("view");
+    });
+
+    it("dims non-deploy cards during deploy", () => {
+        const ctx = baseCtx({
+            prepSubPhase: "deploy",
+            hasActive: false,
+        });
+        const deploy = getHandCardInteraction(digimon("d1", "Rookie"), ctx);
+        expect(deploy.mode).toBe("deploy");
+        expect(deploy.enabled).toBe(true);
+
+        const option = getHandCardInteraction(prepOption("o1"), ctx);
+        expect(option.mode).toBe("inactive");
+        expect(option.enabled).toBe(false);
+    });
+
+    it("enables prep options during discard sub-phase", () => {
+        const ctx = baseCtx({ prepSubPhase: "discard" });
+        const opt = getHandCardInteraction(prepOption("o1"), ctx);
+        expect(opt.mode).toBe("prep_option");
+        expect(opt.enabled).toBe(true);
+    });
+
+    it("dims entire hand when not your turn", () => {
+        const ctx = baseCtx({ isYourTurn: false, prepSubPhase: "evolve" });
+        expect(getHandCardInteraction(digimon("d1"), ctx).enabled).toBe(false);
+    });
+
+    it("highlights support cards during battle_support", () => {
+        const ctx = baseCtx({
+            phase: "battle_support",
+            prepSubPhase: "",
+            canPickSupport: true,
+        });
+        const support = getHandCardInteraction(
+            { ...digimon("d1"), supportEffect: { type: "first_strike", value: 0, description: "First" } },
+            ctx
+        );
+        expect(support.mode).toBe("support");
+        expect(support.enabled).toBe(true);
+
+        expect(getHandCardInteraction(digimon("d2"), ctx).mode).toBe("inactive");
+
+        const legacyBattleOption = getHandCardInteraction(
+            {
+                ...digimon("o-battle"),
+                cardKind: "option",
+                effectId: "",
+                supportEffect: { type: "catalog_text", value: 0, description: "Battle floppy" },
+            },
+            ctx
+        );
+        expect(legacyBattleOption.mode).toBe("support");
+        expect(legacyBattleOption.enabled).toBe(true);
+
+        expect(getHandCardInteraction(prepOption("o1"), ctx).mode).toBe("inactive");
+    });
+
+    it("dims support cards while waiting for sequential pick", () => {
+        const ctx = baseCtx({
+            phase: "battle_support",
+            prepSubPhase: "",
+            canPickSupport: false,
+        });
+        const support = getHandCardInteraction(
+            { ...digimon("d1"), supportEffect: { type: "atk_buff", value: 100, description: "Buff" } },
+            ctx
+        );
+        expect(support.mode).toBe("support");
+        expect(support.enabled).toBe(false);
+    });
+});

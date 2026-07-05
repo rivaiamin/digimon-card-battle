@@ -195,7 +195,7 @@ export const BattleHUD: React.FC<HUDProps> = ({
             initial={{ opacity: 0, x: 24 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 24 }}
-            className="fixed right-4 bottom-36 z-[60] pointer-events-auto flex flex-col gap-2"
+            className="fixed right-4 bottom-[15.5rem] z-[1100] pointer-events-auto flex flex-col gap-2"
           >
             {(
               [

@@ -21,6 +21,7 @@ export interface OptionCardLike {
     circle?: { damage: number };
     triangle?: { damage: number };
     cross?: { damage: number };
+    supportEffect?: { type?: string } | null;
 }
 
 export interface CatalogStatSnapshot {

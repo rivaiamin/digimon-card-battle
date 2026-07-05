@@ -18,7 +18,6 @@ import {
 import { resolveRuleProfile, type RuleProfile } from "../lib/ruleProfile";
 import { parseEffectArgsJson } from "../lib/effectArgs";
 import {
-    canPlayBattleOption,
     canPlayEvolutionOption,
     canPlayPrepOption,
     canUseAsBattleSupport,
@@ -548,6 +547,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             circle: card.circle,
             triangle: card.triangle,
             cross: card.cross,
+            supportEffect: card.supportEffect ? { type: card.supportEffect.type } : null,
         };
     }
 
@@ -901,7 +901,6 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             chosen = player.hand[idx];
             const view = this.toOptionCardView(chosen);
             if (!canUseAsBattleSupport(view)) return;
-            if (chosen.cardKind === "option" && !canPlayBattleOption(view, this.state.phase)) return;
             player.hand.splice(idx, 1);
         }
 

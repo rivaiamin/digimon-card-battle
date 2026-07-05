@@ -18,16 +18,14 @@ import { MatchHeader } from "./battle/MatchHeader";
 import { AttackRevealOverlay } from "./battle/AttackRevealOverlay";
 import { AttackStrikePanel } from "./battle/AttackStrikePanel";
 import { BattleRevealVignette } from "./battle/BattleRevealVignette";
-import { canEvolveDigimon, matchesEvolutionType } from "../lib/evolutionEligibility";
+import { PlayerHandZone, type HandCardAction } from "./battle/PlayerHandZone";
+import type { HandInteractionContext } from "../lib/handCardInteraction";
 import { validateDeployDigimon } from "../lib/openingFlow";
 import { getRuleProfile } from "../lib/ruleProfile";
 import { getBattleRole, shouldShowFlashMessage } from "../lib/battleRoles";
-import {
-    canPlayEvolutionOption,
-    canPlayPrepOption,
-    canUseAsBattleSupport,
-} from "../lib/optionEligibility";
-import { canEvolveWithOption, parseEvolutionModifiers } from "../lib/optionResolver";
+import { canLockSupport } from "../lib/supportPhase";
+import { canPlayEvolutionOption } from "../lib/optionEligibility";
+import { parseEvolutionModifiers } from "../lib/optionResolver";
 
 const INITIAL_PLAYER_STATE: PlayerState = {
     active: null,
@@ -314,14 +312,6 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
         return result.ok;
     });
 
-    const prepOptionCards = gameState.player.hand.filter(c =>
-        canPlayPrepOption(
-            { cardKind: c.cardKind, effectId: c.effectId ?? "" },
-            gameState.prepSubPhase,
-            !!gameState.player.active
-        )
-    );
-
     const evolutionOptionCards = gameState.player.hand.filter(c =>
         canPlayEvolutionOption(
             { cardKind: c.cardKind, effectId: c.effectId ?? "" },
@@ -342,17 +332,14 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
           })
         : parseEvolutionModifiers(null);
 
-    const discardableCards = gameState.player.hand.filter(c => c.cardKind === "digimon");
-    const battleSupportCards = gameState.player.hand.filter(c =>
-        canUseAsBattleSupport({ cardKind: c.cardKind, effectId: c.effectId ?? "" })
-    );
-
     const canPickSupport =
         gameState.phase === "battle_support" &&
-        !gameState.player.supportLocked &&
-        (!ruleProfile.battle.supportPickDefenderFirst ||
-            !gameState.supportPickSessionId ||
-            gameState.supportPickSessionId === room.sessionId);
+        canLockSupport(
+            room.sessionId,
+            gameState.supportPickSessionId ?? "",
+            ruleProfile.battle.supportPickDefenderFirst,
+            !!gameState.player.supportLocked
+        );
 
     const yourBattleRole = gameState.activePlayerSessionId
         ? getBattleRole(room.sessionId, gameState.activePlayerSessionId)
@@ -418,6 +405,153 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
         room.send("action", { type: "LOCK_ATTACK", attack: type });
     };
 
+    const handInteractionContext: HandInteractionContext = {
+        phase: gameState.phase,
+        prepSubPhase: gameState.prepSubPhase,
+        isYourTurn: gameState.isPlayerTurn,
+        hasActive: !!gameState.player.active,
+        playerDp: gameState.player.dp,
+        activeDigimon: gameState.player.active,
+        selectedEvoOptionId,
+        evoModifiers,
+        canPickSupport,
+        supportLocked: !!gameState.player.supportLocked,
+        ruleProfile,
+        needsOpeningDeploy: !!gameState.player.needsOpeningDeploy,
+        selectedEvoOption,
+    };
+
+    const handleHandCardAction = (action: HandCardAction) => {
+        switch (action.type) {
+            case "deploy":
+                handleDeployDigimon(action.cardId);
+                break;
+            case "discard":
+                handleDiscardForDP(action.cardId);
+                break;
+            case "prep_option":
+                handlePlayPrepOption(action.cardId);
+                break;
+            case "evolve":
+                handleEvolution(action.cardId);
+                break;
+            case "toggle_evo_option":
+                setSelectedEvoOptionId(prev =>
+                    prev === action.cardId ? null : action.cardId
+                );
+                break;
+            case "support":
+                handleSupportChoice(action.cardId);
+                break;
+        }
+    };
+
+    const handPhaseActions = (() => {
+        if (gameState.phase === "preparation" && gameState.prepSubPhase === "mulligan" && gameState.isPlayerTurn) {
+            return (
+                <div className="flex gap-2 flex-wrap justify-center">
+                    <button
+                        onClick={handleAcceptHand}
+                        className="bg-ps-green text-black font-black px-4 py-2 border-2 border-fg hover:bg-surface-strong"
+                    >
+                        KEEP HAND
+                    </button>
+                    {(gameState.player.mulligansRemaining ?? 0) > 0 && (
+                        <button
+                            onClick={handleMulligan}
+                            className="bg-ps-yellow text-black font-black px-4 py-2 border-2 border-fg hover:bg-surface-strong"
+                        >
+                            Mulligan ({gameState.player.mulligansRemaining})
+                        </button>
+                    )}
+                </div>
+            );
+        }
+
+        if (
+            gameState.phase === "preparation" &&
+            gameState.prepSubPhase === "deploy" &&
+            !gameState.player.active &&
+            gameState.isPlayerTurn &&
+            deployableHandCards.length === 0
+        ) {
+            return (
+                <button
+                    onClick={handleDigForDeploy}
+                    className="bg-ps-yellow text-black font-black px-4 py-2 border-2 border-fg hover:bg-surface-strong"
+                >
+                    DIG DECK
+                </button>
+            );
+        }
+
+        if (
+            gameState.phase === "preparation" &&
+            gameState.prepSubPhase === "discard" &&
+            gameState.player.active
+        ) {
+            return (
+                <div className="flex items-center justify-center gap-4 flex-wrap">
+                    <span className="text-sm font-semibold text-muted tabular-nums">
+                        {gameState.player.dp} DP
+                    </span>
+                    {gameState.isPlayerTurn && (
+                        <button
+                            onClick={handleEndDiscard}
+                            className="bg-ps-red text-white font-black px-4 py-2 border-2 border-fg hover:bg-surface-strong hover:text-ps-red"
+                        >
+                            DONE DISCARDING
+                        </button>
+                    )}
+                </div>
+            );
+        }
+
+        if (
+            gameState.phase === "preparation" &&
+            gameState.prepSubPhase === "evolve" &&
+            gameState.player.active
+        ) {
+            return (
+                <div className="flex flex-col items-center gap-1">
+                    <div className="flex items-center justify-center gap-4 flex-wrap">
+                        <span className="text-sm font-semibold text-muted tabular-nums">
+                            {gameState.player.dp} DP
+                        </span>
+                        {gameState.isPlayerTurn && (
+                            <button
+                                onClick={handleEndPrep}
+                                className="bg-ps-yellow text-black font-black px-4 py-2 border-2 border-fg hover:bg-surface-strong"
+                            >
+                                End prep
+                            </button>
+                        )}
+                    </div>
+                    {gameState.isPlayerTurn && evolutionOptionCards.length > 0 && (
+                        <span className="text-xs text-ps-blue uppercase font-black text-center">
+                            Digivolve options (optional)
+                            {selectedEvoOptionId ? " — pick evolution target" : ""}
+                        </span>
+                    )}
+                </div>
+            );
+        }
+
+        if (gameState.phase === "battle_support" && !gameState.player.supportLocked) {
+            return (
+                <button
+                    onClick={() => handleSupportChoice(null)}
+                    disabled={!canPickSupport}
+                    className="bg-panel text-fg border border-line px-4 py-2 font-black disabled:opacity-40"
+                >
+                    NO SUPPORT
+                </button>
+            );
+        }
+
+        return null;
+    })();
+
     if (gameState.phase === 'waiting') {
         return (
             <div className="w-screen h-screen bg-app flex flex-col items-center justify-center">
@@ -470,7 +604,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
     }
 
     return (
-        <div className={`relative w-screen h-screen overflow-hidden bg-app text-fg flex items-center justify-center perspective-stage ${timerCritical ? "timer-critical-shake" : ""}`}>
+        <div className={`relative w-screen h-screen overflow-hidden bg-app text-fg flex items-center justify-center perspective-stage pb-36 ${timerCritical ? "timer-critical-shake" : ""}`}>
             <div className="scanlines" />
 
             <BattleRevealVignette
@@ -631,245 +765,27 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                 }
             />
 
-            {/* PHASE CONTROLS (Hand) */}
-            <div className="fixed bottom-4 left-4 z-[1000] flex flex-col gap-3 pointer-events-auto isolate text-fg max-w-[min(100vw-2rem,42rem)]">
-                 {clickDebug && (
-                    <div className="mt-2 bg-panel p-3 text-muted text-xs border border-line font-mono uppercase pointer-events-none max-w-[320px]">
-                        {clickDebug}
-                    </div>
-                 )}
-                 
-                 {gameState.phase === 'preparation' && (
-                     <div className="flex flex-col gap-5">
-                        {gameState.prepSubPhase === 'mulligan' && gameState.isPlayerTurn && (
-                            <div className="flex flex-col gap-3">
-                                <div className="flex gap-2 flex-wrap">
-                                    {gameState.player.hand.map(c => (
-                                        <DigimonCard key={`mull_${c.id}`} data={c} variant="mini" onHover={setHoveredCard} />
-                                    ))}
-                                </div>
-                                <div className="flex gap-2">
-                                    <button
-                                        onClick={handleAcceptHand}
-                                        className="pointer-events-auto bg-ps-green text-black font-black px-4 py-2 border-2 border-fg hover:bg-surface-strong"
-                                    >
-                                        KEEP HAND
-                                    </button>
-                                    {(gameState.player.mulligansRemaining ?? 0) > 0 && (
-                                        <button
-                                            onClick={handleMulligan}
-                                            className="pointer-events-auto bg-ps-yellow text-black font-black px-4 py-2 border-2 border-fg hover:bg-surface-strong"
-                                        >
-                                            Mulligan ({gameState.player.mulligansRemaining})
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                        )}
+            {/* Persistent hand (PS1-style: always visible, inactive when not playable) */}
+            {gameState.phase !== "waiting" && (
+                <PlayerHandZone
+                    hand={gameState.player.hand}
+                    context={handInteractionContext}
+                    onCardAction={handleHandCardAction}
+                    onHover={setHoveredCard}
+                    phaseActions={handPhaseActions}
+                    supportHint={
+                        gameState.phase === "battle_support" && !gameState.player.supportLocked
+                            ? supportPhaseHint
+                            : null
+                    }
+                />
+            )}
 
-                        {gameState.prepSubPhase === 'deploy' && !gameState.player.active && gameState.isPlayerTurn && (
-                            <div className="flex flex-col gap-3">
-                                <div className="flex gap-2 flex-wrap">
-                                    {deployableHandCards.map(c => (
-                                        <div
-                                            key={`deploy_${c.id}`}
-                                            onClick={() => handleDeployDigimon(c.id)}
-                                            className="pointer-events-auto cursor-pointer ring-2 ring-ps-green ring-offset-2 ring-offset-app rounded"
-                                        >
-                                            <DigimonCard data={c} variant="mini" onHover={setHoveredCard} />
-                                            <div className="text-xs bg-ps-green px-1 text-black font-black text-center">
-                                                DEPLOY {c.level !== 'Rookie' ? `(${c.level})` : ''}
-                                            </div>
-                                        </div>
-                                    ))}
-                                    {deployableHandCards.length === 0 && (
-                                        <div className="flex flex-col gap-2">
-                                            <span className="text-muted text-sm uppercase">No legal deploy cards</span>
-                                            {gameState.isPlayerTurn && (
-                                                <button
-                                                    onClick={handleDigForDeploy}
-                                                    className="pointer-events-auto bg-ps-yellow text-black font-black px-4 py-2 border-2 border-fg hover:bg-surface-strong w-fit"
-                                                >
-                                                    DIG DECK
-                                                </button>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-
-                        {gameState.player.active && gameState.prepSubPhase === 'discard' && (
-                            <div className="flex flex-col gap-3">
-                                <div className="flex items-center justify-between gap-4">
-                                    <span className="text-sm font-semibold text-muted tabular-nums">
-                                        {gameState.player.dp} DP
-                                    </span>
-                                    {gameState.isPlayerTurn && (
-                                        <button
-                                            onClick={handleEndDiscard}
-                                            className="pointer-events-auto bg-ps-red text-white font-black px-4 py-2 border-2 border-fg hover:bg-surface-strong hover:text-ps-red shrink-0"
-                                        >
-                                            DONE DISCARDING
-                                        </button>
-                                    )}
-                                </div>
-                                {gameState.isPlayerTurn && (
-                                    <div className="flex gap-2 flex-wrap">
-                                        {discardableCards.map(c => (
-                                            <div
-                                                key={c.id}
-                                                onClick={() => handleDiscardForDP(c.id)}
-                                                className="pointer-events-auto cursor-pointer group relative"
-                                            >
-                                                <DigimonCard data={c} variant="mini" onHover={setHoveredCard} />
-                                                <div className="absolute inset-0 bg-ps-red opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold text-center p-1">
-                                                    DISCARD<br/>(+{c.plusDp} DP)
-                                                </div>
-                                            </div>
-                                        ))}
-                                        {discardableCards.length === 0 && (
-                                            <span className="text-muted text-sm uppercase">No cards to discard</span>
-                                        )}
-                                    </div>
-                                )}
-                                {gameState.isPlayerTurn && prepOptionCards.length > 0 && (
-                                    <div className="flex flex-col gap-1 mt-1">
-                                        <div className="text-xs text-ps-yellow uppercase font-black">Prep Options</div>
-                                        <div className="flex gap-2 flex-wrap">
-                                            {prepOptionCards.map(c => (
-                                                <div
-                                                    key={`prep_opt_${c.id}`}
-                                                    onClick={() => handlePlayPrepOption(c.id)}
-                                                    className="pointer-events-auto cursor-pointer ring-2 ring-ps-yellow ring-offset-2 ring-offset-app rounded"
-                                                >
-                                                    <DigimonCard data={c} variant="mini" onHover={setHoveredCard} />
-                                                    <div className="text-xs bg-ps-yellow px-1 text-black font-black text-center">PLAY</div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        {gameState.player.active && gameState.prepSubPhase === 'evolve' && (
-                            <div className="flex flex-col gap-3">
-                                <div className="flex items-center justify-between gap-4">
-                                    <span className="text-sm font-semibold text-muted tabular-nums">
-                                        {gameState.player.dp} DP
-                                    </span>
-                                    {gameState.isPlayerTurn && (
-                                        <button
-                                            onClick={handleEndPrep}
-                                            className="pointer-events-auto bg-ps-yellow text-black font-black px-4 py-2 border-2 border-fg hover:bg-surface-strong disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
-                                        >
-                                            End prep
-                                        </button>
-                                    )}
-                                </div>
-                                {gameState.isPlayerTurn && (
-                                    <>
-                                        {evolutionOptionCards.length > 0 && (
-                                            <div className="flex flex-col gap-1 mb-2">
-                                                <div className="text-xs text-ps-blue uppercase font-black">
-                                                    Digivolve Options {selectedEvoOptionId ? "(selected — pick evolution target)" : "(optional)"}
-                                                </div>
-                                                <div className="flex gap-2 flex-wrap">
-                                                    {evolutionOptionCards.map(c => (
-                                                        <div
-                                                            key={`evo_opt_${c.id}`}
-                                                            onClick={() =>
-                                                                setSelectedEvoOptionId(prev =>
-                                                                    prev === c.id ? null : c.id
-                                                                )
-                                                            }
-                                                            className={`pointer-events-auto cursor-pointer rounded ring-2 ring-offset-2 ring-offset-app ${
-                                                                selectedEvoOptionId === c.id
-                                                                    ? "ring-fg"
-                                                                    : "ring-ps-blue"
-                                                            }`}
-                                                        >
-                                                            <DigimonCard data={c} variant="mini" onHover={setHoveredCard} />
-                                                            <div className="text-xs bg-ps-blue px-1 text-white font-black text-center">
-                                                                {selectedEvoOptionId === c.id ? "SELECTED" : "ATTACH"}
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-                                        <div className="flex gap-2 flex-wrap">
-                                        {gameState.player.hand
-                                            .filter(c => c.cardKind === "digimon")
-                                            .map(c => {
-                                            const active = gameState.player.active;
-                                            const canEvolve = selectedEvoOption
-                                                ? canEvolveWithOption(active, c, gameState.player.dp, evoModifiers)
-                                                : canEvolveDigimon(active, c, gameState.player.dp);
-                                            const adjustedCost = Math.max(0, c.evoCost + evoModifiers.dpCostDelta);
-                                            const canAfford = gameState.player.dp >= adjustedCost;
-                                            const sameType = active
-                                                ? matchesEvolutionType(active.type, c.type)
-                                                : false;
-                                            return (
-                                                <div
-                                                    key={`evo_${c.id}`}
-                                                    onClick={() => canEvolve && handleEvolution(c.id)}
-                                                    className={`pointer-events-auto relative ${canEvolve ? 'cursor-pointer' : 'opacity-40 cursor-not-allowed'}`}
-                                                >
-                                                    <DigimonCard data={c} variant="mini" onHover={setHoveredCard} />
-                                                    {!canAfford && (
-                                                        <div className="text-xs text-red-500 font-bold">NO DP</div>
-                                                    )}
-                                                    {canAfford && !sameType && (
-                                                        <div className="text-xs text-red-500 font-bold">WRONG TYPE</div>
-                                                    )}
-                                                    {canAfford && sameType && !canEvolve && (
-                                                        <div className="text-xs text-red-500 font-bold">INVALID</div>
-                                                    )}
-                                                    <div className="text-xs bg-ps-blue px-1 text-white">COST: {adjustedCost}</div>
-                                                </div>
-                                            );
-                                        })}
-                                        </div>
-                                    </>
-                                )}
-                            </div>
-                        )}
-
-                     </div>
-                 )}
-
-                 {(gameState.phase === 'battle_support' || gameState.phase === 'battle_reveal') && (
-                     <div className="flex flex-col gap-3">
-                        {gameState.phase === 'battle_support' && !gameState.player.supportLocked && (
-                            <p className="text-xs text-muted">{supportPhaseHint}</p>
-                        )}
-                        <div className="flex gap-2 flex-wrap">
-                             <button onClick={() => handleSupportChoice(null)} disabled={!canPickSupport} className="pointer-events-auto bg-panel text-fg border border-line p-4 disabled:opacity-40">NO SUPPORT</button>
-                             {battleSupportCards.map(c => (
-                                 <div key={c.id} onClick={() => canPickSupport && handleSupportChoice(c.id)} className={`pointer-events-auto cursor-pointer group relative ${!canPickSupport ? 'opacity-40 pointer-events-none' : ''}`}>
-                                     <DigimonCard data={c} variant="mini" onHover={setHoveredCard} />
-                                     <div className="text-xs bg-panel text-fg text-center font-black">
-                                         {c.cardKind === "option" ? "OPTION" : "SUPPORT"}
-                                     </div>
-                                     {c.supportEffect && (
-                                         <div className="absolute inset-x-0 bottom-full bg-surface-strong text-xs p-2 border border-line whitespace-nowrap text-fg">
-                                             {c.supportEffect.description}
-                                         </div>
-                                     )}
-                                     {c.cardKind === "option" && c.effectId && (
-                                         <div className="absolute inset-x-0 bottom-full bg-surface-strong text-xs p-2 border border-ps-yellow/40 whitespace-nowrap text-fg">
-                                             {c.effectId.replace("option.battle.", "")}
-                                         </div>
-                                     )}
-                                 </div>
-                             ))}
-                        </div>
-                     </div>
-                 )}
-            </div>
+            {clickDebug && (
+                <div className="fixed bottom-40 left-4 z-[1001] bg-panel p-3 text-muted text-xs border border-line font-mono uppercase pointer-events-none max-w-[320px]">
+                    {clickDebug}
+                </div>
+            )}
 
             <MatchHeader
                 turn={gameState.turn}
