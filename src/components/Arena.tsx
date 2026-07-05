@@ -407,7 +407,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
 
     if (gameState.phase === 'waiting') {
         return (
-            <div className="w-screen h-screen bg-black flex flex-col items-center justify-center">
+            <div className="w-screen h-screen bg-app flex flex-col items-center justify-center">
                 <div className="relative">
                     <div className="scanlines z-10" />
                     <motion.div 
@@ -418,7 +418,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                         {gameState.message}
                     </motion.div>
                 </div>
-                <div className="mt-8 text-white/40 text-xs font-mono animate-pulse">
+                <div className="mt-8 text-muted text-sm font-mono animate-pulse">
                     ESTABLISHING NEURAL LINK...
                 </div>
             </div>
@@ -438,7 +438,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
         (!gameState.player.active || !gameState.opponent.active)
     ) {
         return (
-            <div className="w-screen h-screen bg-black flex flex-col items-center justify-center">
+            <div className="w-screen h-screen bg-app flex flex-col items-center justify-center">
                 <div className="relative">
                     <div className="scanlines z-10" />
                     <motion.div
@@ -449,7 +449,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                         {gameState.message || "SYNCING BATTLE STATE..."}
                     </motion.div>
                 </div>
-                <div className="mt-8 text-white/40 text-xs font-mono animate-pulse">
+                <div className="mt-8 text-muted text-sm font-mono animate-pulse">
                     LOADING FIELD DATA...
                 </div>
             </div>
@@ -457,7 +457,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
     }
 
     return (
-        <div className={`relative w-screen h-screen overflow-hidden bg-black flex items-center justify-center perspective-stage ${timerCritical ? "timer-critical-shake" : ""}`}>
+        <div className={`relative w-screen h-screen overflow-hidden bg-app text-fg flex items-center justify-center perspective-stage ${timerCritical ? "timer-critical-shake" : ""}`}>
             <div className="scanlines" />
 
             <BattleRevealVignette
@@ -477,7 +477,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                     key={gameState.message}
                     initial={{ scale: 2, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    className="bg-ps-blue/80 px-12 py-2 skew-x-[-20deg] border-y-2 border-white"
+                    className="bg-ps-blue px-12 py-2 skew-x-[-20deg] border-y-2 border-fg"
                 >
                     <span className="text-4xl font-black italic tracking-tighter text-white skew-x-[20deg] block">
                         {gameState.message}
@@ -499,7 +499,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                         transition={{ duration: 0.28, ease: "easeOut" }}
                         className="fixed top-[18%] left-0 w-full z-[88] pointer-events-none flex justify-center"
                     >
-                        <motion.div className="bg-ps-blue/90 border-y-4 border-white px-16 py-2 skew-x-[-18deg] shadow-[0_0_40px_rgba(60,155,255,0.6)]">
+                        <motion.div className="bg-ps-blue border-y-4 border-fg px-16 py-2 skew-x-[-18deg] shadow-[0_0_40px_rgba(60,155,255,0.6)]">
                             <span className="block skew-x-[18deg] text-5xl font-black italic text-white tracking-tighter">
                                 COUNTER!
                             </span>
@@ -519,7 +519,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                     duration: vfx.phase === "impact" ? 0.28 : vfx.isAnimating ? 0.35 : 0.8,
                     ease: vfx.phase === "impact" ? "easeOut" : "easeInOut",
                 }}
-                className="relative w-[200vw] h-[200vh] bg-neutral-950 flex items-center justify-center arena-surface digital-grid"
+                className="relative w-[200vw] h-[200vh] bg-app flex items-center justify-center arena-surface digital-grid"
             >
                 {/* 3D Battle Elements */}
                 <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-center gap-64 h-96 items-center">
@@ -592,33 +592,33 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
             />
 
             {/* PHASE CONTROLS (Hand) */}
-            <div className="fixed bottom-4 left-4 z-[1000] flex flex-col gap-2 pointer-events-auto isolate">
+            <div className="fixed bottom-4 left-4 z-[1000] flex flex-col gap-3 pointer-events-auto isolate text-fg">
                  {gameState.phase === 'draw' && gameState.isPlayerTurn && (
                      <button 
                         onClick={handleDraw}
-                        className="pointer-events-auto bg-ps-blue text-white px-8 py-4 font-black italic border-4 border-white hover:bg-white hover:text-ps-blue"
+                        className="pointer-events-auto bg-ps-blue text-white px-8 py-4 font-black italic border-4 border-fg hover:bg-surface-strong hover:text-ps-blue"
                      >
                         START DRAW PHASE
                      </button>
                  )}
 
                  {clickDebug && (
-                    <div className="mt-2 bg-black/80 p-2 text-white/70 text-[10px] border border-white/20 font-mono uppercase pointer-events-none max-w-[320px]">
+                    <div className="mt-2 bg-panel p-3 text-muted text-xs border border-line font-mono uppercase pointer-events-none max-w-[320px]">
                         {clickDebug}
                     </div>
                  )}
                  
                  {gameState.phase === 'draw' && !gameState.isPlayerTurn && (
-                     <div className="bg-black/80 p-2 text-white/70 text-xs border border-white/20 uppercase pointer-events-none">
+                     <div className="bg-panel p-3 text-muted text-sm border border-line uppercase pointer-events-none">
                          Opponent is drawing...
                      </div>
                  )}
 
                  {gameState.phase === 'preparation' && (
-                     <div className="flex flex-col gap-4">
+                     <div className="flex flex-col gap-5">
                         {gameState.prepSubPhase === 'mulligan' && gameState.isPlayerTurn && (
-                            <div className="flex flex-col gap-2">
-                                <div className="bg-black/80 p-2 text-white text-xs border border-ps-yellow uppercase">
+                            <div className="flex flex-col gap-3">
+                                <div className="bg-panel p-3 text-fg text-sm border border-ps-yellow uppercase">
                                     Opening hand ({ruleProfile.handTarget} cards) — keep or mulligan?
                                     {gameState.player.mulligansRemaining != null && gameState.player.mulligansRemaining > 0 && (
                                         <span className="ml-2 text-ps-yellow">
@@ -634,14 +634,14 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                                 <div className="flex gap-2">
                                     <button
                                         onClick={handleAcceptHand}
-                                        className="pointer-events-auto bg-ps-green text-black font-black px-4 py-2 border-2 border-white hover:bg-white"
+                                        className="pointer-events-auto bg-ps-green text-black font-black px-4 py-2 border-2 border-fg hover:bg-surface-strong"
                                     >
                                         KEEP HAND
                                     </button>
                                     {(gameState.player.mulligansRemaining ?? 0) > 0 && (
                                         <button
                                             onClick={handleMulligan}
-                                            className="pointer-events-auto bg-ps-yellow text-black font-black px-4 py-2 border-2 border-black hover:bg-white"
+                                            className="pointer-events-auto bg-ps-yellow text-black font-black px-4 py-2 border-2 border-fg hover:bg-surface-strong"
                                         >
                                             MULLIGAN
                                         </button>
@@ -651,8 +651,8 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                         )}
 
                         {gameState.prepSubPhase === 'deploy' && !gameState.player.active && gameState.isPlayerTurn && (
-                            <div className="flex flex-col gap-2">
-                                <div className="bg-black/80 p-2 text-white text-xs border border-ps-green uppercase">
+                            <div className="flex flex-col gap-3">
+                                <div className="bg-panel p-3 text-fg text-sm border border-ps-green uppercase">
                                     {gameState.player.needsOpeningDeploy
                                         ? "Deploy battle Digimon (Champion/Ultimate get HP/ATK penalties)"
                                         : "Deploy Digimon: Choose a Rookie from your hand"}
@@ -662,24 +662,24 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                                         <div
                                             key={`deploy_${c.id}`}
                                             onClick={() => handleDeployDigimon(c.id)}
-                                            className="pointer-events-auto cursor-pointer ring-2 ring-ps-green ring-offset-2 ring-offset-black rounded"
+                                            className="pointer-events-auto cursor-pointer ring-2 ring-ps-green ring-offset-2 ring-offset-app rounded"
                                         >
                                             <DigimonCard data={c} variant="mini" onHover={setHoveredCard} />
-                                            <div className="text-[10px] bg-ps-green px-1 text-black font-black text-center">
+                                            <div className="text-xs bg-ps-green px-1 text-black font-black text-center">
                                                 DEPLOY {c.level !== 'Rookie' ? `(${c.level})` : ''}
                                             </div>
                                         </div>
                                     ))}
                                     {deployableHandCards.length === 0 && (
-                                        <span className="text-white/50 text-xs uppercase">No legal deploy cards</span>
+                                        <span className="text-muted text-sm uppercase">No legal deploy cards</span>
                                     )}
                                 </div>
                             </div>
                         )}
 
                         {gameState.player.active && gameState.prepSubPhase === 'discard' && (
-                            <div className="flex flex-col gap-2">
-                                <div className="bg-black/80 p-2 text-white text-xs border border-ps-red uppercase flex items-center justify-between gap-4">
+                            <div className="flex flex-col gap-3">
+                                <div className="bg-panel p-3 text-fg text-sm border border-ps-red uppercase flex items-center justify-between gap-4">
                                     <span>
                                         Step 1 — Discard for DP
                                         {gameState.isPlayerTurn
@@ -690,7 +690,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                                     {gameState.isPlayerTurn && (
                                         <button
                                             onClick={handleEndDiscard}
-                                            className="pointer-events-auto bg-ps-red text-white font-black px-4 py-2 border-2 border-white hover:bg-white hover:text-ps-red shrink-0"
+                                            className="pointer-events-auto bg-ps-red text-white font-black px-4 py-2 border-2 border-fg hover:bg-surface-strong hover:text-ps-red shrink-0"
                                         >
                                             DONE DISCARDING
                                         </button>
@@ -705,28 +705,28 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                                                 className="pointer-events-auto cursor-pointer group relative"
                                             >
                                                 <DigimonCard data={c} variant="mini" onHover={setHoveredCard} />
-                                                <div className="absolute inset-0 bg-ps-red/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-[8px] font-bold text-center p-1">
+                                                <div className="absolute inset-0 bg-ps-red opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold text-center p-1">
                                                     DISCARD<br/>(+{c.plusDp} DP)
                                                 </div>
                                             </div>
                                         ))}
                                         {discardableCards.length === 0 && (
-                                            <span className="text-white/50 text-xs uppercase">No cards to discard</span>
+                                            <span className="text-muted text-sm uppercase">No cards to discard</span>
                                         )}
                                     </div>
                                 )}
                                 {gameState.isPlayerTurn && prepOptionCards.length > 0 && (
                                     <div className="flex flex-col gap-1 mt-1">
-                                        <div className="text-[10px] text-ps-yellow uppercase font-black">Prep Options</div>
+                                        <div className="text-xs text-ps-yellow uppercase font-black">Prep Options</div>
                                         <div className="flex gap-2 flex-wrap">
                                             {prepOptionCards.map(c => (
                                                 <div
                                                     key={`prep_opt_${c.id}`}
                                                     onClick={() => handlePlayPrepOption(c.id)}
-                                                    className="pointer-events-auto cursor-pointer ring-2 ring-ps-yellow ring-offset-2 ring-offset-black rounded"
+                                                    className="pointer-events-auto cursor-pointer ring-2 ring-ps-yellow ring-offset-2 ring-offset-app rounded"
                                                 >
                                                     <DigimonCard data={c} variant="mini" onHover={setHoveredCard} />
-                                                    <div className="text-[10px] bg-ps-yellow px-1 text-black font-black text-center">PLAY</div>
+                                                    <div className="text-xs bg-ps-yellow px-1 text-black font-black text-center">PLAY</div>
                                                 </div>
                                             ))}
                                         </div>
@@ -736,8 +736,8 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                         )}
 
                         {gameState.player.active && gameState.prepSubPhase === 'evolve' && (
-                            <div className="flex flex-col gap-2">
-                                <div className="bg-black/80 p-2 text-white text-xs border border-ps-blue uppercase flex items-center justify-between gap-4">
+                            <div className="flex flex-col gap-3">
+                                <div className="bg-panel p-3 text-fg text-sm border border-ps-blue uppercase flex items-center justify-between gap-4">
                                     <span>
                                         Step 2 — Evolution
                                         {gameState.isPlayerTurn
@@ -748,7 +748,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                                     {gameState.isPlayerTurn && (
                                         <button
                                             onClick={handleEndPrep}
-                                            className="pointer-events-auto bg-ps-yellow text-black font-black px-4 py-2 border-2 border-black hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+                                            className="pointer-events-auto bg-ps-yellow text-black font-black px-4 py-2 border-2 border-fg hover:bg-surface-strong disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
                                         >
                                             END PREP
                                         </button>
@@ -758,7 +758,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                                     <>
                                         {evolutionOptionCards.length > 0 && (
                                             <div className="flex flex-col gap-1 mb-2">
-                                                <div className="text-[10px] text-ps-blue uppercase font-black">
+                                                <div className="text-xs text-ps-blue uppercase font-black">
                                                     Digivolve Options {selectedEvoOptionId ? "(selected — pick evolution target)" : "(optional)"}
                                                 </div>
                                                 <div className="flex gap-2 flex-wrap">
@@ -770,14 +770,14 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                                                                     prev === c.id ? null : c.id
                                                                 )
                                                             }
-                                                            className={`pointer-events-auto cursor-pointer rounded ring-2 ring-offset-2 ring-offset-black ${
+                                                            className={`pointer-events-auto cursor-pointer rounded ring-2 ring-offset-2 ring-offset-app ${
                                                                 selectedEvoOptionId === c.id
-                                                                    ? "ring-white"
+                                                                    ? "ring-fg"
                                                                     : "ring-ps-blue"
                                                             }`}
                                                         >
                                                             <DigimonCard data={c} variant="mini" onHover={setHoveredCard} />
-                                                            <div className="text-[10px] bg-ps-blue px-1 text-white font-black text-center">
+                                                            <div className="text-xs bg-ps-blue px-1 text-white font-black text-center">
                                                                 {selectedEvoOptionId === c.id ? "SELECTED" : "ATTACH"}
                                                             </div>
                                                         </div>
@@ -806,15 +806,15 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                                                 >
                                                     <DigimonCard data={c} variant="mini" onHover={setHoveredCard} />
                                                     {!canAfford && (
-                                                        <div className="text-[10px] text-red-500 font-bold">NO DP</div>
+                                                        <div className="text-xs text-red-500 font-bold">NO DP</div>
                                                     )}
                                                     {canAfford && !sameType && (
-                                                        <div className="text-[10px] text-red-500 font-bold">WRONG TYPE</div>
+                                                        <div className="text-xs text-red-500 font-bold">WRONG TYPE</div>
                                                     )}
                                                     {canAfford && sameType && !canEvolve && (
-                                                        <div className="text-[10px] text-red-500 font-bold">INVALID</div>
+                                                        <div className="text-xs text-red-500 font-bold">INVALID</div>
                                                     )}
-                                                    <div className="text-[10px] bg-ps-blue px-1 text-white">COST: {adjustedCost}</div>
+                                                    <div className="text-xs bg-ps-blue px-1 text-white">COST: {adjustedCost}</div>
                                                 </div>
                                             );
                                         })}
@@ -825,7 +825,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                         )}
 
                         {gameState.phase === 'preparation' && !gameState.isPlayerTurn && (
-                            <div className="bg-black/80 p-2 text-white/70 text-xs border border-white/20 uppercase pointer-events-none">
+                            <div className="bg-panel p-3 text-muted text-sm border border-line uppercase pointer-events-none">
                                 Opponent is preparing...
                             </div>
                         )}
@@ -833,32 +833,32 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                  )}
 
                  {(gameState.phase === 'battle_support' || gameState.phase === 'battle_reveal') && (
-                     <div className="flex flex-col gap-4">
-                        <div className="bg-black/80 p-2 text-white text-xs border border-white uppercase flex items-center justify-between gap-4">
+                     <div className="flex flex-col gap-5">
+                        <div className="bg-panel p-3 text-fg text-sm border border-line uppercase flex items-center justify-between gap-4">
                             <span>
                                 {gameState.phase === 'battle_reveal'
                                     ? 'Revealing support...'
                                     : supportPhaseHint}
                             </span>
                             {gameState.player.supportLocked && gameState.phase === 'battle_support' && (
-                                <span className="text-white/50">LOCKED</span>
+                                <span className="text-muted">LOCKED</span>
                             )}
                         </div>
                         <div className="flex gap-2">
-                             <button onClick={() => handleSupportChoice(null)} disabled={!canPickSupport} className="pointer-events-auto bg-slate-800 text-white p-4 disabled:opacity-40">NO SUPPORT</button>
+                             <button onClick={() => handleSupportChoice(null)} disabled={!canPickSupport} className="pointer-events-auto bg-panel text-fg border border-line p-4 disabled:opacity-40">NO SUPPORT</button>
                              {battleSupportCards.map(c => (
                                  <div key={c.id} onClick={() => canPickSupport && handleSupportChoice(c.id)} className={`pointer-events-auto cursor-pointer group relative ${!canPickSupport ? 'opacity-40 pointer-events-none' : ''}`}>
                                      <DigimonCard data={c} variant="mini" onHover={setHoveredCard} />
-                                     <div className="text-[10px] bg-black/80 text-white text-center font-black">
+                                     <div className="text-xs bg-panel text-fg text-center font-black">
                                          {c.cardKind === "option" ? "OPTION" : "SUPPORT"}
                                      </div>
                                      {c.supportEffect && (
-                                         <div className="absolute inset-x-0 bottom-full bg-black text-[8px] p-1 border border-white/20 whitespace-nowrap">
+                                         <div className="absolute inset-x-0 bottom-full bg-surface-strong text-xs p-2 border border-line whitespace-nowrap text-fg">
                                              {c.supportEffect.description}
                                          </div>
                                      )}
                                      {c.cardKind === "option" && c.effectId && (
-                                         <div className="absolute inset-x-0 bottom-full bg-black text-[8px] p-1 border border-ps-yellow/40 whitespace-nowrap">
+                                         <div className="absolute inset-x-0 bottom-full bg-surface-strong text-xs p-2 border border-ps-yellow/40 whitespace-nowrap text-fg">
                                              {c.effectId.replace("option.battle.", "")}
                                          </div>
                                      )}
@@ -875,13 +875,13 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
             <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] flex gap-8">
                 <div className="flex gap-2">
                     {[...Array(3)].map((_, i) => (
-                        <div key={i} className={`w-4 h-4 rotate-45 border-2 ${i < gameState.player.score ? 'bg-ps-blue border-white shadow-[0_0_10px_#3c9bff]' : 'bg-transparent border-ps-blue/40'}`} />
+                        <div key={i} className={`w-4 h-4 rotate-45 border-2 ${i < gameState.player.score ? 'bg-ps-blue border-fg shadow-[0_0_10px_#3c9bff]' : 'bg-transparent border-ps-blue/40'}`} />
                     ))}
                 </div>
-                <div className="text-white/20 font-black italic">VS</div>
+                <div className="text-muted font-black italic">VS</div>
                 <div className="flex gap-2">
                     {[...Array(3)].map((_, i) => (
-                        <div key={i} className={`w-4 h-4 rotate-45 border-2 ${i < gameState.opponent.score ? 'bg-ps-red border-white shadow-[0_0_10px_#ff3c3c]' : 'bg-transparent border-ps-red/40'}`} />
+                        <div key={i} className={`w-4 h-4 rotate-45 border-2 ${i < gameState.opponent.score ? 'bg-ps-red border-fg shadow-[0_0_10px_#ff3c3c]' : 'bg-transparent border-ps-red/40'}`} />
                     ))}
                 </div>
             </div>
@@ -893,27 +893,27 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: -20 }}
-                        className="fixed top-24 left-10 z-[150] w-80 bg-black/95 border-2 border-ps-blue p-4 shadow-[0_0_50px_rgba(60,155,255,0.3)] pointer-events-none"
+                        className="fixed top-24 left-10 z-[150] w-80 bg-surface-strong border-2 border-ps-blue p-5 shadow-[0_0_50px_rgba(60,155,255,0.3)] pointer-events-none"
                     >
                         <div className="flex justify-between items-start mb-4 border-b border-ps-blue/30 pb-2">
                             <div>
-                                <h2 className="text-2xl font-black italic text-white uppercase leading-none">{hoveredCard.name}</h2>
+                                <h2 className="text-2xl font-black italic text-fg uppercase leading-none">{hoveredCard.name}</h2>
                                 <span className="text-xs font-bold text-ps-blue">{hoveredCard.level.toUpperCase()} / {hoveredCard.type.toUpperCase()}</span>
                             </div>
                             <div className="bg-ps-blue/20 p-2 border border-ps-blue/50">
                                 <span className="text-xl font-black text-ps-blue leading-none">{hoveredCard.hp}</span>
-                                <span className="text-[8px] block opacity-50">HP</span>
+                                <span className="text-xs block text-muted">HP</span>
                             </div>
                         </div>
 
                         {/* SUPPORT EFFECT (HIGH PRIORITY) */}
                         {hoveredCard.supportEffect && (
                             <div className="mb-6 bg-ps-blue/10 border border-ps-blue/40 p-3">
-                                <div className="text-[10px] font-black text-ps-blue uppercase mb-1 tracking-widest flex items-center gap-2">
+                                <div className="text-xs font-black text-ps-blue uppercase mb-1 tracking-widest flex items-center gap-2">
                                     <div className="w-1.5 h-1.5 bg-ps-blue animate-pulse" />
                                     Support Effect
                                 </div>
-                                <p className="text-sm font-bold text-white leading-relaxed">
+                                <p className="text-sm font-bold text-fg leading-relaxed">
                                     {hoveredCard.supportEffect.description}
                                 </p>
                             </div>
@@ -933,7 +933,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                                         <span className={`text-xs font-black text-${atk.color} uppercase`}>{atk.data.name}</span>
                                         <span className={`text-sm font-black text-${atk.color} italic`}>{atk.data.damage}</span>
                                     </div>
-                                    <p className="text-[10px] text-white/60 leading-tight">
+                                    <p className="text-xs text-muted leading-tight">
                                         {atk.data.description || "Standard damage attack."}
                                     </p>
                                 </div>
@@ -942,13 +942,13 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                         </div>
 
                         {/* EVO INFO */}
-                        <div className="mt-6 flex justify-between pt-2 border-t border-white/10 text-[10px] font-bold">
+                        <div className="mt-6 flex justify-between pt-2 border-t border-line text-xs font-bold">
                             <div className="flex flex-col">
-                                <span className="text-white/40 uppercase">Evo Cost</span>
+                                <span className="text-muted uppercase">Evo Cost</span>
                                 <span className="text-ps-blue">{hoveredCard.evoCost} DP</span>
                             </div>
                             <div className="flex flex-col items-end">
-                                <span className="text-white/40 uppercase">Plus DP</span>
+                                <span className="text-muted uppercase">Plus DP</span>
                                 <span className="text-ps-yellow">+{hoveredCard.plusDp}</span>
                             </div>
                         </div>
@@ -957,13 +957,13 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
             </AnimatePresence>
             
             {gameState.phase === 'victory' && !vfx.isAnimating && (
-                <div className="fixed inset-0 bg-black/90 z-[200] flex items-center justify-center">
+                <div className="fixed inset-0 bg-overlay z-[200] flex items-center justify-center">
                     <div className="text-center">
                         <h1 className="text-8xl font-black text-ps-yellow italic mb-8">
                             {gameState.winnerSessionId === (room as any).sessionId ? "BATTLE WON" : "BATTLE LOST"}
                         </h1>
                         {gameState.loserReason && (
-                            <div className="text-white/40 text-xs font-mono mb-6 uppercase">
+                            <div className="text-muted text-sm font-mono mb-6 uppercase">
                                 {String(gameState.loserReason).replace("_", " ")}
                             </div>
                         )}

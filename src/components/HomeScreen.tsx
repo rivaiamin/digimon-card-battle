@@ -51,45 +51,55 @@ export function HomeScreen({ onJoinMatch, joinError }: Props) {
   };
 
   return (
-    <div className="relative w-screen h-screen bg-black overflow-hidden flex items-center justify-center">
+    <div className="relative w-screen h-screen jrpg-map-bg overflow-hidden flex items-center justify-center">
       <div className="scanlines" />
 
       <div className="w-full max-w-xl px-6">
-        <div className="digital-grid rounded-2xl border border-white/10 bg-black/60 p-8 shadow-[0_0_60px_rgba(60,155,255,0.15)]">
+        <div className="digital-grid rounded-2xl border border-line bg-surface p-10 shadow-[0_0_60px_rgba(60,155,255,0.12)]">
           <div className="text-center">
-            <div className="flex justify-center mb-5">
+            <div className="flex justify-center mb-6">
               <AppIcon
                 size={88}
-                className="drop-shadow-[0_0_28px_rgba(60,155,255,0.55)]"
+                className="drop-shadow-[0_0_28px_rgba(60,155,255,0.45)]"
               />
             </div>
-            <div className="text-5xl font-black italic tracking-tighter text-ps-blue">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <div className="flex space-x-1">
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} className="w-3 h-1.5 bg-ps-red transform -skew-x-12" />
+                ))}
+              </div>
+              <span className="text-ps-red font-bold tracking-[0.2em] text-xs uppercase">
+                Online Versus
+              </span>
+            </div>
+            <div className="text-5xl font-black italic tracking-tighter text-fg">
               DIGIMON BATTLE
             </div>
-            <div className="mt-2 text-white/50 text-sm font-mono uppercase tracking-widest">
-              Online Versus
+            <div className="mt-3 text-muted text-sm font-mono uppercase tracking-widest">
+              Digital Card Arena
             </div>
           </div>
 
-          <div className="mt-8 grid grid-cols-1 gap-3 text-left">
-            <label className="flex flex-col gap-1">
-              <span className="text-[10px] font-mono uppercase text-white/50">Rule profile</span>
+          <div className="mt-10 grid grid-cols-1 gap-4 text-left">
+            <label className="flex flex-col gap-2">
+              <span className="text-xs font-mono uppercase text-muted tracking-wider">Rule profile</span>
               <select
                 value={ruleProfile}
                 onChange={e => setRuleProfile(e.target.value as RuleProfileId)}
-                className="bg-black/80 border border-white/20 text-white px-3 py-2 font-mono text-sm"
+                className="bg-surface-strong border border-line text-fg px-3 py-2.5 font-mono text-sm focus:outline-none focus:border-ps-blue"
               >
                 <option value="fidelity_ps1">Fidelity (PS1)</option>
                 <option value="legacy_online">Legacy Online</option>
               </select>
             </label>
 
-            <label className="flex flex-col gap-1">
-              <span className="text-[10px] font-mono uppercase text-white/50">Arena variant</span>
+            <label className="flex flex-col gap-2">
+              <span className="text-xs font-mono uppercase text-muted tracking-wider">Arena variant</span>
               <select
                 value={arenaVariant}
                 onChange={e => setArenaVariant(e.target.value as ArenaVariantId)}
-                className="bg-black/80 border border-white/20 text-white px-3 py-2 font-mono text-sm"
+                className="bg-surface-strong border border-line text-fg px-3 py-2.5 font-mono text-sm focus:outline-none focus:border-ps-blue"
               >
                 {arenaOptions.map(v => (
                   <option key={v.id} value={v.id}>
@@ -99,7 +109,7 @@ export function HomeScreen({ onJoinMatch, joinError }: Props) {
               </select>
             </label>
 
-            <div className="text-[10px] font-mono uppercase text-white/40">
+            <div className="text-xs font-mono uppercase text-muted">
               Deck:{" "}
               {loadingDeck
                 ? "loading default…"
@@ -110,27 +120,27 @@ export function HomeScreen({ onJoinMatch, joinError }: Props) {
           </div>
 
           {joinError && (
-            <div className="mt-4 text-ps-red text-xs font-mono border border-ps-red/40 bg-ps-red/10 p-3">
+            <div className="mt-5 text-ps-red text-sm font-mono border border-ps-red/40 bg-ps-red/10 p-3">
               {joinError}
             </div>
           )}
 
-          <div className="mt-8 flex flex-col gap-3">
+          <div className="mt-10 flex flex-col gap-4">
             <button
               onClick={join}
               onMouseEnter={() => audio.playUiHover()}
-              className="bg-ps-yellow text-black px-8 py-4 font-black italic border-4 border-black hover:bg-white"
+              className="bg-ps-yellow text-black px-8 py-4 font-black italic border-4 border-fg hover:bg-fg hover:text-ps-yellow transition-colors"
             >
               JOIN MATCH
             </button>
 
-            <div className="text-center text-white/40 text-xs font-mono">
+            <div className="text-center text-muted text-sm font-mono">
               Random matchmaking (2 players) — same profile &amp; arena required
             </div>
           </div>
         </div>
 
-        <div className="mt-6 text-center text-white/30 text-[10px] font-mono uppercase">
+        <div className="mt-8 text-center text-muted text-xs font-mono uppercase tracking-wide">
           Tip: open two browser windows with matching settings to test
         </div>
       </div>

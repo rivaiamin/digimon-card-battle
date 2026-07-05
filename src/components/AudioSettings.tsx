@@ -22,7 +22,7 @@ export function AudioSettings({ className = "" }: { className?: string }) {
           setOpen((o) => !o);
           playSfx("menu_click");
         }}
-        className="pointer-events-auto bg-black/80 border border-white/20 text-white/70 text-[10px] font-mono uppercase px-3 py-1.5 hover:border-ps-blue hover:text-ps-blue"
+        className="pointer-events-auto bg-surface border border-line text-muted text-xs font-mono uppercase px-3 py-1.5 hover:border-ps-blue hover:text-ps-blue transition-colors"
         aria-expanded={open}
         aria-label="Audio settings"
       >
@@ -30,13 +30,13 @@ export function AudioSettings({ className = "" }: { className?: string }) {
       </button>
       {open && (
         <div
-          className="absolute bottom-full right-0 mb-2 w-56 bg-black/95 border border-ps-blue/40 p-3 shadow-lg pointer-events-auto z-[300]"
+          className="absolute top-full right-0 mt-2 w-56 bg-surface-strong border border-ps-blue/40 p-4 shadow-lg pointer-events-auto z-[300]"
           role="dialog"
           aria-label="Volume mixer"
         >
           {SLIDERS.map(({ key, label }) => (
-            <label key={key} className="flex items-center gap-2 mb-2 last:mb-0 text-[10px] font-mono text-white/80">
-              <span className="w-14 uppercase">{label}</span>
+            <label key={key} className="flex items-center gap-2 mb-3 last:mb-0 text-xs font-mono text-fg">
+              <span className="w-14 uppercase text-muted">{label}</span>
               <input
                 type="range"
                 min={0}

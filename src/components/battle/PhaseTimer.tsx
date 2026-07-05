@@ -28,10 +28,10 @@ export const PhaseTimer: React.FC<PhaseTimerProps> = ({ phaseEndsAtMs, phase }) 
 
     return (
         <div
-            className={`fixed top-16 left-1/2 -translate-x-1/2 z-[200] pointer-events-none font-mono text-sm font-black tracking-widest px-4 py-1 border-2 ${
+            className={`fixed top-16 left-1/2 -translate-x-1/2 z-[200] pointer-events-none font-mono text-sm font-black tracking-widest px-4 py-1.5 border-2 tabular-nums bg-surface ${
                 critical
                     ? "border-ps-red text-ps-red animate-pulse shadow-[0_0_20px_rgba(255,60,60,0.5)]"
-                    : "border-white/40 text-white/90"
+                    : "border-line text-fg"
             }`}
         >
             {remainingSec}s

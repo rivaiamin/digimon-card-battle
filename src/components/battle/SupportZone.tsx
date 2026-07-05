@@ -100,8 +100,8 @@ export const SupportZone: React.FC<SupportZoneProps> = ({
                     initial={{ y: 24, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                 >
-                    <div className="w-[72px] h-[100px] rounded border-2 border-ps-blue/60 bg-gradient-to-br from-slate-900 via-indigo-950 to-black shadow-[0_0_20px_rgba(60,155,255,0.35)] flex items-center justify-center">
-                        <span className="text-[8px] font-black text-ps-blue/80 uppercase tracking-widest rotate-180">
+                    <div className="w-[72px] h-[100px] rounded border-2 border-ps-blue/60 bg-panel shadow-[0_0_20px_rgba(60,155,255,0.35)] flex items-center justify-center">
+                        <span className="text-xs font-black text-ps-blue uppercase tracking-widest rotate-180">
                             Support
                         </span>
                     </div>
@@ -109,8 +109,8 @@ export const SupportZone: React.FC<SupportZoneProps> = ({
             )}
 
             {showOpponentBack && (
-                <div className="w-[72px] h-[100px] rounded border-2 border-ps-red/50 bg-gradient-to-br from-slate-900 via-red-950/40 to-black shadow-[0_0_16px_rgba(255,60,60,0.25)] flex items-center justify-center -rotate-12">
-                    <span className="text-[8px] font-black text-ps-red/70 uppercase tracking-widest">???</span>
+                <div className="w-[72px] h-[100px] rounded border-2 border-ps-red/50 bg-panel shadow-[0_0_16px_rgba(255,60,60,0.25)] flex items-center justify-center -rotate-12">
+                    <span className="text-xs font-black text-ps-red uppercase tracking-widest">???</span>
                 </div>
             )}
         </motion.div>

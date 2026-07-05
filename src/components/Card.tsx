@@ -51,17 +51,17 @@ export const DigimonCard: React.FC<CardProps & { variant?: 'full' | 'mini' }> = 
                 </div>
             </div>
             <div className="flex flex-col">
-              <span className={`${isMini ? 'text-[8px] truncate max-w-[50px]' : 'text-xl'} font-black italic tracking-tighter text-white leading-tight uppercase`}>
+              <span className={`${isMini ? 'text-[10px] truncate max-w-[50px]' : 'text-xl'} font-black italic tracking-tighter text-white leading-tight uppercase`}>
                 {data.name}
               </span>
-              {!isMini && <span className="text-[10px] font-bold text-ps-blue italic leading-none">{data.type.toUpperCase()} TYPE</span>}
+              {!isMini && <span className="text-xs font-bold text-ps-blue italic leading-none">{data.type.toUpperCase()} TYPE</span>}
             </div>
         </div>
         <div className="flex flex-col items-end">
             <div className={`${isMini ? 'px-1 py-0' : 'bg-white/10 px-2 py-0.5'} rounded-sm border border-white/20`}>
-               <span className={`${isMini ? 'text-[6px]' : 'text-[10px]'} font-black text-white`}>{data.level.toUpperCase()}</span>
+               <span className={`${isMini ? 'text-[10px]' : 'text-xs'} font-black text-white`}>{data.level.toUpperCase()}</span>
             </div>
-            {!isMini && <span className="text-[8px] font-bold text-white/30 mt-1">LV. {data.level[0]}</span>}
+            {!isMini && <span className="text-xs font-bold text-white/50 mt-1">LV. {data.level[0]}</span>}
         </div>
       </div>
 
@@ -76,7 +76,7 @@ export const DigimonCard: React.FC<CardProps & { variant?: 'full' | 'mini' }> = 
                     <img 
                       src={cardImageSrc(data)} 
                       alt={data.name}
-                      className="w-full h-full object-cover opacity-80 mix-blend-screen"
+                      className="w-full h-full object-cover opacity-80 card-art-blend"
                       referrerPolicy="no-referrer"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
@@ -87,7 +87,7 @@ export const DigimonCard: React.FC<CardProps & { variant?: 'full' | 'mini' }> = 
                     <div className="skew-x-[15deg] flex flex-col items-end">
                         {!isMini && (
                             <div className="flex items-center gap-1">
-                               <span className="text-[8px] font-black text-ps-blue">HP</span>
+                               <span className="text-xs font-black text-ps-blue">HP</span>
                                <div className="w-12 h-1 bg-slate-800 rounded-full overflow-hidden">
                                   <div className="h-full bg-ps-blue" style={{ width: `${(data.hp/data.maxHp)*100}%` }} />
                                </div>
@@ -113,7 +113,7 @@ export const DigimonCard: React.FC<CardProps & { variant?: 'full' | 'mini' }> = 
                     <item.icon className={`${isMini ? 'w-2 h-2' : 'w-5 h-5'} text-${item.color} ${item.icon !== X ? 'fill-current' : 'font-black'}`} />
                     {!isMini && <span className="text-sm font-bold text-white uppercase">{item.atk.name}</span>}
                 </div>
-                <span className={`${isMini ? 'text-[8px]' : 'text-xl'} font-black text-${item.color} italic`}>{item.atk.damage}</span>
+                <span className={`${isMini ? 'text-[10px]' : 'text-xl'} font-black text-${item.color} italic tabular-nums`}>{item.atk.damage}</span>
             </div>
         ))}
       </div>
@@ -139,8 +139,8 @@ export const DigimonCard: React.FC<CardProps & { variant?: 'full' | 'mini' }> = 
             <div className="bg-ps-blue/10 p-0.5 rounded border border-ps-blue/20">
                 <div className="scale-75"><TypeIcon type={data.type} /></div>
             </div>
-            <span className="text-[7px] font-black italic text-white/80 uppercase truncate w-12">{data.name}</span>
-            <span className="text-[6px] font-bold text-white/40">{data.level[0]}</span>
+            <span className="text-[10px] font-black italic text-white/90 uppercase truncate w-12">{data.name}</span>
+            <span className="text-[10px] font-bold text-white/60">{data.level[0]}</span>
         </div>
         <div className="flex-1 relative bg-neutral-900 flex items-center justify-center">
             <img 
@@ -149,17 +149,17 @@ export const DigimonCard: React.FC<CardProps & { variant?: 'full' | 'mini' }> = 
                 className="w-full h-full object-cover opacity-60"
             />
             <div className="absolute bottom-1 right-1 bg-black/90 px-1 border-r-2 border-ps-blue">
-                <span className="text-[9px] font-black italic text-ps-blue">{data.hp}</span>
+                <span className="text-xs font-black italic text-ps-blue tabular-nums">{data.hp}</span>
             </div>
         </div>
         <div className="bg-black/95 p-1 flex flex-col gap-0.5">
             <div className="flex justify-between items-center px-1 border-l border-ps-red">
                 <Circle className="w-1.5 h-1.5 text-ps-red fill-current" />
-                <span className="text-[7px] font-bold text-ps-red">{attacks.circle.damage}</span>
+                <span className="text-[10px] font-bold text-ps-red tabular-nums">{attacks.circle.damage}</span>
             </div>
             <div className="flex justify-between items-center px-1 border-l border-ps-blue">
                 <Triangle className="w-1.5 h-1.5 text-ps-blue fill-current" />
-                <span className="text-[7px] font-bold text-ps-blue">{attacks.triangle.damage}</span>
+                <span className="text-[10px] font-bold text-ps-blue tabular-nums">{attacks.triangle.damage}</span>
             </div>
         </div>
       </motion.div>
@@ -206,12 +206,12 @@ export const DigimonCard: React.FC<CardProps & { variant?: 'full' | 'mini' }> = 
       {/* Evolution Info Overlay - Only for Full Cards in certain contexts or hand? 
           Actually user just wanted the UI replicated. I will keep this overlay for full cards only. */}
       {!isMini && (
-        <div className="absolute top-1/2 left-0 -translate-x-full bg-slate-900/90 border border-white/20 p-2 text-[8px] flex flex-col gap-1">
-            <div className="text-white/40 uppercase">Evo Cost</div>
-            <div className="text-ps-blue font-bold">{data.evoCost} DP</div>
-            <div className="h-px bg-white/20" />
-            <div className="text-white/40 uppercase">Plus DP</div>
-            <div className="text-ps-yellow font-bold">+{data.plusDp}</div>
+        <div className="absolute top-1/2 left-0 -translate-x-full bg-surface-strong border border-line p-2.5 text-xs flex flex-col gap-1.5">
+            <div className="text-muted uppercase">Evo Cost</div>
+            <div className="text-ps-blue font-bold tabular-nums">{data.evoCost} DP</div>
+            <div className="h-px bg-line" />
+            <div className="text-muted uppercase">Plus DP</div>
+            <div className="text-ps-yellow font-bold tabular-nums">+{data.plusDp}</div>
         </div>
       )}
     </motion.div>
