@@ -120,7 +120,7 @@ export function getTurnStatusHint(ctx: TurnStatusContext): string {
 
     if (ctx.phase === "battle_attack") {
         if (ctx.attackLocked) return "Waiting for opponent's attack.";
-        return "Both Digimon attack at the same time.";
+        return "Attacker strikes first; defender counter-attacks if they survive.";
     }
 
     if (ctx.phase === "battle_reveal") {

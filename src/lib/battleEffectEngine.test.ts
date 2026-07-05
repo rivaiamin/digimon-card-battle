@@ -68,6 +68,50 @@ describe("cross.to_zero (FC-017)", () => {
     });
 });
 
+describe("take-turn default (FC-018)", () => {
+    it("attacker strikes first and cancels defender hit on KO", () => {
+        const ctx = createSupportBattleContext();
+        const attacker = combatant("a", 500);
+        const defender = combatant("d", 300);
+
+        const { defenderHp, attackerHp, events, strikes } = resolveBattleExchange({
+            attacker,
+            defender,
+            attackerAttack: "circle",
+            defenderAttack: "circle",
+            activeSessionId: "a",
+            supportCtx: ctx,
+        });
+
+        expect(defenderHp).toBe(0);
+        expect(attackerHp).toBe(500);
+        expect(events.some((e) => e.type === "attack_canceled")).toBe(true);
+        expect(strikes).toHaveLength(1);
+        expect(strikes[0].attackerSessionId).toBe("a");
+    });
+
+    it("defender counter-attacks when they survive", () => {
+        const ctx = createSupportBattleContext();
+        const attacker = combatant("a", 500);
+        const defender = combatant("d", 500);
+
+        const { defenderHp, attackerHp, strikes } = resolveBattleExchange({
+            attacker,
+            defender,
+            attackerAttack: "circle",
+            defenderAttack: "triangle",
+            activeSessionId: "a",
+            supportCtx: ctx,
+        });
+
+        expect(defenderHp).toBe(100);
+        expect(attackerHp).toBe(200);
+        expect(strikes).toHaveLength(2);
+        expect(strikes[0].attack).toBe("circle");
+        expect(strikes[1].attack).toBe("triangle");
+    });
+});
+
 describe("first strike cancel (FC-018)", () => {
     it("prevents return hit when first striker KOs", () => {
         const ctx = createSupportBattleContext();

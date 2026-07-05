@@ -79,8 +79,8 @@ The combat sequence, relying heavily on simultaneous blind choices, priority rul
 * **Step 3: Attack Command Selection**
     * Both players secretly select their attack button: Circle (O), Triangle (▲), or Cross (X). Players do not see the opponent's choice until both are locked in.
 * **Step 4: Attack Priority Check**
-    * *Simultaneous (Default):* Both Digimon strike at the exact same time.
-    * *First Attack:* If an attack possesses the "First Attack" property, it strikes before the opponent. If a First Attack reduces the opponent to 0 HP, the opponent's attack is completely canceled. If *both* have First Attack, priority cancels out and becomes simultaneous.
+    * *Take Turn (Default):* The active player (attacker) strikes first. If the defender is reduced to 0 HP, their attack is canceled. If the defender survives, they counter-attack on the same turn.
+    * *First Attack:* If an attack possesses the "First Attack" property (via Support), it strikes before the opponent's attack regardless of turn order. If a First Attack reduces the opponent to 0 HP, the opponent's attack is completely canceled. If *both* have First Attack, take-turn order applies (attacker first).
 * **Step 5: Damage Calculation**
     * Damage is calculated based on base power plus/minus Support modifiers.
     * *Special Cross (X) Effects:* If an X attack is used, special rules apply. For example: 

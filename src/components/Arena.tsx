@@ -16,6 +16,7 @@ import { DamagePopups } from "./battle/DamagePopups";
 import { SupportZone } from "./battle/SupportZone";
 import { MatchHeader } from "./battle/MatchHeader";
 import { AttackRevealOverlay } from "./battle/AttackRevealOverlay";
+import { AttackStrikePanel } from "./battle/AttackStrikePanel";
 import { BattleRevealVignette } from "./battle/BattleRevealVignette";
 import { canEvolveDigimon, matchesEvolutionType } from "../lib/evolutionEligibility";
 import { validateDeployDigimon } from "../lib/openingFlow";
@@ -158,13 +159,15 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
     const [committedSupport, setCommittedSupport] = useState<DigimonCardData | null>(null);
     const [selectedEvoOptionId, setSelectedEvoOptionId] = useState<string | null>(null);
 
+    const [opponentSessionId, setOpponentSessionId] = useState("");
+
     useBattleAudio(gameState, room.sessionId);
-    const vfx = useBattleVfx(gameState);
+    const vfx = useBattleVfx(gameState, room.sessionId, opponentSessionId);
     const timerCritical = usePhaseTimerCritical(gameState.phaseEndsAtMs);
 
     const suppressMessageOverlay =
         vfx.reveal.active ||
-        vfx.isAnimating ||
+        (vfx.isAnimating && !vfx.koMessage) ||
         gameState.phase === "battle_reveal" ||
         !shouldShowFlashMessage(gameState.message, gameState.phase);
 
@@ -201,6 +204,8 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
             const opponentSessionId = Array.from(state.players.keys()).find(id => id !== room.sessionId);
             const opponent = opponentSessionId ? state.players.get(opponentSessionId) : null;
 
+            setOpponentSessionId(opponentSessionId ?? "");
+
             setGameState(prev => ({
                 ...prev,
                 player: mapSchemaToPlayerState(me),
@@ -222,6 +227,8 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                 arenaVariantId: state.arenaVariantId ?? "standard",
                 supportPickSessionId: state.supportPickSessionId ?? "",
                 phaseEndsAtMs: state.phaseEndsAtMs ?? 0,
+                combatStrikesJson: state.combatStrikesJson ?? "",
+                lastBattleAttackerSessionId: state.lastBattleAttackerSessionId ?? "",
                 hasDiscarded: state.prepSubPhase === "evolve",
                 winnerSessionId: (state as any).winnerSessionId,
                 loserReason: (state as any).loserReason,
@@ -491,6 +498,22 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
             </div>
             )}
 
+            {vfx.koMessage && vfx.phase === "ko_beat" && (
+            <div className="absolute top-[28%] left-0 w-full flex justify-center z-[75] pointer-events-none px-4">
+                <motion.div
+                    key={vfx.koMessage}
+                    initial={{ scale: 1.1, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="bg-surface-strong px-8 py-3 rounded border-2 border-ps-red shadow-lg max-w-lg"
+                >
+                    <span className="text-xl font-bold text-fg text-center block text-balance">
+                        {vfx.koMessage}
+                    </span>
+                </motion.div>
+            </div>
+            )}
+
             {/* ARENA FLOOR */}
             <ImpactFlash color={vfx.flashColor} />
             <DamagePopups popups={vfx.popups} />
@@ -521,7 +544,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                     x: vfx.phase === "impact" ? [0, -6, 6, -4, 4, 0] : 0,
                 }}
                 transition={{
-                    duration: vfx.phase === "impact" ? 0.28 : vfx.isAnimating ? 0.35 : 0.8,
+                    duration: vfx.phase === "impact" ? 0.56 : vfx.isAnimating ? 0.7 : 0.8,
                     ease: vfx.phase === "impact" ? "easeOut" : "easeInOut",
                 }}
                 className="relative w-[200vw] h-[200vh] bg-app flex items-center justify-center arena-surface digital-grid"
@@ -533,12 +556,18 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                         {playerActive && (
                             <DigimonCard 
                                 data={{...playerActive, hp: displayPlayerHp}} 
+                                isRaised={vfx.playerRaised}
                                 isAttacking={vfx.playerAttacking}
                                 isHit={vfx.playerHit}
-                                isKo={vfx.phase === "settle" && vfx.playerKo}
+                                isKo={vfx.phase === "ko_beat" && vfx.koSide === "player"}
                                 onHover={setHoveredCard}
                             />
                         )}
+                        <AttackStrikePanel
+                            strike={vfx.activeStrikeSide === "player" ? vfx.activeStrike : null}
+                            side="player"
+                            visible={vfx.activeStrikeSide === "player" && vfx.phase === "raise"}
+                        />
                         <SupportZone
                             side="player"
                             phase={gameState.phase}
@@ -556,12 +585,18 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                             <DigimonCard 
                                 data={{...opponentActive, hp: displayOpponentHp}} 
                                 isOpponent 
+                                isRaised={vfx.opponentRaised}
                                 isAttacking={vfx.opponentAttacking}
                                 isHit={vfx.opponentHit}
-                                isKo={vfx.phase === "settle" && vfx.opponentKo}
+                                isKo={vfx.phase === "ko_beat" && vfx.koSide === "opponent"}
                                 onHover={setHoveredCard}
                             />
                         )}
+                        <AttackStrikePanel
+                            strike={vfx.activeStrikeSide === "opponent" ? vfx.activeStrike : null}
+                            side="opponent"
+                            visible={vfx.activeStrikeSide === "opponent" && vfx.phase === "raise"}
+                        />
                         <SupportZone
                             side="opponent"
                             phase={gameState.phase}

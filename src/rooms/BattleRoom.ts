@@ -41,6 +41,7 @@ import {
 import {
     resolveFullBattle,
     resolveKoScoring,
+    serializeCombatStrikes,
     type BattleCombatant,
 } from "../lib/battleEffectEngine";
 import {
@@ -763,6 +764,8 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
     }
 
     private beginBattlePhaseAfterPrep() {
+        this.state.combatStrikesJson = "";
+        this.state.lastBattleAttackerSessionId = "";
         this.battleTurnOwnerSessionId = this.state.activePlayerSessionId;
         if (this.ruleProfile.battle.attackLockBeforeSupport) {
             this.beginAttackSelection();
@@ -1081,6 +1084,8 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
 
         p1.hp = battle.p1Hp;
         p2.hp = battle.p2Hp;
+        this.state.combatStrikesJson = serializeCombatStrikes(battle.strikes);
+        this.state.lastBattleAttackerSessionId = this.state.activePlayerSessionId;
 
         for (const event of battle.events) {
             this.auditLog.emit({

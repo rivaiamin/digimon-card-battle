@@ -100,4 +100,8 @@ export class BattleStateSchema extends Schema {
     @type("string") supportPickSessionId: string = "";
     /** Server wall-clock ms when the current interactive phase ends (FC-021). */
     @type("number") phaseEndsAtMs: number = 0;
+    /** JSON-encoded CombatStrike[] for client sequential attack animation. */
+    @type("string") combatStrikesJson: string = "";
+    /** Attacker session id for the last resolved battle exchange (for client VFX). */
+    @type("string") lastBattleAttackerSessionId: string = "";
 }

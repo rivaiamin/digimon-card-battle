@@ -6,10 +6,15 @@
 import type { EffectArgs } from "../types";
 import { parseEffectArgsJson, readNumberArg } from "./effectArgs";
 import {
+    getAttackDamageBreakdown,
     getEffectiveAttackDamage,
     type AttackType,
     type SupportBattleContext,
 } from "./supportResolver";
+import type { CombatStrike } from "./combatStrikePlan";
+
+export type { CombatStrike } from "./combatStrikePlan";
+export { parseCombatStrikesJson, serializeCombatStrikes } from "./combatStrikePlan";
 
 export type BattleEventType =
     | "cross_counter"
@@ -17,6 +22,7 @@ export type BattleEventType =
     | "cross_crash"
     | "cross_eat_up_hp"
     | "first_strike_cancel"
+    | "attack_canceled"
     | "damage_dealt"
     | "double_ko";
 
@@ -31,9 +37,9 @@ export interface BattleCombatant {
     hp: number;
     maxHp: number;
     active: {
-        circle: { damage: number; effectId?: string; effectArgsJson?: string };
-        triangle: { damage: number; effectId?: string; effectArgsJson?: string };
-        cross: { damage: number; effectId?: string; effectArgsJson?: string };
+        circle: { damage: number; name?: string; effectId?: string; effectArgsJson?: string };
+        triangle: { damage: number; name?: string; effectId?: string; effectArgsJson?: string };
+        cross: { damage: number; name?: string; effectId?: string; effectArgsJson?: string };
     } | null;
 }
 
@@ -50,6 +56,7 @@ export interface BattleExchangeResult {
     attackerHp: number;
     defenderHp: number;
     events: BattleEvent[];
+    strikes: CombatStrike[];
 }
 
 export interface CrossEffectState {
@@ -182,12 +189,60 @@ function hasEatUp(active: BattleCombatant["active"], attack: AttackType): boolea
     return getAttackEffect(active, "cross")?.effectId === "cross.eat_up_hp";
 }
 
+function getAttackName(active: BattleCombatant["active"], attack: AttackType): string {
+    if (!active) return attack.toUpperCase();
+    const atk =
+        attack === "circle" ? active.circle : attack === "triangle" ? active.triangle : active.cross;
+    const name = String(atk.name ?? "").trim();
+    return name || attack.toUpperCase();
+}
+
+function buildStrike(
+    from: BattleCombatant,
+    to: BattleCombatant,
+    attack: AttackType,
+    damage: number,
+    targetHpAfter: number,
+    supportCtx: SupportBattleContext
+): CombatStrike {
+    const breakdown = getAttackDamageBreakdown(from, attack, supportCtx);
+    return {
+        attackerSessionId: from.sessionId,
+        defenderSessionId: to.sessionId,
+        attack,
+        attackName: getAttackName(from.active, attack),
+        baseDamage: breakdown.baseDamage,
+        bonusDamage: breakdown.bonusDamage,
+        totalDamage: damage,
+        targetHpAfter,
+    };
+}
+
+function emitAttackCanceled(
+    events: BattleEvent[],
+    canceledSessionId: string,
+    canceledDamage: number
+) {
+    events.push({
+        type: "attack_canceled",
+        sessionId: canceledSessionId,
+        detail: { canceledDamage },
+    });
+    events.push({
+        type: "first_strike_cancel",
+        sessionId: canceledSessionId,
+        detail: { canceledDamage },
+    });
+}
+
 /**
  * Resolve one directed exchange (attacker = active player for the turn).
- * First-strike is evaluated from support context relative to each combatant session.
+ * Take-turn default: attacker strikes first; defender counter-attacks only if they survive.
+ * First Strike support lets the holder strike before the opponent when only one has it.
  */
 export function resolveBattleExchange(input: BattleExchangeInput): BattleExchangeResult {
     const events: BattleEvent[] = [];
+    const strikes: CombatStrike[] = [];
     let attackerHp = input.attacker.hp;
     let defenderHp = input.defender.hp;
 
@@ -207,9 +262,12 @@ export function resolveBattleExchange(input: BattleExchangeInput): BattleExchang
     const defenderFirst = input.supportCtx.firstStrikePlayers.has(input.defender.sessionId);
 
     const applyHit = (
+        from: BattleCombatant,
+        to: BattleCombatant,
         fromSessionId: string,
         targetHp: number,
         damage: number,
+        attack: AttackType,
         label: "toDefender" | "toAttacker"
     ): number => {
         if (damage <= 0) return targetHp;
@@ -219,34 +277,65 @@ export function resolveBattleExchange(input: BattleExchangeInput): BattleExchang
             sessionId: fromSessionId,
             detail: { damage, [label]: true },
         });
+        strikes.push(buildStrike(from, to, attack, damage, next, input.supportCtx));
         return next;
     };
 
-    if (attackerFirst && !defenderFirst) {
-        defenderHp = applyHit(input.attacker.sessionId, defenderHp, toDefender, "toDefender");
+    const strikeAttackerFirst = () => {
+        defenderHp = applyHit(
+            input.attacker,
+            input.defender,
+            input.attacker.sessionId,
+            defenderHp,
+            toDefender,
+            input.attackerAttack,
+            "toDefender"
+        );
         if (defenderHp > 0) {
-            attackerHp = applyHit(input.defender.sessionId, attackerHp, toAttacker, "toAttacker");
+            attackerHp = applyHit(
+                input.defender,
+                input.attacker,
+                input.defender.sessionId,
+                attackerHp,
+                toAttacker,
+                input.defenderAttack,
+                "toAttacker"
+            );
         } else if (toAttacker > 0) {
-            events.push({
-                type: "first_strike_cancel",
-                sessionId: input.attacker.sessionId,
-                detail: { canceledDamage: toAttacker },
-            });
+            emitAttackCanceled(events, input.defender.sessionId, toAttacker);
         }
-    } else if (defenderFirst && !attackerFirst) {
-        attackerHp = applyHit(input.defender.sessionId, attackerHp, toAttacker, "toAttacker");
+    };
+
+    const strikeDefenderFirst = () => {
+        attackerHp = applyHit(
+            input.defender,
+            input.attacker,
+            input.defender.sessionId,
+            attackerHp,
+            toAttacker,
+            input.defenderAttack,
+            "toAttacker"
+        );
         if (attackerHp > 0) {
-            defenderHp = applyHit(input.attacker.sessionId, defenderHp, toDefender, "toDefender");
+            defenderHp = applyHit(
+                input.attacker,
+                input.defender,
+                input.attacker.sessionId,
+                defenderHp,
+                toDefender,
+                input.attackerAttack,
+                "toDefender"
+            );
         } else if (toDefender > 0) {
-            events.push({
-                type: "first_strike_cancel",
-                sessionId: input.defender.sessionId,
-                detail: { canceledDamage: toDefender },
-            });
+            emitAttackCanceled(events, input.attacker.sessionId, toDefender);
         }
+    };
+
+    if (defenderFirst && !attackerFirst) {
+        strikeDefenderFirst();
     } else {
-        defenderHp = applyHit(input.attacker.sessionId, defenderHp, toDefender, "toDefender");
-        attackerHp = applyHit(input.defender.sessionId, attackerHp, toAttacker, "toAttacker");
+        // Attacker first: default take-turn, attacker-only First Strike, or both First Strike
+        strikeAttackerFirst();
     }
 
     if (hasEatUp(input.attacker.active, input.attackerAttack) && toDefender > 0 && defenderHp >= 0) {
@@ -267,7 +356,7 @@ export function resolveBattleExchange(input: BattleExchangeInput): BattleExchang
         events.push({ type: "double_ko" });
     }
 
-    return { attackerHp, defenderHp, events };
+    return { attackerHp, defenderHp, events, strikes };
 }
 
 /** Full 1v1 battle resolution for two session-ordered players. */
@@ -278,7 +367,7 @@ export function resolveFullBattle(
     attack2: AttackType,
     activeSessionId: string,
     supportCtx: SupportBattleContext
-): { p1Hp: number; p2Hp: number; events: BattleEvent[] } {
+): { p1Hp: number; p2Hp: number; events: BattleEvent[]; strikes: CombatStrike[] } {
     const isP1Active = p1.sessionId === activeSessionId;
     const result = resolveBattleExchange({
         attacker: isP1Active ? p1 : p2,
@@ -290,9 +379,19 @@ export function resolveFullBattle(
     });
 
     if (isP1Active) {
-        return { p1Hp: result.attackerHp, p2Hp: result.defenderHp, events: result.events };
+        return {
+            p1Hp: result.attackerHp,
+            p2Hp: result.defenderHp,
+            events: result.events,
+            strikes: result.strikes,
+        };
     }
-    return { p1Hp: result.defenderHp, p2Hp: result.attackerHp, events: result.events };
+    return {
+        p1Hp: result.defenderHp,
+        p2Hp: result.attackerHp,
+        events: result.events,
+        strikes: result.strikes,
+    };
 }
 
 export type DoubleKoOutcome = {

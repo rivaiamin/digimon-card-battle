@@ -10,6 +10,7 @@ interface CardProps {
   data: DigimonCardData;
   isOpponent?: boolean;
   isAttacking?: boolean;
+  isRaised?: boolean;
   isHit?: boolean;
   isKo?: boolean;
   delay?: number;
@@ -30,6 +31,7 @@ export const DigimonCard: React.FC<CardProps & { variant?: 'full' | 'mini' }> = 
   data, 
   isOpponent, 
   isAttacking,
+  isRaised = false,
   isHit = false,
   isKo = false,
   delay = 0,
@@ -168,17 +170,19 @@ export const DigimonCard: React.FC<CardProps & { variant?: 'full' | 'mini' }> = 
 
   const knockbackX = isOpponent ? 56 : -56;
   const knockbackRot = isOpponent ? 8 : -8;
+  const raiseY = isRaised ? (isOpponent ? 40 : -40) : 0;
+  const lungeY = isAttacking && !isRaised ? (isOpponent ? 120 : -120) : 0;
 
   return (
     <motion.div
       initial={{ y: 50, opacity: 0, rotateY: 0 }}
       animate={{ 
-        y: isAttacking ? (isOpponent ? 120 : -120) : 0,
-        x: isHit ? knockbackX : isAttacking ? (isOpponent ? -40 : 40) : 0,
+        y: raiseY || lungeY,
+        x: isHit ? knockbackX : isAttacking && !isRaised ? (isOpponent ? -40 : 40) : 0,
         rotate: isHit ? knockbackRot : 0,
         rotateY: 5, 
         rotateX: 5,
-        scale: isAttacking ? 1.15 : isHit ? 0.96 : isKo ? 0.85 : 1,
+        scale: isRaised ? 1.08 : isAttacking ? 1.15 : isHit ? 0.96 : isKo ? 0.85 : 1,
         opacity: isKo ? 0.35 : 1,
         filter: isKo ? "grayscale(1) brightness(0.6)" : "none",
       }}
@@ -189,11 +193,11 @@ export const DigimonCard: React.FC<CardProps & { variant?: 'full' | 'mini' }> = 
       onMouseLeave={() => onHover?.(null)}
       transition={{ 
         delay, 
-        duration: isHit ? 0.25 : 0.55, 
+        duration: isHit ? 0.5 : isRaised ? 0.7 : 1.1, 
         type: "spring", 
-        stiffness: isHit ? 380 : 120,
-        damping: isHit ? 16 : 20,
-        repeat: isAttacking ? 1 : 0,
+        stiffness: isHit ? 380 : isRaised ? 200 : 120,
+        damping: isHit ? 16 : isRaised ? 18 : 20,
+        repeat: isAttacking && !isRaised ? 1 : 0,
         repeatType: "reverse"
       }}
       style={{ transformStyle: "preserve-3d" }}

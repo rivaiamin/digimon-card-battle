@@ -56,8 +56,8 @@ Primary objective for E0 / T0-1:
 | FC-015 | Nullification/jamming-style effects MUST be represented and resolved at correct timing/scope. | `MANUAL` L389, L413-L417 | `SUPPORT` L5-L12, L160-L162 (void only) |
 | FC-016 | Circle/Triangle/Cross base attack characteristics MUST match canonical behavior per card and selection. | `MANUAL` L386; `WIKIMON` L50 | `SUPPORT` L270-L285; `ROOM` L581-L596 |
 | FC-017 | Cross special-effect logic MUST support canonical X behavior set (counter/to-0/crash/eat-up HP, etc.) via effect IDs. | `MANUAL` L386-L394; `WIKIMON` L50; `GFQ_CARDLIST` L191, L222, L232 | `ROOM` L581-L596 (no X-specific branch engine); `SUPPORT` L151-L212 (limited generic effects) |
-| FC-018 | First Attack behavior MUST resolve precedence and cancellation exactly per contract. | `MANUAL` L392, L417 | `SUPPORT` L163-L165; `ROOM` L584-L593 |
-| FC-019 | Simultaneous KO / double KO rules MUST be deterministic and match contract (scoring + redeploy behavior). | `GDD` L90-L93 | `ROOM` L616-L621, L624-L633 |
+| FC-018 | First Attack behavior MUST resolve precedence and cancellation exactly per contract. Take-turn default: attacker strikes first; defender counter-attacks only if they survive. | `MANUAL` L392, L417 | `SUPPORT` L163-L165; `ROOM` L584-L593; `battleEffectEngine` take-turn default |
+| FC-019 | Simultaneous KO from combat exchange is prevented by take-turn ordering; crash/self-KO edge cases remain deterministic. | `GDD` L90-L93 | `ROOM` L616-L621, L624-L633; `battleEffectEngine` sequential hits |
 | FC-020 | Conflicting effects MUST resolve through a deterministic conflict policy (priority + tie-break + override rules). | `MANUAL` L413-L417 | `SUPPORT` L69-L74, L259-L263 |
 | FC-021 | Phase timers MUST be server-authoritative for all interactive phases. | `TIMER_SPEC` L9-L16, L39-L44 | `ROOM` L22, L529-L532 (reveal delay only); `APP` L31 |
 | FC-022 | Timeout auto-commit defaults MUST apply by phase (skip evolution, no support, random attack) unless overridden by mode config. | `TIMER_SPEC` L20-L25, L52-L55 | `ROOM` L40-L156 (no timeout auto-commit handlers) |

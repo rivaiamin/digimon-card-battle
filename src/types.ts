@@ -101,4 +101,8 @@ export interface GameState {
   supportPickSessionId?: string;
   /** Server timestamp (ms) when the interactive phase ends. */
   phaseEndsAtMs?: number;
+  /** JSON-encoded strike sequence for sequential combat animation. */
+  combatStrikesJson?: string;
+  /** Attacker session id for the last resolved battle (before turn handoff). */
+  lastBattleAttackerSessionId?: string;
 }

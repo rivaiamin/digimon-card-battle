@@ -289,14 +289,39 @@ export function getEffectiveAttackDamage(
     attack: AttackType,
     ctx: SupportBattleContext
 ): number {
+    return getAttackDamageBreakdown(player, attack, ctx).totalDamage;
+}
+
+export type AttackDamageBreakdown = {
+    baseDamage: number;
+    bonusDamage: number;
+    totalDamage: number;
+};
+
+/** Card base AP, support bonus delta, and final pre-cross damage. */
+export function getAttackDamageBreakdown(
+    player: DamageSourcePlayer,
+    attack: AttackType,
+    ctx: SupportBattleContext
+): AttackDamageBreakdown {
     const active = player.active;
-    if (!active) return 0;
+    if (!active) return { baseDamage: 0, bonusDamage: 0, totalDamage: 0 };
     const bonus = getBonuses(ctx, player.sessionId);
     const mult = getMultipliers(ctx, player.sessionId);
-    let base = 0;
-    if (attack === "circle") base = active.circle.damage + bonus.circle;
-    else if (attack === "triangle") base = active.triangle.damage + bonus.triangle;
-    else base = active.cross.damage + bonus.cross;
-    const m = attack === "circle" ? mult.circle : attack === "triangle" ? mult.triangle : mult.cross;
-    return Math.floor(base * m);
+    const cardBase =
+        attack === "circle"
+            ? active.circle.damage
+            : attack === "triangle"
+              ? active.triangle.damage
+              : active.cross.damage;
+    const bonusAdd =
+        attack === "circle" ? bonus.circle : attack === "triangle" ? bonus.triangle : bonus.cross;
+    const m =
+        attack === "circle" ? mult.circle : attack === "triangle" ? mult.triangle : mult.cross;
+    const totalDamage = Math.floor((cardBase + bonusAdd) * m);
+    return {
+        baseDamage: cardBase,
+        bonusDamage: totalDamage - cardBase,
+        totalDamage,
+    };
 }

@@ -17,7 +17,7 @@ describe("battleRoles (FC-003 UI)", () => {
         expect(getOpponentBattleRole("attacker")).toBe("defender");
     });
 
-    it("explains simultaneous strikes during attack phase", () => {
+    it("explains take-turn attack order during attack phase", () => {
         const hint = getTurnStatusHint({
             phase: "battle_attack",
             prepSubPhase: "",
@@ -27,7 +27,7 @@ describe("battleRoles (FC-003 UI)", () => {
             isYourSupportPickTurn: false,
             attackLocked: false,
         });
-        expect(hint).toContain("same time");
+        expect(hint).toContain("Attacker strikes first");
     });
 
     it("labels defender-first support order", () => {
