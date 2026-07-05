@@ -1251,18 +1251,13 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         this.beginDrawPhaseForActivePlayer();
     }
 
-    /** Enter draw phase and immediately refill the active player's hand. */
+    /** Enter draw phase; active player (or timer) commits via executeDrawPhase. */
     private beginDrawPhaseForActivePlayer() {
         this.koRedeployQueue = [];
         this.state.phase = "draw";
         this.state.prepSubPhase = "";
         this.state.message = "Draw Phase";
-        const player = this.state.players.get(this.state.activePlayerSessionId);
-        if (!player) {
-            this.syncPhaseTimer();
-            return;
-        }
-        this.executeDrawPhase(player, true);
+        this.syncPhaseTimer();
     }
 
     private endGame(loserSessionId: string, reason: "points" | "deck_out" | "disconnect" | "afk") {

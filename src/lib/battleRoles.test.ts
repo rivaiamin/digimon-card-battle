@@ -30,6 +30,20 @@ describe("battleRoles (FC-003 UI)", () => {
         expect(hint).toContain("Attacker strikes first");
     });
 
+    it("shows draw target in hint", () => {
+        const hint = getTurnStatusHint({
+            phase: "draw",
+            prepSubPhase: "",
+            yourRole: "attacker",
+            isYourTurn: true,
+            supportPickDefenderFirst: true,
+            isYourSupportPickTurn: false,
+            attackLocked: false,
+            handTarget: 4,
+        });
+        expect(hint).toBe("Drawing to 4 cards.");
+    });
+
     it("labels defender-first support order", () => {
         const hint = getTurnStatusHint({
             phase: "battle_support",

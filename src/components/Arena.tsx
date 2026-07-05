@@ -1,5 +1,5 @@
 import { Room } from "colyseus.js";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { DigimonCard } from "./Card";
 import { BattleHUD } from "./BattleHUD";
@@ -158,6 +158,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
     const [selectedEvoOptionId, setSelectedEvoOptionId] = useState<string | null>(null);
 
     const [opponentSessionId, setOpponentSessionId] = useState("");
+    const drawRequestedRef = useRef(false);
 
     useBattleAudio(gameState, room.sessionId);
     const vfx = useBattleVfx(gameState, room.sessionId, opponentSessionId);
@@ -258,6 +259,17 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
             room.onLeave.remove(onLeave);
         };
     }, [room]);
+
+    // Active player commits draw phase (server fills hand, then advances to prep).
+    useEffect(() => {
+        if (gameState.phase !== "draw") {
+            drawRequestedRef.current = false;
+            return;
+        }
+        if (!gameState.isPlayerTurn || drawRequestedRef.current) return;
+        drawRequestedRef.current = true;
+        room.send("action", { type: "DRAW" });
+    }, [gameState.phase, gameState.isPlayerTurn, room]);
 
     useEffect(() => {
         async function loadCards() {

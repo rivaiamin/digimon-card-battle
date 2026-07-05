@@ -85,7 +85,10 @@ export function getTurnStatusTitle(ctx: TurnStatusContext): string {
 /** Short action hint; empty when nothing useful to say. */
 export function getTurnStatusHint(ctx: TurnStatusContext): string {
     if (ctx.phase === "draw") {
-        return ctx.isYourTurn ? "Drawing to hand size." : "";
+        if (!ctx.isYourTurn) return "";
+        return ctx.handTarget
+            ? `Drawing to ${ctx.handTarget} cards.`
+            : "Drawing to hand size.";
     }
 
     if (ctx.phase === "preparation") {
