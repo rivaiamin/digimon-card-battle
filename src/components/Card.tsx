@@ -14,6 +14,8 @@ interface CardProps {
   isHit?: boolean;
   isKo?: boolean;
   delay?: number;
+  /** Mini hand cards: `from-deck` slides up when newly drawn. */
+  miniEnter?: "default" | "from-deck" | "none";
   onHover?: (data: DigimonCardData | null) => void;
 }
 
@@ -36,6 +38,7 @@ export const DigimonCard: React.FC<CardProps & { variant?: 'full' | 'mini' }> = 
   isKo = false,
   delay = 0,
   variant = 'full',
+  miniEnter = 'default',
   onHover
 }) => {
   const isMini = variant === 'mini';
@@ -123,10 +126,26 @@ export const DigimonCard: React.FC<CardProps & { variant?: 'full' | 'mini' }> = 
   );
 
   if (isMini) {
+    const miniInitial =
+      miniEnter === "from-deck"
+        ? { y: 72, opacity: 0, scale: 0.75, rotate: -4 }
+        : miniEnter === "none"
+          ? false
+          : { scale: 0.8, opacity: 0 };
+    const miniAnimate =
+      miniEnter === "from-deck"
+        ? { y: 0, opacity: 1, scale: 1, rotate: 0 }
+        : { scale: 1, opacity: 1 };
+
     return (
       <motion.div
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
+        initial={miniInitial}
+        animate={miniAnimate}
+        transition={
+          miniEnter === "from-deck"
+            ? { type: "spring", stiffness: 340, damping: 24, delay }
+            : { duration: 0.25, delay }
+        }
         whileHover={{ scale: 1.1, translateY: -10, zIndex: 100 }}
         onMouseEnter={() => {
           audio.playUiHover();
