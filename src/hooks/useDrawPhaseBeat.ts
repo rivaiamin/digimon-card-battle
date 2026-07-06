@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DRAW_BEAT_MS, DRAW_CARD_HIGHLIGHT_MS } from "../lib/battleTurnFlow";
 
 export type DrawOverlayMode = "idle" | "drawing" | "landing" | "opponent";
@@ -7,10 +7,8 @@ type DrawPhaseBeat = {
     isDrawPhase: boolean;
     isBeating: boolean;
     newlyDrawnCardIds: ReadonlySet<string>;
-    /** Center/banner overlay visible during draw + card landing. */
     overlayVisible: boolean;
     overlayMode: DrawOverlayMode;
-    /** How many cards just arrived (0 during beat before server reply). */
     cardsLanded: number;
 };
 
@@ -21,18 +19,22 @@ export function useDrawPhaseBeat(
     onCommitDraw: () => void
 ): DrawPhaseBeat {
     const [isBeating, setIsBeating] = useState(false);
-    const [newlyDrawnCardIds, setNewlyDrawnCardIds] = useState<ReadonlySet<string>>(
-        () => new Set()
-    );
-    const [cardsLanded, setCardsLanded] = useState(0);
+    const [landingTick, setLandingTick] = useState(0);
 
     const preDrawHandRef = useRef<readonly string[]>([]);
     const handCardIdsRef = useRef(handCardIds);
     handCardIdsRef.current = handCardIds;
 
     const drawScheduledRef = useRef(false);
+    const awaitingDrawResultRef = useRef(false);
+    const landingIdsRef = useRef<readonly string[]>([]);
+    const landingExpiryRef = useRef(0);
+    const prevHandSigRef = useRef("");
+
     const beatTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const handSig = handCardIds.join("|");
 
     const clearBeatTimer = useCallback(() => {
         if (beatTimerRef.current) {
@@ -48,6 +50,58 @@ export function useDrawPhaseBeat(
         }
     }, []);
 
+    // Detect landed cards on the same render the hand updates (before paint).
+    if (handSig !== prevHandSigRef.current) {
+        const before = new Set(preDrawHandRef.current);
+        const added = handCardIds.filter(id => !before.has(id));
+        if (
+            added.length > 0 &&
+            awaitingDrawResultRef.current &&
+            (phase === "draw" || phase === "preparation")
+        ) {
+            landingIdsRef.current = added;
+            landingExpiryRef.current = performance.now() + DRAW_CARD_HIGHLIGHT_MS;
+            awaitingDrawResultRef.current = false;
+        } else if (
+            phase === "preparation" &&
+            awaitingDrawResultRef.current &&
+            added.length === 0
+        ) {
+            awaitingDrawResultRef.current = false;
+        }
+        prevHandSigRef.current = handSig;
+    }
+
+    const newlyDrawnCardIds = useMemo(() => {
+        if (landingIdsRef.current.length === 0) return new Set<string>();
+        if (performance.now() > landingExpiryRef.current) return new Set<string>();
+        return new Set(landingIdsRef.current);
+    }, [handSig, landingTick]);
+
+    const cardsLanded = newlyDrawnCardIds.size;
+
+    useEffect(() => {
+        if (newlyDrawnCardIds.size === 0) return;
+        clearHighlightTimer();
+        const remaining = Math.max(0, landingExpiryRef.current - performance.now());
+        highlightTimerRef.current = setTimeout(() => {
+            highlightTimerRef.current = null;
+            landingIdsRef.current = [];
+            landingExpiryRef.current = 0;
+            setLandingTick(t => t + 1);
+        }, remaining);
+        return clearHighlightTimer;
+    }, [handSig, newlyDrawnCardIds.size, clearHighlightTimer]);
+
+    useEffect(() => {
+        if (phase !== "draw" && phase !== "preparation") {
+            landingIdsRef.current = [];
+            landingExpiryRef.current = 0;
+            awaitingDrawResultRef.current = false;
+            clearHighlightTimer();
+        }
+    }, [phase, clearHighlightTimer]);
+
     useEffect(() => {
         if (phase !== "draw") {
             drawScheduledRef.current = false;
@@ -56,47 +110,21 @@ export function useDrawPhaseBeat(
             return;
         }
 
-        if (!isPlayerTurn) return;
-
-        if (drawScheduledRef.current) return;
+        if (!isPlayerTurn || drawScheduledRef.current) return;
 
         preDrawHandRef.current = handCardIdsRef.current;
         drawScheduledRef.current = true;
-        setCardsLanded(0);
         setIsBeating(true);
 
         beatTimerRef.current = setTimeout(() => {
             beatTimerRef.current = null;
             setIsBeating(false);
+            awaitingDrawResultRef.current = true;
             onCommitDraw();
         }, DRAW_BEAT_MS);
 
         return clearBeatTimer;
     }, [phase, isPlayerTurn, onCommitDraw, clearBeatTimer]);
-
-    useEffect(() => {
-        if (phase !== "draw" && phase !== "preparation") {
-            setNewlyDrawnCardIds(new Set());
-            setCardsLanded(0);
-            clearHighlightTimer();
-            return;
-        }
-
-        const before = new Set(preDrawHandRef.current);
-        const added = handCardIds.filter(id => !before.has(id));
-        if (added.length === 0) return;
-
-        setCardsLanded(added.length);
-        setNewlyDrawnCardIds(new Set(added));
-        clearHighlightTimer();
-        highlightTimerRef.current = setTimeout(() => {
-            highlightTimerRef.current = null;
-            setNewlyDrawnCardIds(new Set());
-            setCardsLanded(0);
-        }, DRAW_CARD_HIGHLIGHT_MS);
-
-        return clearHighlightTimer;
-    }, [phase, handCardIds, clearHighlightTimer]);
 
     const isDrawPhase = phase === "draw";
     const hasLanding = newlyDrawnCardIds.size > 0;
@@ -106,9 +134,7 @@ export function useDrawPhaseBeat(
         overlayMode = "opponent";
     } else if (hasLanding) {
         overlayMode = "landing";
-    } else if (isDrawPhase && isBeating) {
-        overlayMode = "drawing";
-    } else if (isDrawPhase && isPlayerTurn) {
+    } else if (isDrawPhase && (isBeating || isPlayerTurn)) {
         overlayMode = "drawing";
     }
 

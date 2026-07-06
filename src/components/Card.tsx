@@ -128,7 +128,7 @@ export const DigimonCard: React.FC<CardProps & { variant?: 'full' | 'mini' }> = 
   if (isMini) {
     const miniInitial =
       miniEnter === "from-deck"
-        ? { y: 72, opacity: 0, scale: 0.75, rotate: -4 }
+        ? { y: 88, opacity: 0, scale: 0.7, rotate: -6 }
         : miniEnter === "none"
           ? false
           : { scale: 0.8, opacity: 0 };
@@ -139,11 +139,12 @@ export const DigimonCard: React.FC<CardProps & { variant?: 'full' | 'mini' }> = 
 
     return (
       <motion.div
+        key={miniEnter === "from-deck" ? `deck-${data.id}` : data.id}
         initial={miniInitial}
         animate={miniAnimate}
         transition={
           miniEnter === "from-deck"
-            ? { type: "spring", stiffness: 340, damping: 24, delay }
+            ? { type: "spring", stiffness: 280, damping: 22, delay }
             : { duration: 0.25, delay }
         }
         whileHover={{ scale: 1.1, translateY: -10, zIndex: 100 }}

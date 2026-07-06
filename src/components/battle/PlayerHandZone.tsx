@@ -115,7 +115,7 @@ export const PlayerHandZone: React.FC<PlayerHandZoneProps> = ({
                     )}
 
                     {hand.length > 0 && (
-                        <div className="flex w-full justify-center gap-3 overflow-x-auto pb-1 pt-1 scrollbar-thin">
+                        <div className="flex w-full justify-center gap-3 overflow-x-auto overflow-y-visible px-1 pb-1 pt-2 scrollbar-thin">
                             {hand.map(card => {
                                 const interaction = getHandCardInteraction(card, context);
                                 const dimmed =
@@ -131,6 +131,7 @@ export const PlayerHandZone: React.FC<PlayerHandZoneProps> = ({
                                 return (
                                     <div
                                         key={card.id}
+                                        style={{ overflow: "visible" }}
                                         onClick={() =>
                                             handleCardClick(card, interaction, onCardAction)
                                         }
