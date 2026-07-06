@@ -12,6 +12,15 @@ export const DRAW_BEAT_MS = 1_100;
 /** How long newly drawn hand cards stay highlighted after landing. */
 export const DRAW_CARD_HIGHLIGHT_MS = 1_400;
 
+/** Full-screen flash during field digivolution (PS1 burst). */
+export const EVOLUTION_FLASH_MS = 480;
+
+/** How long the active slot keeps the digivolve enter animation. */
+export const EVOLUTION_ENTER_MS = 900;
+
+/** Screen flash tint while a digimon digivolves on the field. */
+export const EVOLUTION_FLASH_COLOR = "rgba(255, 235, 150, 0.55)";
+
 export type TurnPhase =
     | "waiting"
     | "draw"

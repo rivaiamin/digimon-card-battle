@@ -12,6 +12,7 @@ import { useBattleAudio } from "../hooks/useBattleAudio";
 import { useBattleVfx } from "../hooks/useBattleVfx";
 import { usePhaseTimerCritical } from "../hooks/usePhaseTimerCritical";
 import { ImpactFlash } from "./battle/ImpactFlash";
+import { EvolutionBeat } from "./battle/EvolutionBeat";
 import { DamagePopups } from "./battle/DamagePopups";
 import { SupportZone } from "./battle/SupportZone";
 import { MatchHeader } from "./battle/MatchHeader";
@@ -21,6 +22,7 @@ import { BattleRevealVignette } from "./battle/BattleRevealVignette";
 import { PlayerHandZone, type HandCardAction } from "./battle/PlayerHandZone";
 import type { HandInteractionContext } from "../lib/handCardInteraction";
 import { useDrawPhaseBeat } from "../hooks/useDrawPhaseBeat";
+import { useEvolutionVfx } from "../hooks/useEvolutionVfx";
 import { validateDeployDigimon } from "../lib/openingFlow";
 import { getRuleProfile } from "../lib/ruleProfile";
 import { getBattleRole, shouldShowFlashMessage } from "../lib/battleRoles";
@@ -171,6 +173,25 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
         gameState.isPlayerTurn,
         handCardIds,
         commitDrawPhase
+    );
+
+    const playEvolveSfx = useCallback(
+        (side: "player" | "opponent") => {
+            audio.playSfx("evolve", { spatial: side === "player" ? "player" : "enemy" });
+        },
+        [audio]
+    );
+
+    const evolutionVfx = useEvolutionVfx(
+        {
+            activeId: gameState.player.active?.id ?? null,
+            stackLen: gameState.player.evolutionStack.length,
+        },
+        {
+            activeId: gameState.opponent.active?.id ?? null,
+            stackLen: gameState.opponent.evolutionStack.length,
+        },
+        playEvolveSfx
     );
 
     useBattleAudio(gameState, room.sessionId);
@@ -665,7 +686,8 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
             )}
 
             {/* ARENA FLOOR */}
-            <ImpactFlash color={vfx.flashColor} />
+            <ImpactFlash color={evolutionVfx.flashColor ?? vfx.flashColor} />
+            <EvolutionBeat side={evolutionVfx.label} />
             <DamagePopups popups={vfx.popups} />
 
             <AnimatePresence>
@@ -706,6 +728,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                         {playerActive && (
                             <DigimonCard 
                                 data={{...playerActive, hp: displayPlayerHp}} 
+                                fieldEnter={evolutionVfx.playerFieldEnter}
                                 isRaised={vfx.playerRaised}
                                 isAttacking={vfx.playerAttacking}
                                 isHit={vfx.playerHit}
@@ -735,6 +758,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                             <DigimonCard 
                                 data={{...opponentActive, hp: displayOpponentHp}} 
                                 isOpponent 
+                                fieldEnter={evolutionVfx.opponentFieldEnter}
                                 isRaised={vfx.opponentRaised}
                                 isAttacking={vfx.opponentAttacking}
                                 isHit={vfx.opponentHit}
