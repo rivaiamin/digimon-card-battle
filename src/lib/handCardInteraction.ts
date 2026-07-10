@@ -1,5 +1,6 @@
 import { canEvolveDigimon, matchesEvolutionType } from "./evolutionEligibility";
 import { canDiscardForDp } from "./discardForDp";
+import { getPrepOptionBadge } from "./prepOptionPresentation";
 import {
     canPlayEvolutionOption,
     canPlayPrepOption,
@@ -134,7 +135,11 @@ export function getHandCardInteraction(
                 mode: "prep_option",
                 enabled: true,
                 ringClass: "ring-2 ring-ps-yellow ring-offset-2 ring-offset-app",
-                badge: "PLAY",
+                badge: getPrepOptionBadge({
+                    effectId: card.effectId ?? "",
+                    effectArgs: card.effectArgs,
+                    name: card.name,
+                }),
                 statusHint: null,
             };
         }
@@ -156,6 +161,19 @@ export function getHandCardInteraction(
         isYourTurn &&
         ctx.hasActive
     ) {
+        if (canPlayPrepOption(asOptionLike(card), prepSubPhase, ctx.hasActive)) {
+            return {
+                mode: "prep_option",
+                enabled: true,
+                ringClass: "ring-2 ring-ps-yellow ring-offset-2 ring-offset-app",
+                badge: getPrepOptionBadge({
+                    effectId: card.effectId ?? "",
+                    effectArgs: card.effectArgs,
+                    name: card.name,
+                }),
+                statusHint: null,
+            };
+        }
         if (canPlayEvolutionOption(asOptionLike(card), prepSubPhase, ctx.hasActive)) {
             const selected = ctx.selectedEvoOptionId === card.id;
             return {

@@ -5,6 +5,7 @@ import {
     parseEvolutionModifiers,
     resolvePrepOption,
     shouldRestoreFullStatsAfterEvolve,
+    type OptionCardLike,
 } from "./optionResolver";
 import { canPlayEvolutionOption, canPlayPrepOption } from "./optionEligibility";
 
@@ -37,6 +38,76 @@ describe("prep option resolution", () => {
         const result = resolvePrepOption(hand[0], state, () => 0);
         expect(result.ok).toBe(true);
         expect(state.dp).toBe(30);
+    });
+
+    it("draws cards from option.prep.draw", () => {
+        const hand: OptionCardLike[] = [
+            { id: "opt", cardKind: "option", effectId: "option.prep.draw", effectArgs: { count: 2 } },
+        ];
+        const deck: OptionCardLike[] = [
+            { id: "d1", cardKind: "digimon", effectId: "" },
+            { id: "d2", cardKind: "digimon", effectId: "" },
+        ];
+        const state: {
+            dp: number;
+            hp: number;
+            maxHp: number;
+            hand: OptionCardLike[];
+            deck: OptionCardLike[];
+            trash: OptionCardLike[];
+        } = {
+            dp: 0,
+            hp: 500,
+            maxHp: 1000,
+            hand,
+            deck,
+            trash: [],
+        };
+        const result = resolvePrepOption(hand[0], state, count => {
+            let drawn = 0;
+            for (let i = 0; i < count && state.deck.length > 0; i++) {
+                state.hand.push(state.deck.shift()!);
+                drawn++;
+            }
+            return drawn;
+        });
+        expect(result.ok).toBe(true);
+        expect(state.hand.filter(c => c.id !== "opt").length).toBe(2);
+    });
+
+    it("heals active digimon from option.prep.heal_active", () => {
+        const hand = [{ id: "opt", cardKind: "option", effectId: "option.prep.heal_active", effectArgs: { value: 200 } }];
+        const state = {
+            dp: 0,
+            hp: 300,
+            maxHp: 1000,
+            hand,
+            deck: [],
+            trash: [],
+        };
+        const result = resolvePrepOption(hand[0], state, () => 0);
+        expect(result.ok).toBe(true);
+        expect(state.hp).toBe(500);
+    });
+
+    it("fetches a digimon from trash with option.prep.fetch_trash_digimon", () => {
+        const hand = [{ id: "opt", cardKind: "option", effectId: "option.prep.fetch_trash_digimon" }];
+        const trash = [
+            { id: "t1", cardKind: "option", effectId: "" },
+            { id: "d1", cardKind: "digimon", effectId: "" },
+        ];
+        const state = {
+            dp: 0,
+            hp: 500,
+            maxHp: 1000,
+            hand,
+            deck: [] as typeof trash,
+            trash,
+        };
+        const result = resolvePrepOption(hand[0], state, () => 0);
+        expect(result.ok).toBe(true);
+        expect(state.hand.some(c => c.id === "d1")).toBe(true);
+        expect(state.trash.some(c => c.id === "d1")).toBe(false);
     });
 });
 

@@ -601,11 +601,12 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         }
 
         const dpBefore = player.dp;
-        const hpBefore = player.hp;
+        const active = this.getActive(player);
+        const hpBefore = active?.hp ?? player.hp;
         const prepState = {
             dp: player.dp,
-            hp: player.hp,
-            maxHp: player.active?.maxHp ?? 0,
+            hp: hpBefore,
+            maxHp: active?.maxHp ?? 0,
             hand: player.hand as unknown as OptionCardLike[],
             deck: player.deck as unknown as OptionCardLike[],
             trash: player.trash as unknown as OptionCardLike[],
@@ -627,6 +628,9 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
 
         player.dp = prepState.dp;
         player.hp = prepState.hp;
+        if (active) {
+            active.hp = prepState.hp;
+        }
 
         player.hand.splice(idx, 1);
         player.trash.push(card);

@@ -104,7 +104,16 @@ describe("getHandCardInteraction", () => {
         const ctx = baseCtx({ prepSubPhase: "discard" });
         const opt = getHandCardInteraction(prepOption("o1"), ctx);
         expect(opt.mode).toBe("prep_option");
+        expect(opt.badge).toBe("DRAW 1");
         expect(getHandCardInteraction(digimon("d2"), ctx).mode).toBe("discard");
+    });
+
+    it("enables prep options during evolve sub-phase", () => {
+        const ctx = baseCtx({ prepSubPhase: "evolve" });
+        const opt = getHandCardInteraction(prepOption("o1"), ctx);
+        expect(opt.mode).toBe("prep_option");
+        expect(opt.enabled).toBe(true);
+        expect(opt.badge).toBe("DRAW 1");
     });
 
     it("shows full hand as view-only when opponent is in prep", () => {

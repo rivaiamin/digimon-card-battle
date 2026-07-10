@@ -3,6 +3,7 @@ import { DigimonCard } from "../Card";
 import { HandDrawStatus } from "./HandDrawStatus";
 import { HandMulliganStatus } from "./HandMulliganStatus";
 import { HandDiscardStatus } from "./HandDiscardStatus";
+import { HandPrepOptionStatus } from "./HandPrepOptionStatus";
 import type { DrawOverlayMode } from "../../hooks/useDrawPhaseBeat";
 import type { MulliganOverlayMode } from "../../hooks/useMulliganBeat";
 import {
@@ -41,6 +42,12 @@ type DiscardStatusProps = {
     isYourTurn: boolean;
 };
 
+type PrepOptionStatusProps = {
+    visible: boolean;
+    feedback: string | null;
+    isYourTurn: boolean;
+};
+
 type PlayerHandZoneProps = {
     hand: DigimonCardData[];
     context: HandInteractionContext;
@@ -53,6 +60,7 @@ type PlayerHandZoneProps = {
     drawStatus?: DrawStatusProps;
     mulliganStatus?: MulliganStatusProps;
     discardStatus?: DiscardStatusProps;
+    prepOptionStatus?: PrepOptionStatusProps;
 };
 
 function handleCardClick(
@@ -95,6 +103,7 @@ export const PlayerHandZone: React.FC<PlayerHandZoneProps> = ({
     drawStatus,
     mulliganStatus,
     discardStatus,
+    prepOptionStatus,
 }) => {
     const showBar =
         hand.length > 0 ||
@@ -102,7 +111,8 @@ export const PlayerHandZone: React.FC<PlayerHandZoneProps> = ({
         phaseActionsFooter ||
         drawStatus?.visible ||
         mulliganStatus?.visible ||
-        discardStatus?.visible;
+        discardStatus?.visible ||
+        prepOptionStatus?.visible;
 
     if (!showBar) return null;
 
@@ -137,6 +147,13 @@ export const PlayerHandZone: React.FC<PlayerHandZoneProps> = ({
                                     playerDp={discardStatus.playerDp}
                                     lastDpGain={discardStatus.lastDpGain}
                                     isYourTurn={discardStatus.isYourTurn}
+                                />
+                            )}
+                            {prepOptionStatus && (
+                                <HandPrepOptionStatus
+                                    visible={prepOptionStatus.visible}
+                                    feedback={prepOptionStatus.feedback}
+                                    isYourTurn={prepOptionStatus.isYourTurn}
                                 />
                             )}
                         </div>

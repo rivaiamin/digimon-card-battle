@@ -24,6 +24,7 @@ import type { HandInteractionContext } from "../lib/handCardInteraction";
 import { useDrawPhaseBeat } from "../hooks/useDrawPhaseBeat";
 import { useMulliganBeat } from "../hooks/useMulliganBeat";
 import { useDiscardDpBeat } from "../hooks/useDiscardDpBeat";
+import { usePrepOptionBeat, type PrepOptionPlayRequest } from "../hooks/usePrepOptionBeat";
 import { useEvolutionVfx } from "../hooks/useEvolutionVfx";
 import { validateDeployDigimon } from "../lib/openingFlow";
 import { getRuleProfile } from "../lib/ruleProfile";
@@ -162,6 +163,8 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
     const [committedSupport, setCommittedSupport] = useState<DigimonCardData | null>(null);
     const [selectedEvoOptionId, setSelectedEvoOptionId] = useState<string | null>(null);
     const [mulliganRequestTick, setMulliganRequestTick] = useState(0);
+    const [prepOptionRequestTick, setPrepOptionRequestTick] = useState(0);
+    const [prepOptionPlayRequest, setPrepOptionPlayRequest] = useState<PrepOptionPlayRequest | null>(null);
 
     const [opponentSessionId, setOpponentSessionId] = useState("");
 
@@ -192,6 +195,17 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
         gameState.isPlayerTurn,
         gameState.player.dp,
         handCardIds
+    );
+
+    const prepOptionBeat = usePrepOptionBeat(
+        gameState.phase,
+        gameState.prepSubPhase,
+        gameState.isPlayerTurn,
+        gameState.player.dp,
+        gameState.player.active?.hp ?? gameState.player.hp,
+        handCardIds,
+        prepOptionPlayRequest,
+        prepOptionRequestTick
     );
 
     const newlyHighlightedCardIds = useMemo(() => {
@@ -431,7 +445,17 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
     };
 
     const handlePlayPrepOption = (cardId: string) => {
-        audio.playSfx("thud", { spatial: "player" });
+        const card = gameState.player.hand.find(c => c.id === cardId);
+        if (card) {
+            setPrepOptionPlayRequest({
+                cardId: card.id,
+                effectId: card.effectId ?? "",
+                effectArgs: card.effectArgs,
+                name: card.name,
+            });
+            setPrepOptionRequestTick(t => t + 1);
+        }
+        audio.playSfx("chime", { spatial: "player" });
         room.send("action", { type: "PLAY_PREP_OPTION", cardId });
     };
 
@@ -565,7 +589,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
             if (gameState.isPlayerTurn) {
                 handPhaseActionsFooter = (
                     <span className="text-[10px] text-muted uppercase font-bold tracking-wide">
-                        Click Digimon to discard for +DP · prep options show PLAY
+                        Click Digimon for +DP · yellow badges play prep options
                     </span>
                 );
             }
@@ -591,6 +615,12 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                     <span className="text-[10px] text-ps-blue uppercase font-black">
                         Digivolve options (optional)
                         {selectedEvoOptionId ? " — pick evolution target" : ""}
+                    </span>
+                );
+            } else if (gameState.isPlayerTurn) {
+                handPhaseActionsFooter = (
+                    <span className="text-[10px] text-muted uppercase font-bold tracking-wide">
+                        Evolve if you can · yellow badges play prep options
                     </span>
                 );
             }
@@ -872,11 +902,23 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                             : undefined
                     }
                     discardStatus={
-                        discardDpBeat.overlayVisible
+                        discardDpBeat.overlayVisible && !prepOptionBeat.feedback
                             ? {
                                   visible: discardDpBeat.overlayVisible,
                                   playerDp: discardDpBeat.playerDp,
                                   lastDpGain: discardDpBeat.lastDpGain,
+                                  isYourTurn: gameState.isPlayerTurn,
+                              }
+                            : undefined
+                    }
+                    prepOptionStatus={
+                        prepOptionBeat.overlayVisible &&
+                        (gameState.prepSubPhase === "evolve" ||
+                            gameState.prepSubPhase === "discard" ||
+                            prepOptionBeat.feedback)
+                            ? {
+                                  visible: prepOptionBeat.overlayVisible,
+                                  feedback: prepOptionBeat.feedback,
                                   isYourTurn: gameState.isPlayerTurn,
                               }
                             : undefined

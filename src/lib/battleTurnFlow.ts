@@ -21,6 +21,9 @@ export const MULLIGAN_CARD_HIGHLIGHT_MS = 1_200;
 /** How long +DP gain flash stays visible after discard. */
 export const DISCARD_DP_GAIN_MS = 1_000;
 
+/** How long prep option result feedback stays visible. */
+export const PREP_OPTION_FEEDBACK_MS = 1_200;
+
 /** Full-screen flash during field digivolution (PS1 burst). */
 export const EVOLUTION_FLASH_MS = 480;
 

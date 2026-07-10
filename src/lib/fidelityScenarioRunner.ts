@@ -10,6 +10,8 @@ import { buildDefaultDeckCardIds } from "./defaultDeckBuilder";
 import { validateDeck } from "./deckValidator";
 import { drawToTarget, mulliganHand, validateDeployDigimon } from "./openingFlow";
 import { applyDiscardForDp, canDiscardForDp } from "./discardForDp";
+import { resolvePrepOption } from "./optionResolver";
+import { getPrepOptionBadge } from "./prepOptionPresentation";
 import { isPlayerActionLegal } from "./battleTurnFlow";
 import { PHASE_TIMER_MS, phaseTimerDurationMs } from "./phaseTimer";
 import { getRuleProfile } from "./ruleProfile";
@@ -139,6 +141,35 @@ export const FIDELITY_SCENARIOS: FidelityScenario[] = [
             const result = applyDiscardForDp(hand, trash, ["o1", "d1"]);
             if (result.dpGained !== 20 || result.discardedIds.length !== 1) {
                 throw new Error(`expected 20 dp from one digimon, got ${result.dpGained}`);
+            }
+        },
+    },
+    {
+        id: "prep-option-heal-active",
+        fidelityIds: ["FC-008"],
+        description: "Prep heal option restores active HP up to max during discard/evolve windows",
+        run() {
+            const badge = getPrepOptionBadge({
+                effectId: "option.prep.heal_active",
+                effectArgs: { value: 300 },
+            });
+            if (badge !== "HEAL 300") {
+                throw new Error(`expected HEAL 300 badge, got ${badge}`);
+            }
+            const hand = [
+                { id: "opt", cardKind: "option", effectId: "option.prep.heal_active", effectArgs: { value: 300 } },
+            ];
+            const state = {
+                dp: 0,
+                hp: 400,
+                maxHp: 1000,
+                hand,
+                deck: [],
+                trash: [],
+            };
+            const result = resolvePrepOption(hand[0]!, state, () => 0);
+            if (!result.ok || state.hp !== 700) {
+                throw new Error(`expected heal to 700 hp, got ${state.hp}`);
             }
         },
     },
