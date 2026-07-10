@@ -9,6 +9,7 @@ import type { BattleAuditEntry } from "./battleAuditLog";
 import { buildDefaultDeckCardIds } from "./defaultDeckBuilder";
 import { validateDeck } from "./deckValidator";
 import { drawToTarget, mulliganHand, validateDeployDigimon } from "./openingFlow";
+import { applyDiscardForDp, canDiscardForDp } from "./discardForDp";
 import { isPlayerActionLegal } from "./battleTurnFlow";
 import { PHASE_TIMER_MS, phaseTimerDurationMs } from "./phaseTimer";
 import { getRuleProfile } from "./ruleProfile";
@@ -119,6 +120,25 @@ export const FIDELITY_SCENARIOS: FidelityScenario[] = [
             }
             if (!isPlayerActionLegal("DISCARD_FOR_DP", { ...ctx, phase: "preparation", prepSubPhase: "discard" })) {
                 throw new Error("discard should be legal in discard sub-phase");
+            }
+        },
+    },
+    {
+        id: "prep-discard-dp-digimon-only",
+        fidelityIds: ["FC-006"],
+        description: "Discard-for-DP accepts digimon only and sums plusDp",
+        run() {
+            const hand = [
+                { id: "d1", cardKind: "digimon", plusDp: 20 },
+                { id: "o1", cardKind: "option", plusDp: 0 },
+            ];
+            const trash: typeof hand = [];
+            if (!canDiscardForDp(hand[0]!) || canDiscardForDp(hand[1]!)) {
+                throw new Error("only digimon should be discardable for DP");
+            }
+            const result = applyDiscardForDp(hand, trash, ["o1", "d1"]);
+            if (result.dpGained !== 20 || result.discardedIds.length !== 1) {
+                throw new Error(`expected 20 dp from one digimon, got ${result.dpGained}`);
             }
         },
     },

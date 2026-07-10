@@ -2,6 +2,7 @@ import React from "react";
 import { DigimonCard } from "../Card";
 import { HandDrawStatus } from "./HandDrawStatus";
 import { HandMulliganStatus } from "./HandMulliganStatus";
+import { HandDiscardStatus } from "./HandDiscardStatus";
 import type { DrawOverlayMode } from "../../hooks/useDrawPhaseBeat";
 import type { MulliganOverlayMode } from "../../hooks/useMulliganBeat";
 import {
@@ -33,6 +34,13 @@ type MulliganStatusProps = {
     cardsLanded: number;
 };
 
+type DiscardStatusProps = {
+    visible: boolean;
+    playerDp: number;
+    lastDpGain: number;
+    isYourTurn: boolean;
+};
+
 type PlayerHandZoneProps = {
     hand: DigimonCardData[];
     context: HandInteractionContext;
@@ -44,6 +52,7 @@ type PlayerHandZoneProps = {
     newlyDrawnCardIds?: ReadonlySet<string>;
     drawStatus?: DrawStatusProps;
     mulliganStatus?: MulliganStatusProps;
+    discardStatus?: DiscardStatusProps;
 };
 
 function handleCardClick(
@@ -85,13 +94,15 @@ export const PlayerHandZone: React.FC<PlayerHandZoneProps> = ({
     newlyDrawnCardIds,
     drawStatus,
     mulliganStatus,
+    discardStatus,
 }) => {
     const showBar =
         hand.length > 0 ||
         phaseActions ||
         phaseActionsFooter ||
         drawStatus?.visible ||
-        mulliganStatus?.visible;
+        mulliganStatus?.visible ||
+        discardStatus?.visible;
 
     if (!showBar) return null;
 
@@ -118,6 +129,14 @@ export const PlayerHandZone: React.FC<PlayerHandZoneProps> = ({
                                     mode={mulliganStatus.mode}
                                     mulligansRemaining={mulliganStatus.mulligansRemaining}
                                     cardsLanded={mulliganStatus.cardsLanded}
+                                />
+                            )}
+                            {discardStatus && (
+                                <HandDiscardStatus
+                                    visible={discardStatus.visible}
+                                    playerDp={discardStatus.playerDp}
+                                    lastDpGain={discardStatus.lastDpGain}
+                                    isYourTurn={discardStatus.isYourTurn}
                                 />
                             )}
                         </div>

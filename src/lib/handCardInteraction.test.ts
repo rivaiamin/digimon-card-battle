@@ -92,11 +92,19 @@ describe("getHandCardInteraction", () => {
         expect(evoOpt.mode).toBe("view");
     });
 
-    it("enables prep options during discard sub-phase", () => {
+    it("enables digimon discard during discard sub-phase", () => {
+        const ctx = baseCtx({ prepSubPhase: "discard" });
+        const digi = getHandCardInteraction(digimon("d1"), ctx);
+        expect(digi.mode).toBe("discard");
+        expect(digi.enabled).toBe(true);
+        expect(digi.badge).toBe("+100 DP");
+    });
+
+    it("shows options as view-only during discard unless prep playable", () => {
         const ctx = baseCtx({ prepSubPhase: "discard" });
         const opt = getHandCardInteraction(prepOption("o1"), ctx);
         expect(opt.mode).toBe("prep_option");
-        expect(opt.enabled).toBe(true);
+        expect(getHandCardInteraction(digimon("d2"), ctx).mode).toBe("discard");
     });
 
     it("shows full hand as view-only when opponent is in prep", () => {

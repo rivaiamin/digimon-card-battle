@@ -15,6 +15,7 @@ import {
     shouldDeckOutOnDraw,
     validateDeployDigimon,
 } from "../lib/openingFlow";
+import { applyDiscardForDp } from "../lib/discardForDp";
 import { resolveRuleProfile, type RuleProfile } from "../lib/ruleProfile";
 import { parseEffectArgsJson } from "../lib/effectArgs";
 import {
@@ -168,12 +169,22 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
                     this.recordVoluntaryAction(client.sessionId);
                     {
                         const dpBefore = player.dp;
-                        this.discardForDp(player, Array.isArray(message.cardIds) ? message.cardIds : []);
-                        this.audit("DISCARD_FOR_DP", player, "ok", undefined, {
-                            cardIds: Array.isArray(message.cardIds) ? message.cardIds : [],
-                            dpBefore,
-                            dpAfter: player.dp,
-                        });
+                        const cardIds = Array.isArray(message.cardIds) ? message.cardIds : [];
+                        const result = this.discardForDp(player, cardIds);
+                        if (result.discardedIds.length === 0) {
+                            this.audit("DISCARD_FOR_DP", player, "rejected", "no_valid_discards", {
+                                cardIds,
+                                rejectedIds: result.rejectedIds,
+                            });
+                        } else {
+                            this.audit("DISCARD_FOR_DP", player, "ok", undefined, {
+                                cardIds: result.discardedIds,
+                                rejectedIds: result.rejectedIds,
+                                dpBefore,
+                                dpAfter: player.dp,
+                                dpGained: result.dpGained,
+                            });
+                        }
                     }
                     break;
                 case "END_DISCARD":
@@ -495,15 +506,17 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
     }
 
     private discardForDp(player: PlayerSchema, cardIds: string[]) {
-        for (const cardId of cardIds) {
-            const idx = player.hand.findIndex(c => c.id === cardId);
-            if (idx === -1) continue;
-            const card = player.hand[idx];
-            player.dp += card.plusDp;
-            player.trash.push(card);
-            player.hand.splice(idx, 1);
+        type DiscardRow = { id: string; cardKind: string; plusDp: number };
+        const hand = player.hand as unknown as DiscardRow[];
+        const trash = player.trash as unknown as DiscardRow[];
+        const result = applyDiscardForDp(hand, trash, cardIds);
+        if (result.dpGained > 0) {
+            player.dp += result.dpGained;
         }
-        this.state.message = "Step 1: Discard cards for DP";
+        if (result.discardedIds.length > 0) {
+            this.state.message = "Step 1: Discard cards for DP";
+        }
+        return result;
     }
 
     private beginPrepSubPhase(player: PlayerSchema) {

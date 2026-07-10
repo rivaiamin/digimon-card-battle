@@ -1,4 +1,5 @@
 import { canEvolveDigimon, matchesEvolutionType } from "./evolutionEligibility";
+import { canDiscardForDp } from "./discardForDp";
 import {
     canPlayEvolutionOption,
     canPlayPrepOption,
@@ -137,13 +138,13 @@ export function getHandCardInteraction(
                 statusHint: null,
             };
         }
-        if (card.cardKind === "digimon") {
+        if (canDiscardForDp(card)) {
             return {
                 mode: "discard",
                 enabled: true,
-                ringClass: "",
+                ringClass: "ring-2 ring-ps-red/50 ring-offset-2 ring-offset-app",
                 badge: `+${card.plusDp} DP`,
-                statusHint: "Discard for DP",
+                statusHint: null,
             };
         }
         return visibleOnly();

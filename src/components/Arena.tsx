@@ -23,6 +23,7 @@ import { PlayerHandZone, type HandCardAction } from "./battle/PlayerHandZone";
 import type { HandInteractionContext } from "../lib/handCardInteraction";
 import { useDrawPhaseBeat } from "../hooks/useDrawPhaseBeat";
 import { useMulliganBeat } from "../hooks/useMulliganBeat";
+import { useDiscardDpBeat } from "../hooks/useDiscardDpBeat";
 import { useEvolutionVfx } from "../hooks/useEvolutionVfx";
 import { validateDeployDigimon } from "../lib/openingFlow";
 import { getRuleProfile } from "../lib/ruleProfile";
@@ -185,6 +186,14 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
         mulliganRequestTick
     );
 
+    const discardDpBeat = useDiscardDpBeat(
+        gameState.phase,
+        gameState.prepSubPhase,
+        gameState.isPlayerTurn,
+        gameState.player.dp,
+        handCardIds
+    );
+
     const newlyHighlightedCardIds = useMemo(() => {
         const ids = new Set<string>();
         drawBeat.newlyDrawnCardIds.forEach(id => ids.add(id));
@@ -333,7 +342,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
     };
 
     const handleDiscardForDP = (cardId: string) => {
-        audio.playSfx("thud", { spatial: "player" });
+        audio.playSfx("reward_tick", { spatial: "player" });
         room.send("action", { type: "DISCARD_FOR_DP", cardIds: [cardId] });
     };
 
@@ -553,20 +562,22 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
             gameState.prepSubPhase === "discard" &&
             gameState.player.active
         ) {
-            return (
-                <>
-                    <span className="text-xs font-semibold text-muted tabular-nums px-1">
-                        {gameState.player.dp} DP
+            if (gameState.isPlayerTurn) {
+                handPhaseActionsFooter = (
+                    <span className="text-[10px] text-muted uppercase font-bold tracking-wide">
+                        Click Digimon to discard for +DP · prep options show PLAY
                     </span>
-                    {gameState.isPlayerTurn && (
-                        <button
-                            onClick={handleEndDiscard}
-                            className="bg-ps-red text-white hover:bg-surface-strong hover:text-ps-red"
-                        >
-                            DONE DISCARDING
-                        </button>
-                    )}
-                </>
+                );
+            }
+            return (
+                gameState.isPlayerTurn && (
+                    <button
+                        onClick={handleEndDiscard}
+                        className="bg-ps-red text-white hover:bg-surface-strong hover:text-ps-red"
+                    >
+                        DONE DISCARDING
+                    </button>
+                )
             );
         }
 
@@ -857,6 +868,16 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                                   mode: mulliganBeat.overlayMode,
                                   mulligansRemaining: gameState.player.mulligansRemaining ?? 0,
                                   cardsLanded: mulliganBeat.cardsLanded,
+                              }
+                            : undefined
+                    }
+                    discardStatus={
+                        discardDpBeat.overlayVisible
+                            ? {
+                                  visible: discardDpBeat.overlayVisible,
+                                  playerDp: discardDpBeat.playerDp,
+                                  lastDpGain: discardDpBeat.lastDpGain,
+                                  isYourTurn: gameState.isPlayerTurn,
                               }
                             : undefined
                     }

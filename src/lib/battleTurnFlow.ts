@@ -18,6 +18,9 @@ export const MULLIGAN_REDRAW_MS = 700;
 /** How long mulligan-redrawn cards stay highlighted. */
 export const MULLIGAN_CARD_HIGHLIGHT_MS = 1_200;
 
+/** How long +DP gain flash stays visible after discard. */
+export const DISCARD_DP_GAIN_MS = 1_000;
+
 /** Full-screen flash during field digivolution (PS1 burst). */
 export const EVOLUTION_FLASH_MS = 480;
 
