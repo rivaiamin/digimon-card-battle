@@ -118,8 +118,7 @@ export const PlayerHandZone: React.FC<PlayerHandZoneProps> = ({
                         <div className="flex w-full justify-center gap-3 overflow-x-auto overflow-y-visible px-1 pb-1 pt-2 scrollbar-thin">
                             {hand.map(card => {
                                 const interaction = getHandCardInteraction(card, context);
-                                const dimmed =
-                                    !interaction.enabled && interaction.mode !== "view";
+                                const dimmed = interaction.mode === "inactive";
                                 const clickable = interaction.enabled;
                                 const isNewlyDrawn = newlyDrawnCardIds?.has(card.id) ?? false;
                                 const newCardIndex = isNewlyDrawn

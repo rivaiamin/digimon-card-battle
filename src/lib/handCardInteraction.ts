@@ -60,6 +60,11 @@ const VIEW: HandCardInteraction = {
     statusHint: null,
 };
 
+/** PS1-style: card stays in the hand strip at full opacity; not clickable. */
+function visibleOnly(): HandCardInteraction {
+    return VIEW;
+}
+
 function asOptionLike(card: DigimonCardData): OptionCardLike {
     return {
         cardKind: card.cardKind,
@@ -89,16 +94,16 @@ export function getHandCardInteraction(
 
     if (phase === "waiting" || phase === "victory") return INACTIVE;
 
-    if (phase === "draw" && isYourTurn) {
+    if (phase === "draw") {
         return VIEW;
     }
 
-    if (phase === "preparation" && prepSubPhase === "mulligan" && isYourTurn) {
+    if (phase === "preparation" && prepSubPhase === "mulligan") {
         return VIEW;
     }
 
     if (phase === "preparation" && prepSubPhase === "deploy" && isYourTurn && !ctx.hasActive) {
-        if (card.cardKind !== "digimon") return INACTIVE;
+        if (card.cardKind !== "digimon") return visibleOnly();
         const deployOk = validateDeployDigimon(
             toMinimalCard(card),
             ctx.ruleProfile,
@@ -141,7 +146,7 @@ export function getHandCardInteraction(
                 statusHint: "Discard for DP",
             };
         }
-        return INACTIVE;
+        return visibleOnly();
     }
 
     if (
@@ -185,11 +190,11 @@ export function getHandCardInteraction(
                 statusHint,
             };
         }
-        return INACTIVE;
+        return visibleOnly();
     }
 
     if (phase === "battle_support" || phase === "battle_reveal") {
-        if (!canUseAsBattleSupport(asOptionLike(card))) return INACTIVE;
+        if (!canUseAsBattleSupport(asOptionLike(card))) return visibleOnly();
         const enabled =
             phase === "battle_support" &&
             ctx.canPickSupport &&
@@ -203,7 +208,7 @@ export function getHandCardInteraction(
         };
     }
 
-    if (phase === "preparation" && !isYourTurn) return INACTIVE;
+    if (phase === "preparation" && !isYourTurn) return visibleOnly();
 
-    return INACTIVE;
+    return visibleOnly();
 }
