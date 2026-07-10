@@ -89,6 +89,10 @@ export function getHandCardInteraction(
 
     if (phase === "waiting" || phase === "victory") return INACTIVE;
 
+    if (phase === "draw" && isYourTurn) {
+        return VIEW;
+    }
+
     if (phase === "preparation" && prepSubPhase === "mulligan" && isYourTurn) {
         return VIEW;
     }

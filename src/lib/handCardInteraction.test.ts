@@ -60,6 +60,15 @@ describe("getHandCardInteraction", () => {
         expect(getHandCardInteraction(prepOption("o1"), ctx).mode).toBe("view");
     });
 
+    it("shows hand as view-only during draw phase", () => {
+        const ctx = baseCtx({ phase: "draw", prepSubPhase: "" });
+        expect(getHandCardInteraction(digimon("d1"), ctx).mode).toBe("view");
+        expect(getHandCardInteraction(digimon("d1"), ctx).enabled).toBe(false);
+
+        const waiting = baseCtx({ phase: "draw", prepSubPhase: "", isYourTurn: false });
+        expect(getHandCardInteraction(digimon("d1"), waiting).mode).toBe("inactive");
+    });
+
     it("dims non-deploy cards during deploy", () => {
         const ctx = baseCtx({
             prepSubPhase: "deploy",

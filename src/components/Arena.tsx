@@ -1,5 +1,5 @@
 import { Room } from "colyseus.js";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { DigimonCard } from "./Card";
 import { BattleHUD } from "./BattleHUD";
@@ -12,6 +12,7 @@ import { useBattleAudio } from "../hooks/useBattleAudio";
 import { useBattleVfx } from "../hooks/useBattleVfx";
 import { usePhaseTimerCritical } from "../hooks/usePhaseTimerCritical";
 import { ImpactFlash } from "./battle/ImpactFlash";
+import { EvolutionBeat } from "./battle/EvolutionBeat";
 import { DamagePopups } from "./battle/DamagePopups";
 import { SupportZone } from "./battle/SupportZone";
 import { MatchHeader } from "./battle/MatchHeader";
@@ -20,6 +21,8 @@ import { AttackStrikePanel } from "./battle/AttackStrikePanel";
 import { BattleRevealVignette } from "./battle/BattleRevealVignette";
 import { PlayerHandZone, type HandCardAction } from "./battle/PlayerHandZone";
 import type { HandInteractionContext } from "../lib/handCardInteraction";
+import { useDrawPhaseBeat } from "../hooks/useDrawPhaseBeat";
+import { useEvolutionVfx } from "../hooks/useEvolutionVfx";
 import { validateDeployDigimon } from "../lib/openingFlow";
 import { getRuleProfile } from "../lib/ruleProfile";
 import { getBattleRole, shouldShowFlashMessage } from "../lib/battleRoles";
@@ -158,6 +161,38 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
     const [selectedEvoOptionId, setSelectedEvoOptionId] = useState<string | null>(null);
 
     const [opponentSessionId, setOpponentSessionId] = useState("");
+
+    const commitDrawPhase = useCallback(() => {
+        audio.playSfx("chime");
+        room.send("action", { type: "DRAW" });
+    }, [audio, room]);
+
+    const handCardIds = gameState.player.hand.map(c => c.id);
+    const drawBeat = useDrawPhaseBeat(
+        gameState.phase,
+        gameState.isPlayerTurn,
+        handCardIds,
+        commitDrawPhase
+    );
+
+    const playEvolveSfx = useCallback(
+        (side: "player" | "opponent") => {
+            audio.playSfx("evolve", { spatial: side === "player" ? "player" : "enemy" });
+        },
+        [audio]
+    );
+
+    const evolutionVfx = useEvolutionVfx(
+        {
+            activeId: gameState.player.active?.id ?? null,
+            stackLen: gameState.player.evolutionStack.length,
+        },
+        {
+            activeId: gameState.opponent.active?.id ?? null,
+            stackLen: gameState.opponent.evolutionStack.length,
+        },
+        playEvolveSfx
+    );
 
     useBattleAudio(gameState, room.sessionId);
     const vfx = useBattleVfx(gameState, room.sessionId, opponentSessionId);
@@ -446,25 +481,27 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
         }
     };
 
+    let handPhaseActionsFooter: React.ReactNode = null;
+
     const handPhaseActions = (() => {
         if (gameState.phase === "preparation" && gameState.prepSubPhase === "mulligan" && gameState.isPlayerTurn) {
             return (
-                <div className="flex gap-2 flex-wrap justify-center">
+                <>
                     <button
                         onClick={handleAcceptHand}
-                        className="bg-ps-green text-black font-black px-4 py-2 border-2 border-fg hover:bg-surface-strong"
+                        className="bg-ps-green text-black hover:bg-surface-strong"
                     >
                         KEEP HAND
                     </button>
                     {(gameState.player.mulligansRemaining ?? 0) > 0 && (
                         <button
                             onClick={handleMulligan}
-                            className="bg-ps-yellow text-black font-black px-4 py-2 border-2 border-fg hover:bg-surface-strong"
+                            className="bg-ps-yellow text-black hover:bg-surface-strong"
                         >
                             Mulligan ({gameState.player.mulligansRemaining})
                         </button>
                     )}
-                </div>
+                </>
             );
         }
 
@@ -478,7 +515,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
             return (
                 <button
                     onClick={handleDigForDeploy}
-                    className="bg-ps-yellow text-black font-black px-4 py-2 border-2 border-fg hover:bg-surface-strong"
+                    className="bg-ps-yellow text-black hover:bg-surface-strong"
                 >
                     DIG DECK
                 </button>
@@ -491,19 +528,19 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
             gameState.player.active
         ) {
             return (
-                <div className="flex items-center justify-center gap-4 flex-wrap">
-                    <span className="text-sm font-semibold text-muted tabular-nums">
+                <>
+                    <span className="text-xs font-semibold text-muted tabular-nums px-1">
                         {gameState.player.dp} DP
                     </span>
                     {gameState.isPlayerTurn && (
                         <button
                             onClick={handleEndDiscard}
-                            className="bg-ps-red text-white font-black px-4 py-2 border-2 border-fg hover:bg-surface-strong hover:text-ps-red"
+                            className="bg-ps-red text-white hover:bg-surface-strong hover:text-ps-red"
                         >
                             DONE DISCARDING
                         </button>
                     )}
-                </div>
+                </>
             );
         }
 
@@ -512,28 +549,28 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
             gameState.prepSubPhase === "evolve" &&
             gameState.player.active
         ) {
+            if (gameState.isPlayerTurn && evolutionOptionCards.length > 0) {
+                handPhaseActionsFooter = (
+                    <span className="text-[10px] text-ps-blue uppercase font-black">
+                        Digivolve options (optional)
+                        {selectedEvoOptionId ? " — pick evolution target" : ""}
+                    </span>
+                );
+            }
             return (
-                <div className="flex flex-col items-center gap-1">
-                    <div className="flex items-center justify-center gap-4 flex-wrap">
-                        <span className="text-sm font-semibold text-muted tabular-nums">
-                            {gameState.player.dp} DP
-                        </span>
-                        {gameState.isPlayerTurn && (
-                            <button
-                                onClick={handleEndPrep}
-                                className="bg-ps-yellow text-black font-black px-4 py-2 border-2 border-fg hover:bg-surface-strong"
-                            >
-                                End prep
-                            </button>
-                        )}
-                    </div>
-                    {gameState.isPlayerTurn && evolutionOptionCards.length > 0 && (
-                        <span className="text-xs text-ps-blue uppercase font-black text-center">
-                            Digivolve options (optional)
-                            {selectedEvoOptionId ? " — pick evolution target" : ""}
-                        </span>
+                <>
+                    <span className="text-xs font-semibold text-muted tabular-nums px-1">
+                        {gameState.player.dp} DP
+                    </span>
+                    {gameState.isPlayerTurn && (
+                        <button
+                            onClick={handleEndPrep}
+                            className="bg-ps-yellow text-black hover:bg-surface-strong"
+                        >
+                            End prep
+                        </button>
                     )}
-                </div>
+                </>
             );
         }
 
@@ -542,7 +579,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                 <button
                     onClick={() => handleSupportChoice(null)}
                     disabled={!canPickSupport}
-                    className="bg-panel text-fg border border-line px-4 py-2 font-black disabled:opacity-40"
+                    className="bg-panel text-fg border-line disabled:opacity-40"
                 >
                     NO SUPPORT
                 </button>
@@ -649,7 +686,8 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
             )}
 
             {/* ARENA FLOOR */}
-            <ImpactFlash color={vfx.flashColor} />
+            <ImpactFlash color={evolutionVfx.flashColor ?? vfx.flashColor} />
+            <EvolutionBeat side={evolutionVfx.label} />
             <DamagePopups popups={vfx.popups} />
 
             <AnimatePresence>
@@ -690,6 +728,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                         {playerActive && (
                             <DigimonCard 
                                 data={{...playerActive, hp: displayPlayerHp}} 
+                                fieldEnter={evolutionVfx.playerFieldEnter}
                                 isRaised={vfx.playerRaised}
                                 isAttacking={vfx.playerAttacking}
                                 isHit={vfx.playerHit}
@@ -719,6 +758,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                             <DigimonCard 
                                 data={{...opponentActive, hp: displayOpponentHp}} 
                                 isOpponent 
+                                fieldEnter={evolutionVfx.opponentFieldEnter}
                                 isRaised={vfx.opponentRaised}
                                 isAttacking={vfx.opponentAttacking}
                                 isHit={vfx.opponentHit}
@@ -773,11 +813,23 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                     onCardAction={handleHandCardAction}
                     onHover={setHoveredCard}
                     phaseActions={handPhaseActions}
+                    phaseActionsFooter={handPhaseActionsFooter}
+                    drawStatus={
+                        drawBeat.overlayVisible
+                            ? {
+                                  visible: drawBeat.overlayVisible,
+                                  mode: drawBeat.overlayMode,
+                                  handTarget: ruleProfile.handTarget,
+                                  cardsLanded: drawBeat.cardsLanded,
+                              }
+                            : undefined
+                    }
                     supportHint={
                         gameState.phase === "battle_support" && !gameState.player.supportLocked
                             ? supportPhaseHint
                             : null
                     }
+                    newlyDrawnCardIds={drawBeat.newlyDrawnCardIds}
                 />
             )}
 

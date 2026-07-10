@@ -9,6 +9,7 @@ import type { BattleAuditEntry } from "./battleAuditLog";
 import { buildDefaultDeckCardIds } from "./defaultDeckBuilder";
 import { validateDeck } from "./deckValidator";
 import { drawToTarget, mulliganHand, validateDeployDigimon } from "./openingFlow";
+import { isPlayerActionLegal } from "./battleTurnFlow";
 import { PHASE_TIMER_MS, phaseTimerDurationMs } from "./phaseTimer";
 import { getRuleProfile } from "./ruleProfile";
 import { createSeededRng, shuffleInPlace } from "./seededRng";
@@ -97,6 +98,28 @@ export const FIDELITY_SCENARIOS: FidelityScenario[] = [
             const deck = [makeCard("Champion"), makeCard("Rookie"), makeCard("Rookie"), makeCard("Rookie")];
             mulliganHand(hand, deck, 4, arr => shuffleInPlace(arr, createSeededRng(42)));
             if (hand.length !== 4) throw new Error(`expected hand size 4 after mulligan, got ${hand.length}`);
+        },
+    },
+    {
+        id: "draw-phase-action-guards",
+        fidelityIds: ["FC-003"],
+        description: "DRAW is legal only in draw phase; prep actions rejected there",
+        run() {
+            const ctx = {
+                isYourTurn: true,
+                hasActive: true,
+                supportLocked: false,
+                attackLocked: false,
+            };
+            if (!isPlayerActionLegal("DRAW", { ...ctx, phase: "draw", prepSubPhase: "" })) {
+                throw new Error("DRAW should be legal in draw phase");
+            }
+            if (isPlayerActionLegal("END_PREP", { ...ctx, phase: "draw", prepSubPhase: "" })) {
+                throw new Error("END_PREP must be rejected during draw");
+            }
+            if (!isPlayerActionLegal("DISCARD_FOR_DP", { ...ctx, phase: "preparation", prepSubPhase: "discard" })) {
+                throw new Error("discard should be legal in discard sub-phase");
+            }
         },
     },
     {

@@ -14,6 +14,10 @@ interface CardProps {
   isHit?: boolean;
   isKo?: boolean;
   delay?: number;
+  /** Mini hand cards: `from-deck` slides up when newly drawn. */
+  miniEnter?: "default" | "from-deck" | "none";
+  /** Full field cards: `digivolve` flashes in when evolution lands on the battlefield. */
+  fieldEnter?: "default" | "digivolve" | "none";
   onHover?: (data: DigimonCardData | null) => void;
 }
 
@@ -36,6 +40,8 @@ export const DigimonCard: React.FC<CardProps & { variant?: 'full' | 'mini' }> = 
   isKo = false,
   delay = 0,
   variant = 'full',
+  miniEnter = 'default',
+  fieldEnter = 'default',
   onHover
 }) => {
   const isMini = variant === 'mini';
@@ -123,10 +129,27 @@ export const DigimonCard: React.FC<CardProps & { variant?: 'full' | 'mini' }> = 
   );
 
   if (isMini) {
+    const miniInitial =
+      miniEnter === "from-deck"
+        ? { y: 88, opacity: 0, scale: 0.7, rotate: -6 }
+        : miniEnter === "none"
+          ? false
+          : { scale: 0.8, opacity: 0 };
+    const miniAnimate =
+      miniEnter === "from-deck"
+        ? { y: 0, opacity: 1, scale: 1, rotate: 0 }
+        : { scale: 1, opacity: 1 };
+
     return (
       <motion.div
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
+        key={miniEnter === "from-deck" ? `deck-${data.id}` : data.id}
+        initial={miniInitial}
+        animate={miniAnimate}
+        transition={
+          miniEnter === "from-deck"
+            ? { type: "spring", stiffness: 280, damping: 22, delay }
+            : { duration: 0.25, delay }
+        }
         whileHover={{ scale: 1.1, translateY: -10, zIndex: 100 }}
         onMouseEnter={() => {
           audio.playUiHover();
@@ -172,10 +195,18 @@ export const DigimonCard: React.FC<CardProps & { variant?: 'full' | 'mini' }> = 
   const knockbackRot = isOpponent ? 8 : -8;
   const raiseY = isRaised ? (isOpponent ? 40 : -40) : 0;
   const lungeY = isAttacking && !isRaised ? (isOpponent ? 120 : -120) : 0;
+  const isDigivolving = fieldEnter === "digivolve";
+
+  const fieldInitial =
+    fieldEnter === "digivolve"
+      ? { scale: 0.5, opacity: 0, rotateY: isOpponent ? 28 : -28, filter: "brightness(3.2) saturate(1.4)" }
+      : fieldEnter === "none"
+        ? false
+        : { y: 50, opacity: 0, rotateY: 0 };
 
   return (
     <motion.div
-      initial={{ y: 50, opacity: 0, rotateY: 0 }}
+      initial={fieldInitial}
       animate={{ 
         y: raiseY || lungeY,
         x: isHit ? knockbackX : isAttacking && !isRaised ? (isOpponent ? -40 : 40) : 0,
@@ -192,11 +223,11 @@ export const DigimonCard: React.FC<CardProps & { variant?: 'full' | 'mini' }> = 
       }}
       onMouseLeave={() => onHover?.(null)}
       transition={{ 
-        delay, 
-        duration: isHit ? 0.5 : isRaised ? 0.7 : 1.1, 
-        type: "spring", 
-        stiffness: isHit ? 380 : isRaised ? 200 : 120,
-        damping: isHit ? 16 : isRaised ? 18 : 20,
+        delay: isDigivolving ? 0 : delay, 
+        duration: isDigivolving ? 0.55 : isHit ? 0.5 : isRaised ? 0.7 : 1.1, 
+        type: isDigivolving ? "spring" : "spring", 
+        stiffness: isDigivolving ? 300 : isHit ? 380 : isRaised ? 200 : 120,
+        damping: isDigivolving ? 22 : isHit ? 16 : isRaised ? 18 : 20,
         repeat: isAttacking && !isRaised ? 1 : 0,
         repeatType: "reverse"
       }}
@@ -205,6 +236,14 @@ export const DigimonCard: React.FC<CardProps & { variant?: 'full' | 'mini' }> = 
         ${isOpponent ? 'border-ps-red' : 'border-ps-blue'}
         bg-slate-950 flex flex-col pointer-events-auto`}
     >
+      {isDigivolving && (
+        <motion.div
+          className="absolute inset-0 z-50 rounded-lg bg-white mix-blend-screen pointer-events-none"
+          initial={{ opacity: 1 }}
+          animate={{ opacity: 0 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+        />
+      )}
       {cardContent}
 
       {/* Evolution Info Overlay - Only for Full Cards in certain contexts or hand? 
