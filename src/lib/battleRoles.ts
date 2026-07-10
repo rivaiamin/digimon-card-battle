@@ -35,6 +35,7 @@ export interface TurnStatusContext {
     isYourSupportPickTurn: boolean;
     attackLocked: boolean;
     handTarget?: number;
+    mulligansRemaining?: number;
 }
 
 /** One-line phase title for the match header. */
@@ -95,7 +96,12 @@ export function getTurnStatusHint(ctx: TurnStatusContext): string {
         if (!ctx.isYourTurn) return "";
         switch (ctx.prepSubPhase) {
             case "mulligan":
-                return "Keep this hand or mulligan once.";
+                if (ctx.mulligansRemaining === 0) {
+                    return "No redraws left — keep hand to deploy.";
+                }
+                return ctx.mulligansRemaining === 1
+                    ? "Keep hand or redraw once."
+                    : `Keep hand or redraw (${ctx.mulligansRemaining} left).`;
             case "deploy":
                 return "Play a Digimon from your hand.";
             case "discard":

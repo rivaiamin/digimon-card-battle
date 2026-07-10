@@ -21,6 +21,7 @@ type Props = {
     attackLocked: boolean;
     phaseEndsAtMs: number;
     handTarget: number;
+    mulligansRemaining: number;
     playerScore: number;
     opponentScore: number;
 };
@@ -69,6 +70,7 @@ export const MatchHeader: React.FC<Props> = ({
     attackLocked,
     phaseEndsAtMs,
     handTarget,
+    mulligansRemaining,
     playerScore,
     opponentScore,
 }) => {
@@ -111,6 +113,7 @@ export const MatchHeader: React.FC<Props> = ({
         isYourSupportPickTurn: supportPickSessionId === yourSessionId,
         attackLocked,
         handTarget,
+        mulligansRemaining,
     });
     const hint = getTurnStatusHint({
         phase: battlePhase,
@@ -121,6 +124,7 @@ export const MatchHeader: React.FC<Props> = ({
         isYourSupportPickTurn: supportPickSessionId === yourSessionId,
         attackLocked,
         handTarget,
+        mulligansRemaining,
     });
 
     const timerCritical = remainingSec !== null && remainingSec <= 5;

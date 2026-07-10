@@ -12,6 +12,12 @@ export const DRAW_BEAT_MS = 1_100;
 /** How long newly drawn hand cards stay highlighted after landing. */
 export const DRAW_CARD_HIGHLIGHT_MS = 1_400;
 
+/** Client beat after mulligan before highlighting the new hand. */
+export const MULLIGAN_REDRAW_MS = 700;
+
+/** How long mulligan-redrawn cards stay highlighted. */
+export const MULLIGAN_CARD_HIGHLIGHT_MS = 1_200;
+
 /** Full-screen flash during field digivolution (PS1 burst). */
 export const EVOLUTION_FLASH_MS = 480;
 

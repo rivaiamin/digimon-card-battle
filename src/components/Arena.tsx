@@ -1,5 +1,5 @@
 import { Room } from "colyseus.js";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { DigimonCard } from "./Card";
 import { BattleHUD } from "./BattleHUD";
@@ -22,6 +22,7 @@ import { BattleRevealVignette } from "./battle/BattleRevealVignette";
 import { PlayerHandZone, type HandCardAction } from "./battle/PlayerHandZone";
 import type { HandInteractionContext } from "../lib/handCardInteraction";
 import { useDrawPhaseBeat } from "../hooks/useDrawPhaseBeat";
+import { useMulliganBeat } from "../hooks/useMulliganBeat";
 import { useEvolutionVfx } from "../hooks/useEvolutionVfx";
 import { validateDeployDigimon } from "../lib/openingFlow";
 import { getRuleProfile } from "../lib/ruleProfile";
@@ -159,6 +160,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
     /** Face-down preview of own support until server reveal syncs. */
     const [committedSupport, setCommittedSupport] = useState<DigimonCardData | null>(null);
     const [selectedEvoOptionId, setSelectedEvoOptionId] = useState<string | null>(null);
+    const [mulliganRequestTick, setMulliganRequestTick] = useState(0);
 
     const [opponentSessionId, setOpponentSessionId] = useState("");
 
@@ -174,6 +176,21 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
         handCardIds,
         commitDrawPhase
     );
+
+    const mulliganBeat = useMulliganBeat(
+        gameState.phase,
+        gameState.prepSubPhase,
+        gameState.isPlayerTurn,
+        handCardIds,
+        mulliganRequestTick
+    );
+
+    const newlyHighlightedCardIds = useMemo(() => {
+        const ids = new Set<string>();
+        drawBeat.newlyDrawnCardIds.forEach(id => ids.add(id));
+        mulliganBeat.newlyMulliganedCardIds.forEach(id => ids.add(id));
+        return ids;
+    }, [drawBeat.newlyDrawnCardIds, mulliganBeat.newlyMulliganedCardIds]);
 
     const playEvolveSfx = useCallback(
         (side: "player" | "opponent") => {
@@ -325,7 +342,8 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
     };
 
     const handleMulligan = () => {
-        audio.playSfx("menu_click");
+        audio.playSfx("chime", { spatial: "player" });
+        setMulliganRequestTick(t => t + 1);
         room.send("action", { type: "MULLIGAN" });
     };
 
@@ -485,20 +503,28 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
 
     const handPhaseActions = (() => {
         if (gameState.phase === "preparation" && gameState.prepSubPhase === "mulligan" && gameState.isPlayerTurn) {
+            handPhaseActionsFooter = (
+                <span className="text-[10px] text-muted uppercase font-bold tracking-wide">
+                    Review your opening hand before deploying
+                </span>
+            );
+            const redrawsLeft = gameState.player.mulligansRemaining ?? 0;
             return (
                 <>
                     <button
                         onClick={handleAcceptHand}
-                        className="bg-ps-green text-black hover:bg-surface-strong"
+                        disabled={mulliganBeat.isRedrawing}
+                        className="bg-ps-green text-black hover:bg-surface-strong disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         KEEP HAND
                     </button>
-                    {(gameState.player.mulligansRemaining ?? 0) > 0 && (
+                    {redrawsLeft > 0 && (
                         <button
                             onClick={handleMulligan}
-                            className="bg-ps-yellow text-black hover:bg-surface-strong"
+                            disabled={mulliganBeat.isRedrawing}
+                            className="bg-ps-yellow text-black hover:bg-surface-strong disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            Mulligan ({gameState.player.mulligansRemaining})
+                            REDRAW
                         </button>
                     )}
                 </>
@@ -815,7 +841,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                     phaseActions={handPhaseActions}
                     phaseActionsFooter={handPhaseActionsFooter}
                     drawStatus={
-                        drawBeat.overlayVisible
+                        drawBeat.overlayVisible && !mulliganBeat.overlayVisible
                             ? {
                                   visible: drawBeat.overlayVisible,
                                   mode: drawBeat.overlayMode,
@@ -824,12 +850,22 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                               }
                             : undefined
                     }
+                    mulliganStatus={
+                        mulliganBeat.overlayVisible
+                            ? {
+                                  visible: mulliganBeat.overlayVisible,
+                                  mode: mulliganBeat.overlayMode,
+                                  mulligansRemaining: gameState.player.mulligansRemaining ?? 0,
+                                  cardsLanded: mulliganBeat.cardsLanded,
+                              }
+                            : undefined
+                    }
                     supportHint={
                         gameState.phase === "battle_support" && !gameState.player.supportLocked
                             ? supportPhaseHint
                             : null
                     }
-                    newlyDrawnCardIds={drawBeat.newlyDrawnCardIds}
+                    newlyDrawnCardIds={newlyHighlightedCardIds}
                 />
             )}
 
@@ -851,6 +887,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                 attackLocked={!!gameState.player.attackLocked}
                 phaseEndsAtMs={gameState.phaseEndsAtMs ?? 0}
                 handTarget={ruleProfile.handTarget}
+                mulligansRemaining={gameState.player.mulligansRemaining ?? 0}
                 playerScore={gameState.player.score}
                 opponentScore={gameState.opponent.score}
             />

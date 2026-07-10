@@ -1,7 +1,9 @@
 import React from "react";
 import { DigimonCard } from "../Card";
 import { HandDrawStatus } from "./HandDrawStatus";
+import { HandMulliganStatus } from "./HandMulliganStatus";
 import type { DrawOverlayMode } from "../../hooks/useDrawPhaseBeat";
+import type { MulliganOverlayMode } from "../../hooks/useMulliganBeat";
 import {
     getHandCardInteraction,
     type HandCardInteraction,
@@ -24,6 +26,13 @@ type DrawStatusProps = {
     cardsLanded: number;
 };
 
+type MulliganStatusProps = {
+    visible: boolean;
+    mode: MulliganOverlayMode;
+    mulligansRemaining: number;
+    cardsLanded: number;
+};
+
 type PlayerHandZoneProps = {
     hand: DigimonCardData[];
     context: HandInteractionContext;
@@ -34,6 +43,7 @@ type PlayerHandZoneProps = {
     supportHint?: string | null;
     newlyDrawnCardIds?: ReadonlySet<string>;
     drawStatus?: DrawStatusProps;
+    mulliganStatus?: MulliganStatusProps;
 };
 
 function handleCardClick(
@@ -74,9 +84,14 @@ export const PlayerHandZone: React.FC<PlayerHandZoneProps> = ({
     supportHint,
     newlyDrawnCardIds,
     drawStatus,
+    mulliganStatus,
 }) => {
     const showBar =
-        hand.length > 0 || phaseActions || phaseActionsFooter || drawStatus?.visible;
+        hand.length > 0 ||
+        phaseActions ||
+        phaseActionsFooter ||
+        drawStatus?.visible ||
+        mulliganStatus?.visible;
 
     if (!showBar) return null;
 
@@ -95,6 +110,14 @@ export const PlayerHandZone: React.FC<PlayerHandZoneProps> = ({
                                     mode={drawStatus.mode}
                                     handTarget={drawStatus.handTarget}
                                     cardsLanded={drawStatus.cardsLanded}
+                                />
+                            )}
+                            {mulliganStatus && (
+                                <HandMulliganStatus
+                                    visible={mulliganStatus.visible}
+                                    mode={mulliganStatus.mode}
+                                    mulligansRemaining={mulliganStatus.mulligansRemaining}
+                                    cardsLanded={mulliganStatus.cardsLanded}
                                 />
                             )}
                         </div>
