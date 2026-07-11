@@ -21,6 +21,7 @@ import {
     parseStatusAilmentsJson,
     serializeStatusAilments,
 } from "../lib/postEvolutionRecovery";
+import { getPrepServerMessage } from "../lib/prepPhaseCopy";
 import { resolveRuleProfile, type RuleProfile } from "../lib/ruleProfile";
 import { parseEffectArgsJson } from "../lib/effectArgs";
 import {
@@ -198,7 +199,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
                     this.recordVoluntaryAction(client.sessionId);
                     this.state.prepSubPhase = "evolve";
                     this.audit("END_DISCARD", player, "ok");
-                    this.state.message = "Step 2: Evolve or end prep";
+                    this.state.message = this.prepMessageFor(player);
                     this.syncPhaseTimer();
                     break;
                 case "DEPLOY_DIGIMON":
@@ -224,7 +225,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
                     }
                     this.logDrawSnapshot("DIG_FOR_DEPLOY after recovery", player);
                     this.audit("DIG_FOR_DEPLOY", player, "ok");
-                    this.state.message = "Deck dig — deploy a Digimon from your hand";
+                    this.state.message = this.prepMessageFor(player, { dugDeckForDigimon: true });
                     this.syncPhaseTimer();
                     break;
                 }
@@ -275,7 +276,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
                                 this.endGame(player.sessionId, "deck_out");
                             } else {
                                 this.state.prepSubPhase = "deploy";
-                                this.state.message = "Deck dig — deploy a Digimon from your hand";
+                                this.state.message = this.prepMessageFor(player, { dugDeckForDigimon: true });
                                 this.logDrawSnapshot("END_PREP after recovery", player);
                             }
                         }
@@ -529,7 +530,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             player.dp += result.dpGained;
         }
         if (result.discardedIds.length > 0) {
-            this.state.message = "Step 1: Discard cards for DP";
+            this.state.message = this.prepMessageFor(player);
         }
         return result;
     }
@@ -541,24 +542,26 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             player.mulligansRemaining,
             this.ruleProfile
         );
+        this.state.message = this.prepMessageFor(player);
         this.syncPhaseTimer();
     }
 
-    private prepMessageFor(player: PlayerSchema): string {
-        switch (this.state.prepSubPhase) {
-            case "mulligan":
-                return `Opening hand (${this.ruleProfile.handTarget} cards) — keep or mulligan?`;
-            case "deploy":
-                return player.needsOpeningDeploy
-                    ? "Deploy your battle Digimon"
-                    : "Deploy a Rookie from your hand";
-            case "discard":
-                return "Step 1: Discard cards for DP";
-            case "evolve":
-                return "Step 2: Evolve or end prep";
-            default:
-                return this.getActive(player) ? "Step 1: Discard cards for DP" : "Deploy your battle Digimon";
-        }
+    private prepMessageFor(
+        player: PlayerSchema,
+        extras: {
+            dugDeckForDigimon?: boolean;
+            isKoRedeploy?: boolean;
+            isDoubleKoRedeploy?: boolean;
+        } = {}
+    ): string {
+        return getPrepServerMessage(this.state.prepSubPhase as "" | "mulligan" | "deploy" | "discard" | "evolve", {
+            handTarget: this.ruleProfile.handTarget,
+            mulligansRemaining: player.mulligansRemaining,
+            needsOpeningDeploy: player.needsOpeningDeploy,
+            dugDeckForDigimon: extras.dugDeckForDigimon,
+            isKoRedeploy: extras.isKoRedeploy,
+            isDoubleKoRedeploy: extras.isDoubleKoRedeploy,
+        });
     }
 
     private toOptionCardView(card: CardSchema): OptionCardLike {
@@ -738,7 +741,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             }
         }
 
-        this.state.message = "Step 2: Evolve or end prep";
+        this.state.message = this.prepMessageFor(player);
         return true;
     }
 
@@ -800,7 +803,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         }
 
         this.state.prepSubPhase = "discard";
-        this.state.message = "Step 1: Discard cards for DP";
+        this.state.message = this.prepMessageFor(player);
         this.syncPhaseTimer();
     }
 
@@ -1196,7 +1199,10 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             this.state.activePlayerSessionId = sessionId;
             this.state.phase = "preparation";
             this.state.prepSubPhase = "deploy";
-            this.state.message = "KO — deploy a Rookie from your hand";
+            const koPlayer = this.state.players.get(sessionId);
+            this.state.message = koPlayer
+                ? this.prepMessageFor(koPlayer, { isKoRedeploy: true })
+                : getPrepServerMessage("deploy", { isKoRedeploy: true });
             this.syncPhaseTimer();
             return;
         }
@@ -1216,7 +1222,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         if (ko.isDoubleKo) {
             this.trashEvolutionStack(pA);
             this.trashEvolutionStack(pB);
-            this.state.message = "Double KO — deploy a Digimon from your hand";
+            this.state.message = getPrepServerMessage("deploy", { isDoubleKoRedeploy: true });
             this.auditLog.emit({
                 turn: this.state.turn,
                 phase: this.state.phase,
@@ -1462,7 +1468,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
                 this.auditPhaseTimeout(phaseKey, [player.sessionId], "auto_end_discard");
                 if (this.applyTimeoutStrike(player.sessionId)) return;
                 this.state.prepSubPhase = "evolve";
-                this.state.message = "Step 2: Evolve or end prep";
+                this.state.message = this.prepMessageFor(player);
                 this.syncPhaseTimer();
                 break;
             }
@@ -1538,7 +1544,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             auto,
         });
         this.state.message = dugDeckForDigimon
-            ? "Deck dig — deploy a Digimon from your hand"
+            ? this.prepMessageFor(player, { dugDeckForDigimon: true })
             : this.prepMessageFor(player);
     }
 
@@ -1583,7 +1589,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
                     this.endGame(player.sessionId, "deck_out");
                 } else {
                     this.state.prepSubPhase = "deploy";
-                    this.state.message = "Deck dig — deploy a Digimon from your hand";
+                    this.state.message = this.prepMessageFor(player, { dugDeckForDigimon: true });
                     this.syncPhaseTimer();
                 }
             }

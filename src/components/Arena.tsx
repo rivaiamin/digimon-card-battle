@@ -33,6 +33,11 @@ import { canLockSupport } from "../lib/supportPhase";
 import { canPlayEvolutionOption } from "../lib/optionEligibility";
 import { parseEvolutionModifiers } from "../lib/optionResolver";
 import { parseStatusAilmentsJson } from "../lib/postEvolutionRecovery";
+import {
+    getPrepHandFooter,
+    getPrepPrimaryActionLabel,
+    getPrepSecondaryActionLabel,
+} from "../lib/prepPhaseCopy";
 
 const INITIAL_PLAYER_STATE: PlayerState = {
     active: null,
@@ -542,7 +547,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
         if (gameState.phase === "preparation" && gameState.prepSubPhase === "mulligan" && gameState.isPlayerTurn) {
             handPhaseActionsFooter = (
                 <span className="text-[10px] text-muted uppercase font-bold tracking-wide">
-                    Review your opening hand before deploying
+                    {getPrepHandFooter("mulligan")}
                 </span>
             );
             const redrawsLeft = gameState.player.mulligansRemaining ?? 0;
@@ -553,7 +558,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                         disabled={mulliganBeat.isRedrawing}
                         className="bg-ps-green text-black hover:bg-surface-strong disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        KEEP HAND
+                        {getPrepPrimaryActionLabel("mulligan")}
                     </button>
                     {redrawsLeft > 0 && (
                         <button
@@ -561,7 +566,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                             disabled={mulliganBeat.isRedrawing}
                             className="bg-ps-yellow text-black hover:bg-surface-strong disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            REDRAW
+                            {getPrepSecondaryActionLabel("mulligan")}
                         </button>
                     )}
                 </>
@@ -580,7 +585,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                     onClick={handleDigForDeploy}
                     className="bg-ps-yellow text-black hover:bg-surface-strong"
                 >
-                    DIG DECK
+                    {getPrepSecondaryActionLabel("deploy")}
                 </button>
             );
         }
@@ -593,7 +598,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
             if (gameState.isPlayerTurn) {
                 handPhaseActionsFooter = (
                     <span className="text-[10px] text-muted uppercase font-bold tracking-wide">
-                        Click Digimon for +DP · yellow badges play prep options
+                        {getPrepHandFooter("discard")}
                     </span>
                 );
             }
@@ -603,7 +608,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                         onClick={handleEndDiscard}
                         className="bg-ps-red text-white hover:bg-surface-strong hover:text-ps-red"
                     >
-                        DONE DISCARDING
+                        {getPrepPrimaryActionLabel("discard")}
                     </button>
                 )
             );
@@ -614,17 +619,19 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
             gameState.prepSubPhase === "evolve" &&
             gameState.player.active
         ) {
-            if (gameState.isPlayerTurn && evolutionOptionCards.length > 0) {
+            if (gameState.isPlayerTurn) {
                 handPhaseActionsFooter = (
-                    <span className="text-[10px] text-ps-blue uppercase font-black">
-                        Digivolve options (optional)
-                        {selectedEvoOptionId ? " — pick evolution target" : ""}
-                    </span>
-                );
-            } else if (gameState.isPlayerTurn) {
-                handPhaseActionsFooter = (
-                    <span className="text-[10px] text-muted uppercase font-bold tracking-wide">
-                        Evolve if you can · yellow badges play prep options
+                    <span
+                        className={`text-[10px] uppercase tracking-wide ${
+                            evolutionOptionCards.length > 0
+                                ? "text-ps-blue font-black"
+                                : "text-muted font-bold"
+                        }`}
+                    >
+                        {getPrepHandFooter("evolve", {
+                            hasEvolutionOptions: evolutionOptionCards.length > 0,
+                            evoOptionSelected: !!selectedEvoOptionId,
+                        })}
                     </span>
                 );
             }
@@ -638,7 +645,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                             onClick={handleEndPrep}
                             className="bg-ps-yellow text-black hover:bg-surface-strong"
                         >
-                            End prep
+                            {getPrepPrimaryActionLabel("evolve")}
                         </button>
                     )}
                 </>
@@ -955,6 +962,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                 phaseEndsAtMs={gameState.phaseEndsAtMs ?? 0}
                 handTarget={ruleProfile.handTarget}
                 mulligansRemaining={gameState.player.mulligansRemaining ?? 0}
+                needsOpeningDeploy={!!gameState.player.needsOpeningDeploy}
                 playerScore={gameState.player.score}
                 opponentScore={gameState.opponent.score}
             />

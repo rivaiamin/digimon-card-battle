@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import { Swords, Shield } from "lucide-react";
 import {
     getBattleRole,
@@ -8,6 +9,7 @@ import {
     type BattleRole,
     type TurnStatusPhase,
 } from "../../lib/battleRoles";
+import { PREP_SUBPHASE_TRANSITION_MS } from "../../lib/prepPhaseCopy";
 
 type Props = {
     turn: number;
@@ -22,6 +24,7 @@ type Props = {
     phaseEndsAtMs: number;
     handTarget: number;
     mulligansRemaining: number;
+    needsOpeningDeploy?: boolean;
     playerScore: number;
     opponentScore: number;
 };
@@ -71,6 +74,7 @@ export const MatchHeader: React.FC<Props> = ({
     phaseEndsAtMs,
     handTarget,
     mulligansRemaining,
+    needsOpeningDeploy = false,
     playerScore,
     opponentScore,
 }) => {
@@ -104,7 +108,7 @@ export const MatchHeader: React.FC<Props> = ({
             ? prepSubPhase
             : "";
 
-    const title = getTurnStatusTitle({
+    const statusCtx = {
         phase: battlePhase,
         prepSubPhase: prep,
         yourRole,
@@ -114,20 +118,14 @@ export const MatchHeader: React.FC<Props> = ({
         attackLocked,
         handTarget,
         mulligansRemaining,
-    });
-    const hint = getTurnStatusHint({
-        phase: battlePhase,
-        prepSubPhase: prep,
-        yourRole,
-        isYourTurn,
-        supportPickDefenderFirst,
-        isYourSupportPickTurn: supportPickSessionId === yourSessionId,
-        attackLocked,
-        handTarget,
-        mulligansRemaining,
-    });
+        needsOpeningDeploy,
+    } as const;
 
+    const title = getTurnStatusTitle(statusCtx);
+    const hint = getTurnStatusHint(statusCtx);
+    const statusKey = `${phase}:${prep}:${isYourTurn ? "you" : "opp"}`;
     const timerCritical = remainingSec !== null && remainingSec <= 5;
+    const transitionSec = PREP_SUBPHASE_TRANSITION_MS / 1000;
 
     return (
         <header className="fixed top-0 inset-x-0 z-[100] pointer-events-none">
@@ -143,30 +141,40 @@ export const MatchHeader: React.FC<Props> = ({
                         timerCritical ? "border-ps-red/50" : "border-line"
                     }`}
                 >
-                    <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-sm font-semibold text-fg">
-                        <span className="text-muted tabular-nums">Turn {turn}</span>
-                        <span className="text-muted">·</span>
-                        <span>{title}</span>
-                        {remainingSec !== null && (
-                            <>
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={statusKey}
+                            initial={{ opacity: 0, y: -4 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 3 }}
+                            transition={{ duration: transitionSec * 0.7 }}
+                        >
+                            <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-sm font-semibold text-fg">
+                                <span className="text-muted tabular-nums">Turn {turn}</span>
                                 <span className="text-muted">·</span>
-                                <span
-                                    className={`tabular-nums ${timerCritical ? "text-ps-red" : "text-muted"}`}
-                                >
-                                    {remainingSec}s
-                                </span>
-                            </>
-                        )}
-                    </div>
-                    <div className="mt-1.5 flex flex-wrap items-center justify-center gap-2">
-                        <span className="text-[11px] text-muted">You</span>
-                        <RolePill role={yourRole} />
-                        <span className="text-[11px] text-muted">Opponent</span>
-                        <RolePill role={getOpponentBattleRole(yourRole)} />
-                    </div>
-                    {hint && (
-                        <p className="mt-1.5 text-xs text-muted leading-snug text-balance">{hint}</p>
-                    )}
+                                <span>{title}</span>
+                                {remainingSec !== null && (
+                                    <>
+                                        <span className="text-muted">·</span>
+                                        <span
+                                            className={`tabular-nums ${timerCritical ? "text-ps-red" : "text-muted"}`}
+                                        >
+                                            {remainingSec}s
+                                        </span>
+                                    </>
+                                )}
+                            </div>
+                            <div className="mt-1.5 flex flex-wrap items-center justify-center gap-2">
+                                <span className="text-[11px] text-muted">You</span>
+                                <RolePill role={yourRole} />
+                                <span className="text-[11px] text-muted">Opponent</span>
+                                <RolePill role={getOpponentBattleRole(yourRole)} />
+                            </div>
+                            {hint && (
+                                <p className="mt-1.5 text-xs text-muted leading-snug text-balance">{hint}</p>
+                            )}
+                        </motion.div>
+                    </AnimatePresence>
                 </div>
             </div>
         </header>

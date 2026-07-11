@@ -24,6 +24,9 @@ export const DISCARD_DP_GAIN_MS = 1_000;
 /** How long prep option result feedback stays visible. */
 export const PREP_OPTION_FEEDBACK_MS = 1_200;
 
+/** Brief highlight when prep sub-phase advances (P2-9). */
+export const PREP_SUBPHASE_TRANSITION_MS = 450;
+
 /** Full-screen flash during field digivolution (PS1 burst). */
 export const EVOLUTION_FLASH_MS = 480;
 

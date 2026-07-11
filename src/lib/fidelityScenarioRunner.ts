@@ -15,9 +15,10 @@ import {
     applyPostEvolutionRecovery,
     parseStatusAilmentsJson,
 } from "./postEvolutionRecovery";
+import { getPrepServerMessage, nextPrepSubPhase } from "./prepPhaseCopy";
 import { resolvePrepOption } from "./optionResolver";
 import { getPrepOptionBadge } from "./prepOptionPresentation";
-import { isPlayerActionLegal } from "./battleTurnFlow";
+import { isPlayerActionLegal, prepSubPhaseAfterDraw } from "./battleTurnFlow";
 import { PHASE_TIMER_MS, phaseTimerDurationMs } from "./phaseTimer";
 import { getRuleProfile } from "./ruleProfile";
 import { createSeededRng, shuffleInPlace } from "./seededRng";
@@ -240,6 +241,49 @@ export const FIDELITY_SCENARIOS: FidelityScenario[] = [
             }
             if (state.openingPenaltyActive || !result.openingPenaltyCleared) {
                 throw new Error("opening penalty flag must clear when active digimon is replaced");
+            }
+        },
+    },
+    {
+        id: "prep-subphase-transitions",
+        fidelityIds: ["FC-003"],
+        description: "Prep sub-phases advance mulligan→deploy→discard→evolve with aligned copy",
+        run() {
+            const profile = getRuleProfile("fidelity_ps1");
+            if (prepSubPhaseAfterDraw(false, true, 1, profile) !== "mulligan") {
+                throw new Error("opening should start at mulligan");
+            }
+            if (prepSubPhaseAfterDraw(true, false, 0, profile) !== "discard") {
+                throw new Error("mid-game with active should start at discard");
+            }
+            if (nextPrepSubPhase("mulligan") !== "deploy") throw new Error("mulligan→deploy");
+            if (nextPrepSubPhase("deploy") !== "discard") throw new Error("deploy→discard");
+            if (nextPrepSubPhase("discard") !== "evolve") throw new Error("discard→evolve");
+            if (nextPrepSubPhase("evolve") !== null) throw new Error("evolve ends prep");
+
+            const discardMsg = getPrepServerMessage("discard");
+            const evolveMsg = getPrepServerMessage("evolve");
+            if (!discardMsg.toLowerCase().includes("dp")) {
+                throw new Error(`discard copy should mention DP: ${discardMsg}`);
+            }
+            if (!evolveMsg.toLowerCase().includes("digivolve") && !evolveMsg.toLowerCase().includes("prep")) {
+                throw new Error(`evolve copy should mention digivolve/prep: ${evolveMsg}`);
+            }
+
+            const ctx = {
+                isYourTurn: true,
+                hasActive: true,
+                supportLocked: false,
+                attackLocked: false,
+            };
+            if (!isPlayerActionLegal("END_DISCARD", { ...ctx, phase: "preparation", prepSubPhase: "discard" })) {
+                throw new Error("END_DISCARD must be legal in discard");
+            }
+            if (isPlayerActionLegal("END_PREP", { ...ctx, phase: "preparation", prepSubPhase: "discard" })) {
+                throw new Error("END_PREP must be illegal before evolve");
+            }
+            if (!isPlayerActionLegal("END_PREP", { ...ctx, phase: "preparation", prepSubPhase: "evolve" })) {
+                throw new Error("END_PREP must be legal in evolve");
             }
         },
     },

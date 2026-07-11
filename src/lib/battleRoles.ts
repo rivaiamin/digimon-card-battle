@@ -2,6 +2,11 @@
  * Attacker / defender labeling for UI (FC-003 / FC-012).
  */
 
+import {
+    getPrepSubPhaseHint,
+    getPrepSubPhaseTitle,
+} from "./prepPhaseCopy";
+
 export type BattleRole = "attacker" | "defender";
 
 export function getBattleRole(sessionId: string, activePlayerSessionId: string): BattleRole {
@@ -36,6 +41,7 @@ export interface TurnStatusContext {
     attackLocked: boolean;
     handTarget?: number;
     mulligansRemaining?: number;
+    needsOpeningDeploy?: boolean;
 }
 
 /** One-line phase title for the match header. */
@@ -50,18 +56,10 @@ export function getTurnStatusTitle(ctx: TurnStatusContext): string {
         if (!ctx.isYourTurn) {
             return `Waiting · opponent prepares (${role})`;
         }
-        switch (ctx.prepSubPhase) {
-            case "mulligan":
-                return `Opening hand (${ctx.handTarget ?? 4} cards)`;
-            case "deploy":
-                return "Deploy your Digimon";
-            case "discard":
-                return "Discard for DP";
-            case "evolve":
-                return "Evolve or end prep";
-            default:
-                return `Preparation (${role})`;
-        }
+        return getPrepSubPhaseTitle(ctx.prepSubPhase, {
+            handTarget: ctx.handTarget,
+            needsOpeningDeploy: ctx.needsOpeningDeploy,
+        });
     }
 
     if (ctx.phase === "battle_support") {
@@ -94,23 +92,10 @@ export function getTurnStatusHint(ctx: TurnStatusContext): string {
 
     if (ctx.phase === "preparation") {
         if (!ctx.isYourTurn) return "";
-        switch (ctx.prepSubPhase) {
-            case "mulligan":
-                if (ctx.mulligansRemaining === 0) {
-                    return "No redraws left — keep hand to deploy.";
-                }
-                return ctx.mulligansRemaining === 1
-                    ? "Keep hand or redraw once."
-                    : `Keep hand or redraw (${ctx.mulligansRemaining} left).`;
-            case "deploy":
-                return "Play a Digimon from your hand.";
-            case "discard":
-                return "Discard Digimon cards to gain DP.";
-            case "evolve":
-                return "Evolve if you can, then end prep.";
-            default:
-                return "";
-        }
+        return getPrepSubPhaseHint(ctx.prepSubPhase, {
+            mulligansRemaining: ctx.mulligansRemaining,
+            needsOpeningDeploy: ctx.needsOpeningDeploy,
+        });
     }
 
     if (ctx.phase === "battle_support") {
