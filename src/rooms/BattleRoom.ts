@@ -1122,6 +1122,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             sessionId: player.sessionId,
             hp: player.hp,
             maxHp: active?.maxHp ?? player.hp,
+            specialty: active?.type ?? "",
             active: active
                 ? {
                       circle: {

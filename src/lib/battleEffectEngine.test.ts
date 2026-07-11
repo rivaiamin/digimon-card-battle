@@ -12,12 +12,14 @@ function combatant(
     hp: number,
     crossEffectId = "",
     crossDamage = 100,
-    crossArgs: Record<string, string | number> = {}
+    crossArgs: Record<string, string | number> = {},
+    specialty = "Fire"
 ): BattleCombatant {
     return {
         sessionId,
         hp,
         maxHp: hp,
+        specialty,
         active: {
             circle: { damage: 400 },
             triangle: { damage: 300 },
@@ -157,6 +159,51 @@ describe("cross.crash and double KO (FC-019)", () => {
         const scoring = resolveKoScoring(0, 0);
         expect(scoring.isDoubleKo).toBe(true);
         expect(scoring.scoreDelta).toEqual({ p1: 0, p2: 0 });
+    });
+});
+
+describe("attack.specialty_mult (FC-016)", () => {
+    it("triples Cross damage against matching specialty foe", () => {
+        const ctx = createSupportBattleContext();
+        const attacker = combatant("a", 2000, "attack.specialty_mult", 380, {
+            specialty: "Ice",
+            multiplier: 3,
+        }, "Fire");
+        const defender = combatant("d", 2000, "", 100, {}, "Ice");
+
+        const { defenderHp, events } = resolveBattleExchange({
+            attacker,
+            defender,
+            attackerAttack: "cross",
+            defenderAttack: "triangle",
+            activeSessionId: "a",
+            supportCtx: ctx,
+        });
+
+        // 380 * 3 = 1140; defender triangle 300
+        expect(defenderHp).toBe(2000 - 1140);
+        expect(events.some(e => e.type === "specialty_foe_mult")).toBe(true);
+    });
+
+    it("does not multiply against a mismatched specialty", () => {
+        const ctx = createSupportBattleContext();
+        const attacker = combatant("a", 2000, "attack.specialty_mult", 380, {
+            specialty: "Ice",
+            multiplier: 3,
+        }, "Fire");
+        const defender = combatant("d", 2000, "", 100, {}, "Fire");
+
+        const { defenderHp, events } = resolveBattleExchange({
+            attacker,
+            defender,
+            attackerAttack: "cross",
+            defenderAttack: "triangle",
+            activeSessionId: "a",
+            supportCtx: ctx,
+        });
+
+        expect(defenderHp).toBe(2000 - 380);
+        expect(events.some(e => e.type === "specialty_foe_mult")).toBe(false);
     });
 });
 

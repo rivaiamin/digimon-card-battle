@@ -5,6 +5,7 @@
 
 import type { EffectArgs } from "../types";
 import { parseEffectArgsJson, readNumberArg } from "./effectArgs";
+import { applySpecialtyFoeMultiplier } from "./specialtyFoeMult";
 import {
     getAttackDamageBreakdown,
     getEffectiveAttackDamage,
@@ -21,6 +22,7 @@ export type BattleEventType =
     | "cross_to_zero"
     | "cross_crash"
     | "cross_eat_up_hp"
+    | "specialty_foe_mult"
     | "first_strike_cancel"
     | "attack_canceled"
     | "damage_dealt"
@@ -36,6 +38,8 @@ export interface BattleCombatant {
     sessionId: string;
     hp: number;
     maxHp: number;
+    /** Active Digimon specialty (Fire/Ice/Nature/Dark/Rare). */
+    specialty: string;
     active: {
         circle: { damage: number; name?: string; effectId?: string; effectArgsJson?: string };
         triangle: { damage: number; name?: string; effectId?: string; effectArgsJson?: string };
@@ -86,6 +90,28 @@ function targetAttackMatches(args: EffectArgs, opponentAttack: AttackType): bool
     return raw === opponentAttack;
 }
 
+function applySpecialtyFoeToDamage(
+    damage: number,
+    source: BattleCombatant,
+    attack: AttackType,
+    opponentSpecialty: string,
+    events: BattleEvent[]
+): number {
+    const effect = getAttackEffect(source.active, attack);
+    if (!effect || effect.effectId !== "attack.specialty_mult") return damage;
+    const specialty = String(effect.effectArgs.specialty ?? "").trim();
+    const multiplier = readNumberArg(effect.effectArgs, "multiplier", 3);
+    const next = applySpecialtyFoeMultiplier(damage, specialty, multiplier, opponentSpecialty);
+    if (next !== damage) {
+        events.push({
+            type: "specialty_foe_mult",
+            sessionId: source.sessionId,
+            detail: { specialty, multiplier, from: damage, to: next },
+        });
+    }
+    return next;
+}
+
 type DamagePair = { toDefender: number; toAttacker: number };
 
 function applyCrossEffects(
@@ -98,6 +124,22 @@ function applyCrossEffects(
 ): DamagePair {
     let toDefender = getEffectiveAttackDamage(attacker, attackerAttack, supportCtx);
     let toAttacker = getEffectiveAttackDamage(defender, defenderAttack, supportCtx);
+
+    // FC-016: Specialty Foe ×N after support mods, before Cross specials.
+    toDefender = applySpecialtyFoeToDamage(
+        toDefender,
+        attacker,
+        attackerAttack,
+        defender.specialty,
+        events
+    );
+    toAttacker = applySpecialtyFoeToDamage(
+        toAttacker,
+        defender,
+        defenderAttack,
+        attacker.specialty,
+        events
+    );
 
     const attackerCross = attackerAttack === "cross" ? getAttackEffect(attacker.active, "cross") : null;
     const defenderCross = defenderAttack === "cross" ? getAttackEffect(defender.active, "cross") : null;

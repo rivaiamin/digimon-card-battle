@@ -60,6 +60,7 @@ function combatant(sessionId: string, hp: number, crossEffectId = ""): BattleCom
         sessionId,
         hp,
         maxHp: hp,
+        specialty: "Fire",
         active: {
             circle: { damage: 400 },
             triangle: { damage: 300 },
@@ -572,6 +573,65 @@ export const FIDELITY_SCENARIOS: FidelityScenario[] = [
             const disabled = attemptOnlineDeckSupportGamble([{ id: "x" }], false);
             if (disabled.ok !== false || disabled.reason !== "gamble_disabled") {
                 throw new Error("disabled profile must reject gamble");
+            }
+        },
+    },
+    {
+        id: "attack-specialty-foe-mult",
+        fidelityIds: ["FC-016"],
+        description: "Specialty Foe ×N triples attack power vs matching specialty (no universal RPS triangle)",
+        run() {
+            const wargreymon = CATALOG_BY_ID.get("002");
+            if (!wargreymon) throw new Error("missing WarGreymon catalog entry");
+            if (wargreymon.attacks.cross.effectId !== "attack.specialty_mult") {
+                throw new Error(
+                    `WarGreymon Cross should normalize Ice Foe x3, got ${wargreymon.attacks.cross.effectId}`
+                );
+            }
+            if (wargreymon.attacks.cross.effectArgs.specialty !== "Ice") {
+                throw new Error("WarGreymon Cross specialty arg should be Ice");
+            }
+
+            const ctx = createSupportBattleContext();
+            const attacker: BattleCombatant = {
+                sessionId: "a",
+                hp: 2000,
+                maxHp: 2000,
+                specialty: "Fire",
+                active: {
+                    circle: { damage: 900 },
+                    triangle: { damage: 670 },
+                    cross: {
+                        damage: 380,
+                        effectId: "attack.specialty_mult",
+                        effectArgsJson: JSON.stringify({ specialty: "Ice", multiplier: 3 }),
+                    },
+                },
+            };
+            const iceFoe: BattleCombatant = {
+                sessionId: "d",
+                hp: 2000,
+                maxHp: 2000,
+                specialty: "Ice",
+                active: {
+                    circle: { damage: 400 },
+                    triangle: { damage: 300 },
+                    cross: { damage: 200 },
+                },
+            };
+            const fireFoe = { ...iceFoe, specialty: "Fire" };
+
+            const vsIce = resolveFullBattle(attacker, iceFoe, "cross", "triangle", "a", ctx);
+            if (vsIce.p2Hp !== 2000 - 1140) {
+                throw new Error(`expected 1140 vs Ice, p2Hp=${vsIce.p2Hp}`);
+            }
+            if (!vsIce.events.some(e => e.type === "specialty_foe_mult")) {
+                throw new Error("expected specialty_foe_mult event");
+            }
+
+            const vsFire = resolveFullBattle(attacker, fireFoe, "cross", "triangle", "a", ctx);
+            if (vsFire.p2Hp !== 2000 - 380) {
+                throw new Error(`expected no mult vs Fire, p2Hp=${vsFire.p2Hp}`);
             }
         },
     },
