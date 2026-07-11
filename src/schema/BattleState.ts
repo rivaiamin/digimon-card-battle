@@ -74,6 +74,8 @@ export class PlayerSchema extends Schema {
     @type("boolean") needsOpeningDeploy: boolean = true;
     /** Active Digimon was deployed with opening level C/U penalties. */
     @type("boolean") openingPenaltyActive: boolean = false;
+    /** Negative status ailments on the active digimon (JSON string array). Cleared on evolve (FC-009). */
+    @type("string") statusAilmentsJson: string = "[]";
     /** Consecutive phase timeouts without voluntary action (FC-023). */
     @type("number") afkStrikes: number = 0;
 }

@@ -70,6 +70,8 @@ export interface PlayerState {
   mulligansRemaining?: number;
   needsOpeningDeploy?: boolean;
   openingPenaltyActive?: boolean;
+  /** Negative status ailments on the active digimon (cleared on evolve). */
+  statusAilments?: string[];
   afkStrikes?: number;
 }
 

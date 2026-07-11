@@ -11,6 +11,10 @@ import { validateDeck } from "./deckValidator";
 import { drawToTarget, mulliganHand, validateDeployDigimon } from "./openingFlow";
 import { applyDiscardForDp, canDiscardForDp } from "./discardForDp";
 import { evaluateEvolution } from "./evolutionEligibility";
+import {
+    applyPostEvolutionRecovery,
+    parseStatusAilmentsJson,
+} from "./postEvolutionRecovery";
 import { resolvePrepOption } from "./optionResolver";
 import { getPrepOptionBadge } from "./prepOptionPresentation";
 import { isPlayerActionLegal } from "./battleTurnFlow";
@@ -211,6 +215,31 @@ export const FIDELITY_SCENARIOS: FidelityScenario[] = [
             const optionTarget = evaluateEvolution(active, { ...legal, cardKind: "option" }, 100);
             if (optionTarget.ok !== false || optionTarget.reason !== "not_digimon") {
                 throw new Error("option cards must not be digivolve targets");
+            }
+        },
+    },
+    {
+        id: "prep-post-evolution-recovery",
+        fidelityIds: ["FC-009"],
+        description: "Evolve restores HP to new max and clears status ailments",
+        run() {
+            const ailments = parseStatusAilmentsJson('["poison","paralysis"]');
+            if (ailments.length !== 2) throw new Error("expected two parsed ailments");
+            const state = {
+                hp: 80,
+                active: { hp: 80, maxHp: 900 },
+                statusAilments: ailments,
+                openingPenaltyActive: true,
+            };
+            const result = applyPostEvolutionRecovery(state);
+            if (result.hpRestoredTo !== 900 || state.hp !== 900 || state.active.hp !== 900) {
+                throw new Error(`expected full HP restore to 900, got ${state.hp}`);
+            }
+            if (state.statusAilments.length !== 0 || result.ailmentsCleared.length !== 2) {
+                throw new Error("status ailments must be cleared on evolve");
+            }
+            if (state.openingPenaltyActive || !result.openingPenaltyCleared) {
+                throw new Error("opening penalty flag must clear when active digimon is replaced");
             }
         },
     },

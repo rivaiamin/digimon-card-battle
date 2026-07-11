@@ -32,6 +32,7 @@ import { getBattleRole, shouldShowFlashMessage } from "../lib/battleRoles";
 import { canLockSupport } from "../lib/supportPhase";
 import { canPlayEvolutionOption } from "../lib/optionEligibility";
 import { parseEvolutionModifiers } from "../lib/optionResolver";
+import { parseStatusAilmentsJson } from "../lib/postEvolutionRecovery";
 
 const INITIAL_PLAYER_STATE: PlayerState = {
     active: null,
@@ -45,7 +46,8 @@ const INITIAL_PLAYER_STATE: PlayerState = {
     supportCard: null,
     supportLocked: false,
     selectedAttack: null,
-    attackLocked: false
+    attackLocked: false,
+    statusAilments: [],
 };
 
 const INITIAL_OPPONENT_STATE: PlayerState = {
@@ -60,7 +62,8 @@ const INITIAL_OPPONENT_STATE: PlayerState = {
     supportCard: null,
     supportLocked: false,
     selectedAttack: null,
-    attackLocked: false
+    attackLocked: false,
+    statusAilments: [],
 };
 
 const normalizeCardKind = (rawKind: unknown): CardKind => {
@@ -133,6 +136,7 @@ const mapSchemaToPlayerState = (schema: any): PlayerState => {
         mulligansRemaining: schema.mulligansRemaining ?? 0,
         needsOpeningDeploy: schema.needsOpeningDeploy ?? false,
         openingPenaltyActive: !!schema.openingPenaltyActive,
+        statusAilments: parseStatusAilmentsJson(schema.statusAilmentsJson),
         afkStrikes: schema.afkStrikes ?? 0,
     };
 };

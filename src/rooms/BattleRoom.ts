@@ -16,6 +16,11 @@ import {
     validateDeployDigimon,
 } from "../lib/openingFlow";
 import { applyDiscardForDp } from "../lib/discardForDp";
+import {
+    applyPostEvolutionRecovery,
+    parseStatusAilmentsJson,
+    serializeStatusAilments,
+} from "../lib/postEvolutionRecovery";
 import { resolveRuleProfile, type RuleProfile } from "../lib/ruleProfile";
 import { parseEffectArgsJson } from "../lib/effectArgs";
 import {
@@ -241,12 +246,21 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
                                 ? message.evolutionOptionCardId
                                 : undefined;
                         const evolved = this.evolve(player, message.cardId, evolutionOptionCardId);
-                        this.audit("EVOLVE", player, evolved ? "ok" : "rejected", evolved ? undefined : "invalid_evolution", {
-                            cardId: message.cardId,
-                            evolutionOptionCardId,
-                            dpBefore,
-                            dpAfter: player.dp,
-                        });
+                        this.audit(
+                            "EVOLVE",
+                            player,
+                            evolved ? "ok" : "rejected",
+                            evolved ? undefined : "invalid_evolution",
+                            {
+                                cardId: message.cardId,
+                                evolutionOptionCardId,
+                                dpBefore,
+                                dpAfter: player.dp,
+                                hpAfter: player.hp,
+                                statusAilmentsJson: player.statusAilmentsJson,
+                            },
+                            { fidelityIds: evolved ? ["FC-007", "FC-009"] : ["FC-007"] }
+                        );
                     }
                     break;
                 case "END_PREP":
@@ -381,6 +395,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             p.needsOpeningDeploy = true;
             p.mulligansRemaining = this.ruleProfile.mulligan.maxRedraws;
             p.openingPenaltyActive = false;
+            p.statusAilmentsJson = "[]";
             p.afkStrikes = 0;
 
             const deckIds =
@@ -693,11 +708,24 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         player.dp -= adjustedCost;
         player.evolutionStack.push(evoCard);
         player.active = evoCard;
-        player.hp = evoCard.maxHp;
+
+        // FC-009: full HP to new max + cure status ailments (GDD evolution bonuses).
+        const penaltyWasActive = player.openingPenaltyActive;
+        const ailments = parseStatusAilmentsJson(player.statusAilmentsJson);
+        const recoveryState = {
+            hp: player.hp,
+            active: evoCard,
+            statusAilments: ailments,
+            openingPenaltyActive: penaltyWasActive,
+        };
+        applyPostEvolutionRecovery(recoveryState);
+        player.hp = recoveryState.hp;
+        player.statusAilmentsJson = serializeStatusAilments(recoveryState.statusAilments);
+        player.openingPenaltyActive = recoveryState.openingPenaltyActive;
 
         const restore = shouldRestoreFullStatsAfterEvolve(
             modifiers,
-            player.openingPenaltyActive,
+            penaltyWasActive,
             fromLevel,
             evoCard.level
         );
@@ -706,8 +734,8 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             if (stats) {
                 applyFullStatsFromCatalog(evoCard, stats);
                 player.hp = evoCard.maxHp;
+                evoCard.hp = evoCard.maxHp;
             }
-            player.openingPenaltyActive = false;
         }
 
         this.state.message = "Step 2: Evolve or end prep";
@@ -755,6 +783,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
 
         player.active = card;
         player.hp = card.maxHp;
+        player.statusAilmentsJson = "[]";
         player.needsOpeningDeploy = false;
         this.audit("DEPLOY_DIGIMON", player, "ok", undefined, {
             cardId,
