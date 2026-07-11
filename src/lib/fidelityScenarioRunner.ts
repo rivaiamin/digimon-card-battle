@@ -3,6 +3,12 @@
  */
 
 import { shouldForfeitAfk, strikesAfterTimeout, strikesAfterVoluntaryAction } from "./afkPolicy";
+import {
+    isConsentedLeave,
+    RECONNECT_GRACE_SECONDS,
+    shouldForfeitOnPermanentLeave,
+    shouldOfferReconnectGrace,
+} from "./reconnectPolicy";
 import { resolveArenaVariant } from "./arenaVariant";
 import { resolveFullBattle, resolveKoScoring, type BattleCombatant } from "./battleEffectEngine";
 import type { BattleAuditEntry } from "./battleAuditLog";
@@ -696,6 +702,33 @@ export const FIDELITY_SCENARIOS: FidelityScenario[] = [
             if (shouldForfeitAfk(strikes)) throw new Error("should not forfeit at 2 strikes");
             strikes = strikesAfterTimeout(strikes);
             if (!shouldForfeitAfk(strikes)) throw new Error("should forfeit at 3 strikes");
+        },
+    },
+    {
+        id: "reconnect-disconnect-fairness",
+        fidelityIds: ["FC-024"],
+        description: "Grace on drop; consented/expired leave forfeits mid-match only",
+        run() {
+            if (RECONNECT_GRACE_SECONDS <= 0) throw new Error("grace must be positive");
+            if (!shouldOfferReconnectGrace("battle_support", false)) {
+                throw new Error("unexpected drop mid-match must offer grace");
+            }
+            if (shouldOfferReconnectGrace("battle_support", true)) {
+                throw new Error("consented leave must not offer grace");
+            }
+            if (shouldOfferReconnectGrace("victory", false)) {
+                throw new Error("victory drop must not offer grace");
+            }
+            if (!isConsentedLeave(4000)) throw new Error("4000 is consented leave");
+            if (!shouldForfeitOnPermanentLeave("preparation", 2)) {
+                throw new Error("permanent leave mid-match must forfeit");
+            }
+            if (shouldForfeitOnPermanentLeave("waiting", 2)) {
+                throw new Error("waiting leave must not forfeit");
+            }
+            if (shouldForfeitOnPermanentLeave("victory", 2)) {
+                throw new Error("victory leave must not re-forfeit");
+            }
         },
     },
     {

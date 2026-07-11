@@ -62,7 +62,7 @@ Primary objective for E0 / T0-1:
 | FC-021 | Phase timers MUST be server-authoritative for all interactive phases. | `TIMER_SPEC` L9-L16, L39-L44 | `ROOM` L22, L529-L532 (reveal delay only); `APP` L31 |
 | FC-022 | Timeout auto-commit defaults MUST apply by phase (skip evolution, no support, random attack) unless overridden by mode config. | `TIMER_SPEC` L20-L25, L52-L55 | `ROOM` L40-L156 (no timeout auto-commit handlers) |
 | FC-023 | Consecutive inactivity MUST trigger strike accounting and forfeit at configured threshold. | `TIMER_SPEC` L26-L29 | `ROOM` L40-L156 (no AFK strike system) |
-| FC-024 | Disconnect/reconnect policy MUST be explicit, fair, and deterministic for ranked multiplayer outcomes. | `NET_SPEC` L5, L15-L22 | `ROOM` L196-L204 (disconnect ends match immediately) |
+| FC-024 | Disconnect/reconnect policy MUST be explicit, fair, and deterministic for ranked multiplayer outcomes. | `NET_SPEC` L5, L15-L22 | `reconnectPolicy.ts` + `BattleRoom.onDrop`/`onReconnect`/`onLeave` (30s grace; consented/expired → disconnect forfeit) |
 | FC-025 | Hidden information MUST remain private until reveal gates are satisfied (support/attack anti-leak guarantees). | `NET_SPEC` L19-L22 | `ROOM` L19-L23, L482-L493, L520-L527; `STATE` L51-L60 |
 | FC-026 | Card taxonomy MUST represent Digimon, Option, and Evolution card categories in schema/runtime. | `MANUAL` L269-L271; `WIKIMON` L36; `GFQ_CARDLIST` L180-L184, L1883, L2080, L2724, L2772 | `CARDS` L1-L439 (Digimon-focused data); `STATE` L21-L37 (single card schema type) |
 | FC-027 | Effect modeling MUST be normalized into stable effect IDs + arguments (data-driven, not one-off hardcoding). | `BACKLOG` L88; `MANUAL` L413-L417 | `SUPPORT` L5-L12, L95-L140 (partial token parsing) |

@@ -80,6 +80,8 @@ export class PlayerSchema extends Schema {
     @type("string") statusAilmentsJson: string = "[]";
     /** Consecutive phase timeouts without voluntary action (FC-023). */
     @type("number") afkStrikes: number = 0;
+    /** False while seat is in reconnect grace (FC-024). */
+    @type("boolean") connected: boolean = true;
 }
 
 export class BattleStateSchema extends Schema {

@@ -145,15 +145,18 @@ const mapSchemaToPlayerState = (schema: any): PlayerState => {
         openingPenaltyActive: !!schema.openingPenaltyActive,
         statusAilments: parseStatusAilmentsJson(schema.statusAilmentsJson),
         afkStrikes: schema.afkStrikes ?? 0,
+        connected: schema.connected !== false,
     };
 };
 
 type ArenaProps = {
-    onReturnToWorldMap: () => void;
     room: Room<BattleStateSchema>;
+    onReturnToWorldMap: () => void;
+    /** Unexpected leave — App may attempt FC-024 reconnect. */
+    onRoomLeft?: (code: number, reconnectionToken: string) => void;
 };
 
-export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap }) => {
+export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap, onRoomLeft }) => {
     const audio = useAudio();
     const [clickDebug, setClickDebug] = useState<string>("");
     const [gameState, setGameState] = useState<GameState>({
@@ -329,7 +332,12 @@ export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap }) => {
 
         const onLeave = (code: number) => {
             console.log(`[Colyseus] Left room: ${code}`);
-            setGameState(prev => ({ ...prev, phase: 'waiting', message: "DISCONNECTED FROM SERVER" }));
+            const token = room.reconnectionToken ?? "";
+            setGameState(prev => ({
+                ...prev,
+                message: "DISCONNECTED FROM SERVER",
+            }));
+            onRoomLeft?.(code, token);
         };
 
         // Apply current server snapshot immediately. The first client can receive all
@@ -346,7 +354,7 @@ export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap }) => {
             room.onError.remove(onError);
             room.onLeave.remove(onLeave);
         };
-    }, [room]);
+    }, [room, onRoomLeft]);
 
     useEffect(() => {
         async function loadCards() {
@@ -921,6 +929,16 @@ export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap }) => {
                     !!gameState.player.attackLocked
                 }
             />
+
+            {gameState.phase !== "victory" &&
+                gameState.phase !== "waiting" &&
+                gameState.opponent.connected === false && (
+                <div className="fixed top-20 inset-x-0 z-[120] flex justify-center pointer-events-none">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-ps-yellow bg-surface-strong/90 border border-ps-yellow/40 px-4 py-2">
+                        Opponent reconnecting…
+                    </span>
+                </div>
+            )}
 
             {/* Persistent hand (PS1-style: always visible, inactive when not playable) */}
             {gameState.phase !== "waiting" && (
