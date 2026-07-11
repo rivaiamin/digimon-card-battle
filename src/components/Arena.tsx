@@ -116,6 +116,7 @@ const mapSchemaCardToData = (c: any): DigimonCardData => {
                   value: c.supportEffect.value ?? 0,
                   description: c.supportEffect.description ?? "",
                   requireType: c.supportEffect.requireType || undefined,
+                  requireOpponentType: c.supportEffect.requireOpponentType || undefined,
                   priority: c.supportEffect.priority || undefined,
               }
             : undefined,
@@ -170,6 +171,8 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
     const [hoveredCard, setHoveredCard] = useState<DigimonCardData | null>(null);
     /** Face-down preview of own support until server reveal syncs. */
     const [committedSupport, setCommittedSupport] = useState<DigimonCardData | null>(null);
+    const [committedEmptySupport, setCommittedEmptySupport] = useState(false);
+    const [committedGambleSupport, setCommittedGambleSupport] = useState(false);
     const [selectedEvoOptionId, setSelectedEvoOptionId] = useState<string | null>(null);
     const [mulliganRequestTick, setMulliganRequestTick] = useState(0);
     const [prepOptionRequestTick, setPrepOptionRequestTick] = useState(0);
@@ -483,15 +486,29 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
         if (cardId) {
             const card = gameState.player.hand.find(c => c.id === cardId) ?? null;
             setCommittedSupport(card);
+            setCommittedEmptySupport(false);
+            setCommittedGambleSupport(false);
         } else {
             setCommittedSupport(null);
+            setCommittedEmptySupport(true);
+            setCommittedGambleSupport(false);
         }
         room.send("action", { type: "LOCK_SUPPORT", cardId });
+    };
+
+    const handleSupportGamble = () => {
+        audio.playSfx("thud", { spatial: "player" });
+        setCommittedSupport(null);
+        setCommittedEmptySupport(false);
+        setCommittedGambleSupport(true);
+        room.send("action", { type: "LOCK_SUPPORT", gamble: true });
     };
 
     useEffect(() => {
         if (gameState.phase !== "battle_support" && gameState.phase !== "battle_reveal") {
             setCommittedSupport(null);
+            setCommittedEmptySupport(false);
+            setCommittedGambleSupport(false);
         }
     }, [gameState.phase]);
 
@@ -653,14 +670,32 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
         }
 
         if (gameState.phase === "battle_support" && !gameState.player.supportLocked) {
+            const canGamble =
+                ruleProfile.battle.allowOnlineDeckGamble &&
+                canPickSupport &&
+                gameState.player.deck.length > 0;
+            handPhaseActionsFooter = (
+                <span className="text-[10px] text-muted uppercase font-bold tracking-wide">
+                    Hand, NO SUPPORT, or gamble the Online Deck
+                </span>
+            );
             return (
-                <button
-                    onClick={() => handleSupportChoice(null)}
-                    disabled={!canPickSupport}
-                    className="bg-panel text-fg border-line disabled:opacity-40"
-                >
-                    NO SUPPORT
-                </button>
+                <>
+                    <button
+                        onClick={handleSupportGamble}
+                        disabled={!canGamble}
+                        className="bg-ps-yellow text-black hover:bg-surface-strong disabled:opacity-40"
+                    >
+                        GAMBLE
+                    </button>
+                    <button
+                        onClick={() => handleSupportChoice(null)}
+                        disabled={!canPickSupport}
+                        className="bg-panel text-fg border-line disabled:opacity-40"
+                    >
+                        NO SUPPORT
+                    </button>
+                </>
             );
         }
 
@@ -825,6 +860,8 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                             supportCard={gameState.player.supportCard}
                             supportLocked={!!gameState.player.supportLocked}
                             committedFaceDown={committedSupport}
+                            bluffEmpty={committedEmptySupport}
+                            bluffGamble={committedGambleSupport}
                             revealOrder={playerRevealOrder}
                             onHover={setHoveredCard}
                         />
@@ -1037,12 +1074,37 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                 )}
             </AnimatePresence>
             
+            {gameState.phase === "battle_support" && gameState.player.supportLocked && (
+                <div className="fixed bottom-36 inset-x-0 z-[90] flex justify-center pointer-events-none">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-ps-blue/80 bg-surface-strong/80 border border-ps-blue/30 px-3 py-1 rounded">
+                        {committedGambleSupport
+                            ? "Deck gamble set — waiting for opponent"
+                            : committedEmptySupport
+                              ? "Bluff set — waiting for opponent"
+                              : "Support set — waiting for opponent"}
+                    </span>
+                </div>
+            )}
+
             {gameState.phase === 'victory' && !vfx.isAnimating && (
-                <div className="fixed inset-0 bg-overlay z-[200] flex items-center justify-center">
-                    <div className="text-center">
-                        <h1 className="text-8xl font-black text-ps-yellow italic mb-8">
-                            {gameState.winnerSessionId === (room as any).sessionId ? "BATTLE WON" : "BATTLE LOST"}
+                <motion.div
+                    className="fixed inset-0 bg-overlay z-[200] flex items-center justify-center"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.35 }}
+                >
+                    <motion.div
+                        className="text-center"
+                        initial={{ opacity: 0, y: 16, scale: 0.96 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+                    >
+                        <h1 className="text-8xl font-black text-ps-yellow italic mb-4">
+                            {gameState.winnerSessionId === room.sessionId ? "BATTLE WON" : "BATTLE LOST"}
                         </h1>
+                        <div className="text-muted text-sm font-mono mb-2 uppercase tracking-wide">
+                            {gameState.player.score} — {gameState.opponent.score}
+                        </div>
                         {gameState.loserReason && (
                             <div className="text-muted text-sm font-mono mb-6 uppercase">
                                 {String(gameState.loserReason).replace("_", " ")}
@@ -1054,8 +1116,8 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                         >
                             RETURN TO WORLD MAP
                         </button>
-                    </div>
-                </div>
+                    </motion.div>
+                </motion.div>
             )}
         </div>
     );

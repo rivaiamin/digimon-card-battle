@@ -109,7 +109,7 @@ export function getTurnStatusHint(ctx: TurnStatusContext): string {
                 ? "Pick support after the defender."
                 : "Defender picks support first.";
         }
-        return "Optional support from hand.";
+        return "Optional support from hand — or bluff with none.";
     }
 
     if (ctx.phase === "battle_attack") {
@@ -118,7 +118,7 @@ export function getTurnStatusHint(ctx: TurnStatusContext): string {
     }
 
     if (ctx.phase === "battle_reveal") {
-        return "Cards are revealing.";
+        return "Support reveal — defender flips first.";
     }
 
     if (ctx.phase === "resolution") {

@@ -5,7 +5,7 @@ import { resolveArenaVariant } from "./arenaVariant";
 
 /**
  * Build a legal 30-card deck as catalog base ids (shared by server fallback + API).
- * Prefers a random PS1 base deck from GameFAQs when available.
+ * Prefers a PS1 base deck from GameFAQs when available (deterministic by playerIndex).
  */
 export function buildDefaultDeckCardIds(
     catalog: readonly NormalizedCardCatalogEntry[],
@@ -14,7 +14,7 @@ export function buildDefaultDeckCardIds(
     const catalogById = new Map(catalog.map(c => [c.id, c]));
     const baseDecks = listPlayableBaseDecks(catalogById, resolveArenaVariant("standard"));
     if (baseDecks.length > 0) {
-        const deck = baseDecks[Math.floor(Math.random() * baseDecks.length)];
+        const deck = baseDecks[Math.abs(playerIndex) % baseDecks.length];
         return [...deck.cardIds];
     }
 

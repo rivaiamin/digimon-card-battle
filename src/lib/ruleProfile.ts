@@ -39,6 +39,10 @@ export interface BattleFlowRules {
      * Legacy: simultaneous hidden lock-in.
      */
     supportPickDefenderFirst: boolean;
+    /**
+     * FC-013: allow All-or-Nothing gamble — top Online Deck card as support.
+     */
+    allowOnlineDeckGamble: boolean;
 }
 
 export interface RuleProfile {
@@ -72,6 +76,7 @@ const FIDELITY_PS1: RuleProfile = {
     battle: {
         attackLockBeforeSupport: true,
         supportPickDefenderFirst: true,
+        allowOnlineDeckGamble: true,
     },
     postKoDeployRookieOnly: true,
     digForRookieOnly: false,
@@ -92,6 +97,7 @@ const LEGACY_ONLINE: RuleProfile = {
     battle: {
         attackLockBeforeSupport: false,
         supportPickDefenderFirst: false,
+        allowOnlineDeckGamble: true,
     },
     postKoDeployRookieOnly: true,
     digForRookieOnly: true,

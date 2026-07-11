@@ -6,7 +6,7 @@ import { shouldForfeitAfk, strikesAfterTimeout, strikesAfterVoluntaryAction } fr
 import { resolveArenaVariant } from "./arenaVariant";
 import { resolveFullBattle, resolveKoScoring, type BattleCombatant } from "./battleEffectEngine";
 import type { BattleAuditEntry } from "./battleAuditLog";
-import { buildDefaultDeckCardIds } from "./defaultDeckBuilder";
+import { buildDefaultDeckCardIds, buildSyntheticDefaultDeck } from "./defaultDeckBuilder";
 import { validateDeck } from "./deckValidator";
 import { drawToTarget, mulliganHand, validateDeployDigimon } from "./openingFlow";
 import { applyDiscardForDp, canDiscardForDp } from "./discardForDp";
@@ -34,7 +34,12 @@ import {
     initialSupportPicker,
     nextSupportPickerAfterLock,
 } from "./supportPhase";
-import { createSupportBattleContext } from "./supportResolver";
+import {
+    canVoidEnemySupport,
+    createSupportBattleContext,
+    evaluateSupportNullification,
+} from "./supportResolver";
+import { attemptOnlineDeckSupportGamble } from "./supportGamble";
 import type { ScenarioRunResult } from "./battleReplay";
 import type { NormalizedCardCatalogEntry } from "./cardCatalogLoader";
 import cardsData from "../data/cards.json";
@@ -55,6 +60,7 @@ function combatant(sessionId: string, hp: number, crossEffectId = ""): BattleCom
         sessionId,
         hp,
         maxHp: hp,
+        specialty: "Fire",
         active: {
             circle: { damage: 400 },
             triangle: { damage: 300 },
@@ -488,6 +494,148 @@ export const FIDELITY_SCENARIOS: FidelityScenario[] = [
         },
     },
     {
+        id: "support-void-jamming",
+        fidelityIds: ["FC-015"],
+        description: "Void/jamming cancels enemy support before options and buffs resolve",
+        run() {
+            const active = {
+                sessionId: "a",
+                active: { type: "Fire" },
+            };
+            const defender = {
+                sessionId: "d",
+                active: { type: "Ice" },
+            };
+            const voidEffect = { type: "void_enemy_support", requireType: "", requireOpponentType: "" };
+            const iceGated = { type: "void_enemy_support", requireType: "Ice", requireOpponentType: "" };
+
+            if (!canVoidEnemySupport(active as never, voidEffect, defender as never, true)) {
+                throw new Error("unconditional void should apply");
+            }
+            if (canVoidEnemySupport(active as never, iceGated, defender as never, true)) {
+                throw new Error("Fire active must fail Ice-gated void");
+            }
+            if (!canVoidEnemySupport(defender as never, iceGated, active as never, true)) {
+                throw new Error("Ice active must pass Ice-gated void");
+            }
+
+            const mutual = evaluateSupportNullification(
+                active as never,
+                defender as never,
+                { supportEffect: voidEffect } as never,
+                { supportEffect: voidEffect } as never
+            );
+            if (!mutual.activeVoided || !mutual.defenderVoided) {
+                throw new Error("mutual void must cancel both");
+            }
+
+            const optionNullify = evaluateSupportNullification(
+                active as never,
+                defender as never,
+                { cardKind: "option", supportEffect: null } as never,
+                { cardKind: "digimon", supportEffect: voidEffect } as never
+            );
+            if (!optionNullify.activeVoided) {
+                throw new Error("void must cancel enemy battle option");
+            }
+            if (optionNullify.defenderVoided) {
+                throw new Error("option without void must not cancel defender void");
+            }
+        },
+    },
+    {
+        id: "support-online-deck-gamble",
+        fidelityIds: ["FC-013"],
+        description: "Online Deck All-or-Nothing gamble draws top card when enabled",
+        run() {
+            const profile = getRuleProfile("fidelity_ps1");
+            if (!profile.battle.allowOnlineDeckGamble) {
+                throw new Error("fidelity_ps1 must allow online-deck gamble");
+            }
+            const deck = [
+                { id: "top", name: "Agumon" },
+                { id: "next", name: "Gabumon" },
+            ];
+            const result = attemptOnlineDeckSupportGamble(deck, true);
+            if (result.ok === false) {
+                throw new Error(`expected gamble ok, got ${result.reason}`);
+            }
+            if (result.card.id !== "top" || result.deckSizeAfter !== 1) {
+                throw new Error("gamble must take the top Online Deck card");
+            }
+            if (deck.length !== 1 || deck[0].id !== "next") {
+                throw new Error("deck must shrink after gamble");
+            }
+            const empty = attemptOnlineDeckSupportGamble([], true);
+            if (empty.ok !== false || empty.reason !== "empty_deck") {
+                throw new Error("empty Online Deck must reject gamble");
+            }
+            const disabled = attemptOnlineDeckSupportGamble([{ id: "x" }], false);
+            if (disabled.ok !== false || disabled.reason !== "gamble_disabled") {
+                throw new Error("disabled profile must reject gamble");
+            }
+        },
+    },
+    {
+        id: "attack-specialty-foe-mult",
+        fidelityIds: ["FC-016"],
+        description: "Specialty Foe ×N triples attack power vs matching specialty (no universal RPS triangle)",
+        run() {
+            const wargreymon = CATALOG_BY_ID.get("002");
+            if (!wargreymon) throw new Error("missing WarGreymon catalog entry");
+            if (wargreymon.attacks.cross.effectId !== "attack.specialty_mult") {
+                throw new Error(
+                    `WarGreymon Cross should normalize Ice Foe x3, got ${wargreymon.attacks.cross.effectId}`
+                );
+            }
+            if (wargreymon.attacks.cross.effectArgs.specialty !== "Ice") {
+                throw new Error("WarGreymon Cross specialty arg should be Ice");
+            }
+
+            const ctx = createSupportBattleContext();
+            const attacker: BattleCombatant = {
+                sessionId: "a",
+                hp: 2000,
+                maxHp: 2000,
+                specialty: "Fire",
+                active: {
+                    circle: { damage: 900 },
+                    triangle: { damage: 670 },
+                    cross: {
+                        damage: 380,
+                        effectId: "attack.specialty_mult",
+                        effectArgsJson: JSON.stringify({ specialty: "Ice", multiplier: 3 }),
+                    },
+                },
+            };
+            const iceFoe: BattleCombatant = {
+                sessionId: "d",
+                hp: 2000,
+                maxHp: 2000,
+                specialty: "Ice",
+                active: {
+                    circle: { damage: 400 },
+                    triangle: { damage: 300 },
+                    cross: { damage: 200 },
+                },
+            };
+            const fireFoe = { ...iceFoe, specialty: "Fire" };
+
+            const vsIce = resolveFullBattle(attacker, iceFoe, "cross", "triangle", "a", ctx);
+            if (vsIce.p2Hp !== 2000 - 1140) {
+                throw new Error(`expected 1140 vs Ice, p2Hp=${vsIce.p2Hp}`);
+            }
+            if (!vsIce.events.some(e => e.type === "specialty_foe_mult")) {
+                throw new Error("expected specialty_foe_mult event");
+            }
+
+            const vsFire = resolveFullBattle(attacker, fireFoe, "cross", "triangle", "a", ctx);
+            if (vsFire.p2Hp !== 2000 - 380) {
+                throw new Error(`expected no mult vs Fire, p2Hp=${vsFire.p2Hp}`);
+            }
+        },
+    },
+    {
         id: "phase-timer-tiered-durations",
         fidelityIds: ["FC-021"],
         description: "Interactive phases have server-authoritative timer durations",
@@ -530,7 +678,15 @@ export const FIDELITY_SCENARIOS: FidelityScenario[] = [
         fidelityIds: ["FC-029"],
         description: "no_options arena rejects option cards in deck",
         run() {
-            const ids = buildDefaultDeckCardIds(CATALOG, 0);
+            // Use a deck that is known to include options. Random/index base decks can be
+            // digimon-only (~2%), which would incorrectly pass no_options validation.
+            const ids = buildSyntheticDefaultDeck(CATALOG, 0);
+            const hasOption = ids.some(id => {
+                const card = CATALOG_BY_ID.get(id);
+                return card?.cardKind === "option" || card?.cardKind === "evolution_option";
+            });
+            if (!hasOption) throw new Error("synthetic default deck must include option cards");
+
             const result = validateDeck(ids, CATALOG_BY_ID, resolveArenaVariant("no_options"));
             if (result.ok !== false) {
                 throw new Error("expected deck to be invalid in no_options arena");

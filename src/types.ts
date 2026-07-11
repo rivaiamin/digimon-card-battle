@@ -49,6 +49,8 @@ export interface DigimonCardData {
     value: number;
     description: string;
     requireType?: string;
+    /** Effect only applies if opponent's active Digimon specialty matches. */
+    requireOpponentType?: string;
     priority?: number;
   };
   image: string;

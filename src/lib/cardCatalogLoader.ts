@@ -6,6 +6,7 @@ type LegacySupportEffect = {
     value?: unknown;
     description?: unknown;
     requireType?: unknown;
+    requireOpponentType?: unknown;
     priority?: unknown;
 };
 
@@ -15,6 +16,7 @@ export type NormalizedSupportEffect = {
     value: number;
     description: string;
     requireType: string;
+    requireOpponentType: string;
     priority: number;
 };
 
@@ -59,6 +61,7 @@ export const KNOWN_EFFECT_IDS = new Set<string>([
     "cross.to_zero",
     "cross.crash",
     "cross.eat_up_hp",
+    "attack.specialty_mult",
 ]);
 
 function toCardKind(rawKind: unknown): CardKind {
@@ -135,6 +138,7 @@ function normalizeSupportEffect(raw: LegacySupportEffect | null): NormalizedSupp
         value: Number(raw.value ?? 0),
         description: String(raw.description ?? ""),
         requireType: String(raw.requireType ?? ""),
+        requireOpponentType: String(raw.requireOpponentType ?? ""),
         priority: Number(raw.priority ?? 0),
     };
 }
@@ -223,6 +227,14 @@ function normalizeAttack<T extends "circle" | "triangle" | "cross">(
     const a = rawAttack && typeof rawAttack === "object" ? (rawAttack as Record<string, unknown>) : {};
     let effectId = typeof a.effectId === "string" ? a.effectId.trim() : "";
     let effectArgs = normalizeEffectArgs(a.effectArgs);
+    const description = String(a.description ?? "");
+    if (!effectId) {
+        const foe = parseSpecialtyFoeFromDescription(description);
+        if (foe) {
+            effectId = foe.effectId;
+            effectArgs = foe.effectArgs;
+        }
+    }
     if (effectId) {
         assertKnownEffectId(effectId, `attack:${type}`);
     }
@@ -230,9 +242,26 @@ function normalizeAttack<T extends "circle" | "triangle" | "cross">(
         name: String(a.name ?? ""),
         damage: Number(a.damage ?? 0),
         type,
-        description: String(a.description ?? ""),
+        description,
         effectId,
         effectArgs,
+    };
+}
+
+/** Catalog "Ice Foe x3" → attack.specialty_mult (FC-016). */
+function parseSpecialtyFoeFromDescription(
+    description: string
+): { effectId: string; effectArgs: EffectArgs } | null {
+    const m = description.trim().match(/^(Dark(?:ness)?|Fire|Ice|Nature|Rare)\s+Foe\s+x(\d+)\.?$/i);
+    if (!m) return null;
+    const multiplier = parseInt(m[2] ?? "0", 10);
+    if (!Number.isFinite(multiplier) || multiplier <= 1) return null;
+    const raw = String(m[1] ?? "");
+    const specialty =
+        /^dark/i.test(raw) ? "Dark" : raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase();
+    return {
+        effectId: "attack.specialty_mult",
+        effectArgs: { specialty, multiplier },
     };
 }
 

@@ -27,6 +27,12 @@ export const PREP_OPTION_FEEDBACK_MS = 1_200;
 /** Brief highlight when prep sub-phase advances (P2-9). */
 export const PREP_SUBPHASE_TRANSITION_MS = 450;
 
+/** Server + client support reveal window before resolution (P3-6). */
+export const SUPPORT_REVEAL_MS = 1_600;
+
+/** Second support card flip delay within the reveal window (seconds). */
+export const SUPPORT_REVEAL_STAGGER_S = 0.38;
+
 /** Full-screen flash during field digivolution (PS1 burst). */
 export const EVOLUTION_FLASH_MS = 480;
 

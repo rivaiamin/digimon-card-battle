@@ -5,6 +5,8 @@ import {
     fidelityBattlePhaseChain,
     isPlayerActionLegal,
     prepSubPhaseAfterDraw,
+    SUPPORT_REVEAL_MS,
+    SUPPORT_REVEAL_STAGGER_S,
 } from "./battleTurnFlow";
 import { getRuleProfile } from "./ruleProfile";
 import { getDefenderSessionId } from "./supportPhase";
@@ -90,5 +92,10 @@ describe("player action legality (FC-003)", () => {
 
     it("exposes draw beat timing for client pacing", () => {
         expect(DRAW_BEAT_MS).toBeGreaterThanOrEqual(1_000);
+    });
+
+    it("exposes support reveal timing that fits staggered flips (P3-6)", () => {
+        expect(SUPPORT_REVEAL_MS).toBe(1_600);
+        expect(SUPPORT_REVEAL_STAGGER_S * 1000 + 650).toBeLessThanOrEqual(SUPPORT_REVEAL_MS);
     });
 });
