@@ -16,9 +16,15 @@ import {
     parseStatusAilmentsJson,
 } from "./postEvolutionRecovery";
 import { getPrepServerMessage, nextPrepSubPhase } from "./prepPhaseCopy";
-import { resolvePrepOption } from "./optionResolver";
+import {
+    canEvolveWithOption,
+    parseEvolutionModifiers,
+    resolvePrepOption,
+} from "./optionResolver";
+import { canPlayEvolutionOption, canPlayPrepOption } from "./optionEligibility";
 import { getPrepOptionBadge } from "./prepOptionPresentation";
 import { isPlayerActionLegal, prepSubPhaseAfterDraw } from "./battleTurnFlow";
+import type { PlayerActionType } from "./battleTurnFlow";
 import { PHASE_TIMER_MS, phaseTimerDurationMs } from "./phaseTimer";
 import { getRuleProfile } from "./ruleProfile";
 import { createSeededRng, shuffleInPlace } from "./seededRng";
@@ -284,6 +290,159 @@ export const FIDELITY_SCENARIOS: FidelityScenario[] = [
             }
             if (!isPlayerActionLegal("END_PREP", { ...ctx, phase: "preparation", prepSubPhase: "evolve" })) {
                 throw new Error("END_PREP must be legal in evolve");
+            }
+        },
+    },
+    {
+        id: "prep-flow-action-matrix",
+        fidelityIds: ["FC-003"],
+        description: "Prep action legality matrix across mulligan/deploy/discard/evolve",
+        run() {
+            const base = {
+                isYourTurn: true,
+                hasActive: true,
+                supportLocked: false,
+                attackLocked: false,
+                phase: "preparation" as const,
+            };
+
+            const expectLegal = (
+                action: PlayerActionType,
+                prepSubPhase: "mulligan" | "deploy" | "discard" | "evolve",
+                ok: boolean
+            ) => {
+                const legal = isPlayerActionLegal(action, {
+                    ...base,
+                    prepSubPhase,
+                    hasActive: prepSubPhase !== "deploy" && prepSubPhase !== "mulligan",
+                });
+                if (legal !== ok) {
+                    throw new Error(`${action} in ${prepSubPhase}: expected ${ok}, got ${legal}`);
+                }
+            };
+
+            expectLegal("MULLIGAN", "mulligan", true);
+            expectLegal("ACCEPT_HAND", "mulligan", true);
+            expectLegal("DEPLOY_DIGIMON", "mulligan", false);
+            expectLegal("DISCARD_FOR_DP", "mulligan", false);
+
+            expectLegal("DEPLOY_DIGIMON", "deploy", true);
+            expectLegal("DIG_FOR_DEPLOY", "deploy", true);
+            expectLegal("DISCARD_FOR_DP", "deploy", false);
+            expectLegal("END_PREP", "deploy", false);
+
+            expectLegal("DISCARD_FOR_DP", "discard", true);
+            expectLegal("END_DISCARD", "discard", true);
+            expectLegal("PLAY_PREP_OPTION", "discard", true);
+            expectLegal("EVOLVE", "discard", false);
+            expectLegal("END_PREP", "discard", false);
+
+            expectLegal("EVOLVE", "evolve", true);
+            expectLegal("END_PREP", "evolve", true);
+            expectLegal("PLAY_PREP_OPTION", "evolve", true);
+            expectLegal("DISCARD_FOR_DP", "evolve", false);
+            expectLegal("MULLIGAN", "evolve", false);
+        },
+    },
+    {
+        id: "prep-evolution-option-warp",
+        fidelityIds: ["FC-008"],
+        description: "Evolution option warp enables Rookie→Ultimate only during evolve window",
+        run() {
+            const warp = {
+                id: "warp",
+                cardKind: "evolution_option",
+                effectId: "evolution_option.warp_evolve",
+                effectArgs: { skipLevels: 1 },
+            };
+            if (!canPlayEvolutionOption(warp, "evolve", true)) {
+                throw new Error("warp option must be playable during evolve");
+            }
+            if (canPlayEvolutionOption(warp, "discard", true)) {
+                throw new Error("warp option must not attach during discard");
+            }
+
+            const mods = parseEvolutionModifiers(warp);
+            const ok = canEvolveWithOption(
+                { level: "Rookie", type: "Fire" },
+                { level: "Ultimate", type: "Fire", evoCost: 50, cardKind: "digimon" },
+                50,
+                mods
+            );
+            if (!ok) throw new Error("warp should allow Rookie→Ultimate when DP is met");
+
+            const blocked = canEvolveWithOption(
+                { level: "Rookie", type: "Fire" },
+                { level: "Ultimate", type: "Fire", evoCost: 50, cardKind: "digimon" },
+                50,
+                parseEvolutionModifiers(null)
+            );
+            if (blocked) throw new Error("Rookie→Ultimate must fail without warp");
+
+            const prepGain = { cardKind: "option", effectId: "option.prep.gain_dp" };
+            if (!canPlayPrepOption(prepGain, "discard", true) || !canPlayPrepOption(prepGain, "evolve", true)) {
+                throw new Error("prep options must remain legal in discard and evolve");
+            }
+            const hand = [
+                { id: "opt", cardKind: "option", effectId: "option.prep.gain_dp", effectArgs: { value: 20 } },
+            ];
+            const state = { dp: 0, hp: 500, maxHp: 1000, hand, deck: [], trash: [] };
+            const resolved = resolvePrepOption(hand[0]!, state, () => 0);
+            if (!resolved.ok || state.dp !== 20) {
+                throw new Error("prep gain_dp option should add DP");
+            }
+        },
+    },
+    {
+        id: "prep-flow-end-to-end",
+        fidelityIds: ["FC-003", "FC-006", "FC-007", "FC-009"],
+        description: "Integrated prep slice: discard DP → legal digivolve gate → post-evo recovery",
+        run() {
+            // FC-006 discard
+            const hand = [
+                { id: "d1", cardKind: "digimon", plusDp: 30 },
+                { id: "d2", cardKind: "digimon", plusDp: 10 },
+                { id: "o1", cardKind: "option", plusDp: 99 },
+            ];
+            const trash: typeof hand = [];
+            const discard = applyDiscardForDp(hand, trash, ["d1", "o1", "d2"]);
+            if (discard.dpGained !== 40 || discard.discardedIds.length !== 2) {
+                throw new Error(`expected 40 DP from two digimon, got ${discard.dpGained}`);
+            }
+
+            // FC-007 digivolve gate with earned DP
+            const gate = evaluateEvolution(
+                { level: "Rookie", type: "Nature" },
+                { level: "Champion", type: "Nature", evoCost: 40, cardKind: "digimon" },
+                discard.dpGained
+            );
+            if (!gate.ok) throw new Error("40 DP should afford Champion evoCost 40");
+
+            const tooExpensive = evaluateEvolution(
+                { level: "Rookie", type: "Nature" },
+                { level: "Champion", type: "Nature", evoCost: 41, cardKind: "digimon" },
+                discard.dpGained
+            );
+            if (tooExpensive.ok !== false || tooExpensive.reason !== "insufficient_dp") {
+                throw new Error("41 cost must reject with insufficient_dp");
+            }
+
+            // FC-009 recovery after evolve
+            const ailments = parseStatusAilmentsJson('["poison"]');
+            const recoveryState = {
+                hp: 50,
+                active: { hp: 50, maxHp: 700 },
+                statusAilments: ailments,
+                openingPenaltyActive: false,
+            };
+            const recovery = applyPostEvolutionRecovery(recoveryState);
+            if (recovery.hpRestoredTo !== 700 || recoveryState.statusAilments.length !== 0) {
+                throw new Error("post-evo recovery must restore HP and clear ailments");
+            }
+
+            // FC-003: after discard step, evolve is next; END_PREP only then
+            if (nextPrepSubPhase("discard") !== "evolve") {
+                throw new Error("discard must advance to evolve");
             }
         },
     },
