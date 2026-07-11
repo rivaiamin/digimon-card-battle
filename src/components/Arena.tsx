@@ -1,5 +1,5 @@
 import { Room } from "colyseus.js";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { DigimonCard } from "./Card";
 import { BattleHUD } from "./BattleHUD";
@@ -22,6 +22,9 @@ import { BattleRevealVignette } from "./battle/BattleRevealVignette";
 import { PlayerHandZone, type HandCardAction } from "./battle/PlayerHandZone";
 import type { HandInteractionContext } from "../lib/handCardInteraction";
 import { useDrawPhaseBeat } from "../hooks/useDrawPhaseBeat";
+import { useMulliganBeat } from "../hooks/useMulliganBeat";
+import { useDiscardDpBeat } from "../hooks/useDiscardDpBeat";
+import { usePrepOptionBeat, type PrepOptionPlayRequest } from "../hooks/usePrepOptionBeat";
 import { useEvolutionVfx } from "../hooks/useEvolutionVfx";
 import { validateDeployDigimon } from "../lib/openingFlow";
 import { getRuleProfile } from "../lib/ruleProfile";
@@ -29,6 +32,12 @@ import { getBattleRole, shouldShowFlashMessage } from "../lib/battleRoles";
 import { canLockSupport } from "../lib/supportPhase";
 import { canPlayEvolutionOption } from "../lib/optionEligibility";
 import { parseEvolutionModifiers } from "../lib/optionResolver";
+import { parseStatusAilmentsJson } from "../lib/postEvolutionRecovery";
+import {
+    getPrepHandFooter,
+    getPrepPrimaryActionLabel,
+    getPrepSecondaryActionLabel,
+} from "../lib/prepPhaseCopy";
 
 const INITIAL_PLAYER_STATE: PlayerState = {
     active: null,
@@ -42,7 +51,8 @@ const INITIAL_PLAYER_STATE: PlayerState = {
     supportCard: null,
     supportLocked: false,
     selectedAttack: null,
-    attackLocked: false
+    attackLocked: false,
+    statusAilments: [],
 };
 
 const INITIAL_OPPONENT_STATE: PlayerState = {
@@ -57,7 +67,8 @@ const INITIAL_OPPONENT_STATE: PlayerState = {
     supportCard: null,
     supportLocked: false,
     selectedAttack: null,
-    attackLocked: false
+    attackLocked: false,
+    statusAilments: [],
 };
 
 const normalizeCardKind = (rawKind: unknown): CardKind => {
@@ -130,6 +141,7 @@ const mapSchemaToPlayerState = (schema: any): PlayerState => {
         mulligansRemaining: schema.mulligansRemaining ?? 0,
         needsOpeningDeploy: schema.needsOpeningDeploy ?? false,
         openingPenaltyActive: !!schema.openingPenaltyActive,
+        statusAilments: parseStatusAilmentsJson(schema.statusAilmentsJson),
         afkStrikes: schema.afkStrikes ?? 0,
     };
 };
@@ -159,6 +171,9 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
     /** Face-down preview of own support until server reveal syncs. */
     const [committedSupport, setCommittedSupport] = useState<DigimonCardData | null>(null);
     const [selectedEvoOptionId, setSelectedEvoOptionId] = useState<string | null>(null);
+    const [mulliganRequestTick, setMulliganRequestTick] = useState(0);
+    const [prepOptionRequestTick, setPrepOptionRequestTick] = useState(0);
+    const [prepOptionPlayRequest, setPrepOptionPlayRequest] = useState<PrepOptionPlayRequest | null>(null);
 
     const [opponentSessionId, setOpponentSessionId] = useState("");
 
@@ -174,6 +189,40 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
         handCardIds,
         commitDrawPhase
     );
+
+    const mulliganBeat = useMulliganBeat(
+        gameState.phase,
+        gameState.prepSubPhase,
+        gameState.isPlayerTurn,
+        handCardIds,
+        mulliganRequestTick
+    );
+
+    const discardDpBeat = useDiscardDpBeat(
+        gameState.phase,
+        gameState.prepSubPhase,
+        gameState.isPlayerTurn,
+        gameState.player.dp,
+        handCardIds
+    );
+
+    const prepOptionBeat = usePrepOptionBeat(
+        gameState.phase,
+        gameState.prepSubPhase,
+        gameState.isPlayerTurn,
+        gameState.player.dp,
+        gameState.player.active?.hp ?? gameState.player.hp,
+        handCardIds,
+        prepOptionPlayRequest,
+        prepOptionRequestTick
+    );
+
+    const newlyHighlightedCardIds = useMemo(() => {
+        const ids = new Set<string>();
+        drawBeat.newlyDrawnCardIds.forEach(id => ids.add(id));
+        mulliganBeat.newlyMulliganedCardIds.forEach(id => ids.add(id));
+        return ids;
+    }, [drawBeat.newlyDrawnCardIds, mulliganBeat.newlyMulliganedCardIds]);
 
     const playEvolveSfx = useCallback(
         (side: "player" | "opponent") => {
@@ -316,7 +365,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
     };
 
     const handleDiscardForDP = (cardId: string) => {
-        audio.playSfx("thud", { spatial: "player" });
+        audio.playSfx("reward_tick", { spatial: "player" });
         room.send("action", { type: "DISCARD_FOR_DP", cardIds: [cardId] });
     };
 
@@ -325,7 +374,8 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
     };
 
     const handleMulligan = () => {
-        audio.playSfx("menu_click");
+        audio.playSfx("chime", { spatial: "player" });
+        setMulliganRequestTick(t => t + 1);
         room.send("action", { type: "MULLIGAN" });
     };
 
@@ -404,7 +454,17 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
     };
 
     const handlePlayPrepOption = (cardId: string) => {
-        audio.playSfx("thud", { spatial: "player" });
+        const card = gameState.player.hand.find(c => c.id === cardId);
+        if (card) {
+            setPrepOptionPlayRequest({
+                cardId: card.id,
+                effectId: card.effectId ?? "",
+                effectArgs: card.effectArgs,
+                name: card.name,
+            });
+            setPrepOptionRequestTick(t => t + 1);
+        }
+        audio.playSfx("chime", { spatial: "player" });
         room.send("action", { type: "PLAY_PREP_OPTION", cardId });
     };
 
@@ -485,20 +545,28 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
 
     const handPhaseActions = (() => {
         if (gameState.phase === "preparation" && gameState.prepSubPhase === "mulligan" && gameState.isPlayerTurn) {
+            handPhaseActionsFooter = (
+                <span className="text-[10px] text-muted uppercase font-bold tracking-wide">
+                    {getPrepHandFooter("mulligan")}
+                </span>
+            );
+            const redrawsLeft = gameState.player.mulligansRemaining ?? 0;
             return (
                 <>
                     <button
                         onClick={handleAcceptHand}
-                        className="bg-ps-green text-black hover:bg-surface-strong"
+                        disabled={mulliganBeat.isRedrawing}
+                        className="bg-ps-green text-black hover:bg-surface-strong disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        KEEP HAND
+                        {getPrepPrimaryActionLabel("mulligan")}
                     </button>
-                    {(gameState.player.mulligansRemaining ?? 0) > 0 && (
+                    {redrawsLeft > 0 && (
                         <button
                             onClick={handleMulligan}
-                            className="bg-ps-yellow text-black hover:bg-surface-strong"
+                            disabled={mulliganBeat.isRedrawing}
+                            className="bg-ps-yellow text-black hover:bg-surface-strong disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            Mulligan ({gameState.player.mulligansRemaining})
+                            {getPrepSecondaryActionLabel("mulligan")}
                         </button>
                     )}
                 </>
@@ -517,7 +585,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                     onClick={handleDigForDeploy}
                     className="bg-ps-yellow text-black hover:bg-surface-strong"
                 >
-                    DIG DECK
+                    {getPrepSecondaryActionLabel("deploy")}
                 </button>
             );
         }
@@ -527,20 +595,22 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
             gameState.prepSubPhase === "discard" &&
             gameState.player.active
         ) {
-            return (
-                <>
-                    <span className="text-xs font-semibold text-muted tabular-nums px-1">
-                        {gameState.player.dp} DP
+            if (gameState.isPlayerTurn) {
+                handPhaseActionsFooter = (
+                    <span className="text-[10px] text-muted uppercase font-bold tracking-wide">
+                        {getPrepHandFooter("discard")}
                     </span>
-                    {gameState.isPlayerTurn && (
-                        <button
-                            onClick={handleEndDiscard}
-                            className="bg-ps-red text-white hover:bg-surface-strong hover:text-ps-red"
-                        >
-                            DONE DISCARDING
-                        </button>
-                    )}
-                </>
+                );
+            }
+            return (
+                gameState.isPlayerTurn && (
+                    <button
+                        onClick={handleEndDiscard}
+                        className="bg-ps-red text-white hover:bg-surface-strong hover:text-ps-red"
+                    >
+                        {getPrepPrimaryActionLabel("discard")}
+                    </button>
+                )
             );
         }
 
@@ -549,11 +619,19 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
             gameState.prepSubPhase === "evolve" &&
             gameState.player.active
         ) {
-            if (gameState.isPlayerTurn && evolutionOptionCards.length > 0) {
+            if (gameState.isPlayerTurn) {
                 handPhaseActionsFooter = (
-                    <span className="text-[10px] text-ps-blue uppercase font-black">
-                        Digivolve options (optional)
-                        {selectedEvoOptionId ? " — pick evolution target" : ""}
+                    <span
+                        className={`text-[10px] uppercase tracking-wide ${
+                            evolutionOptionCards.length > 0
+                                ? "text-ps-blue font-black"
+                                : "text-muted font-bold"
+                        }`}
+                    >
+                        {getPrepHandFooter("evolve", {
+                            hasEvolutionOptions: evolutionOptionCards.length > 0,
+                            evoOptionSelected: !!selectedEvoOptionId,
+                        })}
                     </span>
                 );
             }
@@ -567,7 +645,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                             onClick={handleEndPrep}
                             className="bg-ps-yellow text-black hover:bg-surface-strong"
                         >
-                            End prep
+                            {getPrepPrimaryActionLabel("evolve")}
                         </button>
                     )}
                 </>
@@ -815,7 +893,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                     phaseActions={handPhaseActions}
                     phaseActionsFooter={handPhaseActionsFooter}
                     drawStatus={
-                        drawBeat.overlayVisible
+                        drawBeat.overlayVisible && !mulliganBeat.overlayVisible
                             ? {
                                   visible: drawBeat.overlayVisible,
                                   mode: drawBeat.overlayMode,
@@ -824,12 +902,44 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                               }
                             : undefined
                     }
+                    mulliganStatus={
+                        mulliganBeat.overlayVisible
+                            ? {
+                                  visible: mulliganBeat.overlayVisible,
+                                  mode: mulliganBeat.overlayMode,
+                                  mulligansRemaining: gameState.player.mulligansRemaining ?? 0,
+                                  cardsLanded: mulliganBeat.cardsLanded,
+                              }
+                            : undefined
+                    }
+                    discardStatus={
+                        discardDpBeat.overlayVisible && !prepOptionBeat.feedback
+                            ? {
+                                  visible: discardDpBeat.overlayVisible,
+                                  playerDp: discardDpBeat.playerDp,
+                                  lastDpGain: discardDpBeat.lastDpGain,
+                                  isYourTurn: gameState.isPlayerTurn,
+                              }
+                            : undefined
+                    }
+                    prepOptionStatus={
+                        prepOptionBeat.overlayVisible &&
+                        (gameState.prepSubPhase === "evolve" ||
+                            gameState.prepSubPhase === "discard" ||
+                            prepOptionBeat.feedback)
+                            ? {
+                                  visible: prepOptionBeat.overlayVisible,
+                                  feedback: prepOptionBeat.feedback,
+                                  isYourTurn: gameState.isPlayerTurn,
+                              }
+                            : undefined
+                    }
                     supportHint={
                         gameState.phase === "battle_support" && !gameState.player.supportLocked
                             ? supportPhaseHint
                             : null
                     }
-                    newlyDrawnCardIds={drawBeat.newlyDrawnCardIds}
+                    newlyDrawnCardIds={newlyHighlightedCardIds}
                 />
             )}
 
@@ -851,6 +961,8 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                 attackLocked={!!gameState.player.attackLocked}
                 phaseEndsAtMs={gameState.phaseEndsAtMs ?? 0}
                 handTarget={ruleProfile.handTarget}
+                mulligansRemaining={gameState.player.mulligansRemaining ?? 0}
+                needsOpeningDeploy={!!gameState.player.needsOpeningDeploy}
                 playerScore={gameState.player.score}
                 opponentScore={gameState.opponent.score}
             />

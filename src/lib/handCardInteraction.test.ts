@@ -66,10 +66,10 @@ describe("getHandCardInteraction", () => {
         expect(getHandCardInteraction(digimon("d1"), ctx).enabled).toBe(false);
 
         const waiting = baseCtx({ phase: "draw", prepSubPhase: "", isYourTurn: false });
-        expect(getHandCardInteraction(digimon("d1"), waiting).mode).toBe("inactive");
+        expect(getHandCardInteraction(digimon("d1"), waiting).mode).toBe("view");
     });
 
-    it("dims non-deploy cards during deploy", () => {
+    it("shows non-deploy cards as view-only during deploy (not hidden/dimmed)", () => {
         const ctx = baseCtx({
             prepSubPhase: "deploy",
             hasActive: false,
@@ -79,23 +79,50 @@ describe("getHandCardInteraction", () => {
         expect(deploy.enabled).toBe(true);
 
         const option = getHandCardInteraction(prepOption("o1"), ctx);
-        expect(option.mode).toBe("inactive");
+        expect(option.mode).toBe("view");
         expect(option.enabled).toBe(false);
     });
 
-    it("enables prep options during discard sub-phase", () => {
+    it("shows non-actionable discard cards as view-only", () => {
+        const ctx = baseCtx({ prepSubPhase: "discard" });
+        const evoOpt = getHandCardInteraction(
+            { ...prepOption("e1"), cardKind: "evolution_option", effectId: "evolution_option.skip" },
+            ctx
+        );
+        expect(evoOpt.mode).toBe("view");
+    });
+
+    it("enables digimon discard during discard sub-phase", () => {
+        const ctx = baseCtx({ prepSubPhase: "discard" });
+        const digi = getHandCardInteraction(digimon("d1"), ctx);
+        expect(digi.mode).toBe("discard");
+        expect(digi.enabled).toBe(true);
+        expect(digi.badge).toBe("+100 DP");
+    });
+
+    it("shows options as view-only during discard unless prep playable", () => {
         const ctx = baseCtx({ prepSubPhase: "discard" });
         const opt = getHandCardInteraction(prepOption("o1"), ctx);
         expect(opt.mode).toBe("prep_option");
+        expect(opt.badge).toBe("DRAW 1");
+        expect(getHandCardInteraction(digimon("d2"), ctx).mode).toBe("discard");
+    });
+
+    it("enables prep options during evolve sub-phase", () => {
+        const ctx = baseCtx({ prepSubPhase: "evolve" });
+        const opt = getHandCardInteraction(prepOption("o1"), ctx);
+        expect(opt.mode).toBe("prep_option");
         expect(opt.enabled).toBe(true);
+        expect(opt.badge).toBe("DRAW 1");
     });
 
-    it("dims entire hand when not your turn", () => {
+    it("shows full hand as view-only when opponent is in prep", () => {
         const ctx = baseCtx({ isYourTurn: false, prepSubPhase: "evolve" });
-        expect(getHandCardInteraction(digimon("d1"), ctx).enabled).toBe(false);
+        expect(getHandCardInteraction(digimon("d1"), ctx).mode).toBe("view");
+        expect(getHandCardInteraction(prepOption("o1"), ctx).mode).toBe("view");
     });
 
-    it("highlights support cards during battle_support", () => {
+    it("shows non-support cards as view-only during battle_support", () => {
         const ctx = baseCtx({
             phase: "battle_support",
             prepSubPhase: "",
@@ -108,7 +135,7 @@ describe("getHandCardInteraction", () => {
         expect(support.mode).toBe("support");
         expect(support.enabled).toBe(true);
 
-        expect(getHandCardInteraction(digimon("d2"), ctx).mode).toBe("inactive");
+        expect(getHandCardInteraction(digimon("d2"), ctx).mode).toBe("view");
 
         const legacyBattleOption = getHandCardInteraction(
             {
@@ -122,7 +149,13 @@ describe("getHandCardInteraction", () => {
         expect(legacyBattleOption.mode).toBe("support");
         expect(legacyBattleOption.enabled).toBe(true);
 
-        expect(getHandCardInteraction(prepOption("o1"), ctx).mode).toBe("inactive");
+        expect(getHandCardInteraction(prepOption("o1"), ctx).mode).toBe("view");
+    });
+
+    it("shows full hand as view-only during battle_attack", () => {
+        const ctx = baseCtx({ phase: "battle_attack", prepSubPhase: "" });
+        expect(getHandCardInteraction(digimon("d1"), ctx).mode).toBe("view");
+        expect(getHandCardInteraction(prepOption("o1"), ctx).mode).toBe("view");
     });
 
     it("dims support cards while waiting for sequential pick", () => {
@@ -137,5 +170,34 @@ describe("getHandCardInteraction", () => {
         );
         expect(support.mode).toBe("support");
         expect(support.enabled).toBe(false);
+    });
+
+    it("shows digivolve reject hints for DP, type, and level", () => {
+        const active = digimon("active", "Rookie");
+        const noDp = getHandCardInteraction(digimon("c1", "Champion"), baseCtx({
+            prepSubPhase: "evolve",
+            activeDigimon: active,
+            playerDp: 0,
+        }));
+        expect(noDp.mode).toBe("evolve_target");
+        expect(noDp.enabled).toBe(false);
+        expect(noDp.statusHint).toBe("NO DP");
+
+        const wrongType = getHandCardInteraction(
+            { ...digimon("c2", "Champion"), type: "Ice" },
+            baseCtx({
+                prepSubPhase: "evolve",
+                activeDigimon: active,
+                playerDp: 500,
+            })
+        );
+        expect(wrongType.statusHint).toBe("WRONG TYPE");
+
+        const wrongLevel = getHandCardInteraction(digimon("u1", "Ultimate"), baseCtx({
+            prepSubPhase: "evolve",
+            activeDigimon: active,
+            playerDp: 500,
+        }));
+        expect(wrongLevel.statusHint).toBe("WRONG LEVEL");
     });
 });

@@ -1,4 +1,10 @@
-import { canEvolveDigimon, matchesEvolutionType } from "./evolutionEligibility";
+import {
+    canEvolveDigimon,
+    evaluateEvolution,
+    evolutionStatusHint,
+} from "./evolutionEligibility";
+import { canDiscardForDp } from "./discardForDp";
+import { getPrepOptionBadge } from "./prepOptionPresentation";
 import {
     canPlayEvolutionOption,
     canPlayPrepOption,
@@ -60,6 +66,11 @@ const VIEW: HandCardInteraction = {
     statusHint: null,
 };
 
+/** PS1-style: card stays in the hand strip at full opacity; not clickable. */
+function visibleOnly(): HandCardInteraction {
+    return VIEW;
+}
+
 function asOptionLike(card: DigimonCardData): OptionCardLike {
     return {
         cardKind: card.cardKind,
@@ -89,16 +100,16 @@ export function getHandCardInteraction(
 
     if (phase === "waiting" || phase === "victory") return INACTIVE;
 
-    if (phase === "draw" && isYourTurn) {
+    if (phase === "draw") {
         return VIEW;
     }
 
-    if (phase === "preparation" && prepSubPhase === "mulligan" && isYourTurn) {
+    if (phase === "preparation" && prepSubPhase === "mulligan") {
         return VIEW;
     }
 
     if (phase === "preparation" && prepSubPhase === "deploy" && isYourTurn && !ctx.hasActive) {
-        if (card.cardKind !== "digimon") return INACTIVE;
+        if (card.cardKind !== "digimon") return visibleOnly();
         const deployOk = validateDeployDigimon(
             toMinimalCard(card),
             ctx.ruleProfile,
@@ -128,20 +139,24 @@ export function getHandCardInteraction(
                 mode: "prep_option",
                 enabled: true,
                 ringClass: "ring-2 ring-ps-yellow ring-offset-2 ring-offset-app",
-                badge: "PLAY",
+                badge: getPrepOptionBadge({
+                    effectId: card.effectId ?? "",
+                    effectArgs: card.effectArgs,
+                    name: card.name,
+                }),
                 statusHint: null,
             };
         }
-        if (card.cardKind === "digimon") {
+        if (canDiscardForDp(card)) {
             return {
                 mode: "discard",
                 enabled: true,
-                ringClass: "",
+                ringClass: "ring-2 ring-ps-red/50 ring-offset-2 ring-offset-app",
                 badge: `+${card.plusDp} DP`,
-                statusHint: "Discard for DP",
+                statusHint: null,
             };
         }
-        return INACTIVE;
+        return visibleOnly();
     }
 
     if (
@@ -150,6 +165,19 @@ export function getHandCardInteraction(
         isYourTurn &&
         ctx.hasActive
     ) {
+        if (canPlayPrepOption(asOptionLike(card), prepSubPhase, ctx.hasActive)) {
+            return {
+                mode: "prep_option",
+                enabled: true,
+                ringClass: "ring-2 ring-ps-yellow ring-offset-2 ring-offset-app",
+                badge: getPrepOptionBadge({
+                    effectId: card.effectId ?? "",
+                    effectArgs: card.effectArgs,
+                    name: card.name,
+                }),
+                statusHint: null,
+            };
+        }
         if (canPlayEvolutionOption(asOptionLike(card), prepSubPhase, ctx.hasActive)) {
             const selected = ctx.selectedEvoOptionId === card.id;
             return {
@@ -168,12 +196,11 @@ export function getHandCardInteraction(
                 ? canEvolveWithOption(active, card, ctx.playerDp, ctx.evoModifiers)
                 : canEvolveDigimon(active, card, ctx.playerDp);
             const adjustedCost = Math.max(0, card.evoCost + ctx.evoModifiers.dpCostDelta);
-            const canAfford = ctx.playerDp >= adjustedCost;
-            const sameType = active ? matchesEvolutionType(active.type, card.type) : false;
-            let statusHint: string | null = null;
-            if (!canAfford) statusHint = "NO DP";
-            else if (!sameType) statusHint = "WRONG TYPE";
-            else if (!canEvolve) statusHint = "INVALID";
+            const gate = evaluateEvolution(active, card, ctx.playerDp, {
+                dpCostDelta: ctx.evoModifiers.dpCostDelta,
+                warpSkipLevels: ctx.selectedEvoOption ? ctx.evoModifiers.warpSkipLevels : 0,
+            });
+            const statusHint = !canEvolve && gate.ok === false ? evolutionStatusHint(gate.reason) : null;
 
             return {
                 mode: "evolve_target",
@@ -185,11 +212,11 @@ export function getHandCardInteraction(
                 statusHint,
             };
         }
-        return INACTIVE;
+        return visibleOnly();
     }
 
     if (phase === "battle_support" || phase === "battle_reveal") {
-        if (!canUseAsBattleSupport(asOptionLike(card))) return INACTIVE;
+        if (!canUseAsBattleSupport(asOptionLike(card))) return visibleOnly();
         const enabled =
             phase === "battle_support" &&
             ctx.canPickSupport &&
@@ -203,7 +230,7 @@ export function getHandCardInteraction(
         };
     }
 
-    if (phase === "preparation" && !isYourTurn) return INACTIVE;
+    if (phase === "preparation" && !isYourTurn) return visibleOnly();
 
-    return INACTIVE;
+    return visibleOnly();
 }

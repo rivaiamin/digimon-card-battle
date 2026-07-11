@@ -15,6 +15,13 @@ import {
     shouldDeckOutOnDraw,
     validateDeployDigimon,
 } from "../lib/openingFlow";
+import { applyDiscardForDp } from "../lib/discardForDp";
+import {
+    applyPostEvolutionRecovery,
+    parseStatusAilmentsJson,
+    serializeStatusAilments,
+} from "../lib/postEvolutionRecovery";
+import { getPrepServerMessage } from "../lib/prepPhaseCopy";
 import { resolveRuleProfile, type RuleProfile } from "../lib/ruleProfile";
 import { parseEffectArgsJson } from "../lib/effectArgs";
 import {
@@ -168,12 +175,22 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
                     this.recordVoluntaryAction(client.sessionId);
                     {
                         const dpBefore = player.dp;
-                        this.discardForDp(player, Array.isArray(message.cardIds) ? message.cardIds : []);
-                        this.audit("DISCARD_FOR_DP", player, "ok", undefined, {
-                            cardIds: Array.isArray(message.cardIds) ? message.cardIds : [],
-                            dpBefore,
-                            dpAfter: player.dp,
-                        });
+                        const cardIds = Array.isArray(message.cardIds) ? message.cardIds : [];
+                        const result = this.discardForDp(player, cardIds);
+                        if (result.discardedIds.length === 0) {
+                            this.audit("DISCARD_FOR_DP", player, "rejected", "no_valid_discards", {
+                                cardIds,
+                                rejectedIds: result.rejectedIds,
+                            });
+                        } else {
+                            this.audit("DISCARD_FOR_DP", player, "ok", undefined, {
+                                cardIds: result.discardedIds,
+                                rejectedIds: result.rejectedIds,
+                                dpBefore,
+                                dpAfter: player.dp,
+                                dpGained: result.dpGained,
+                            });
+                        }
                     }
                     break;
                 case "END_DISCARD":
@@ -182,7 +199,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
                     this.recordVoluntaryAction(client.sessionId);
                     this.state.prepSubPhase = "evolve";
                     this.audit("END_DISCARD", player, "ok");
-                    this.state.message = "Step 2: Evolve or end prep";
+                    this.state.message = this.prepMessageFor(player);
                     this.syncPhaseTimer();
                     break;
                 case "DEPLOY_DIGIMON":
@@ -208,7 +225,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
                     }
                     this.logDrawSnapshot("DIG_FOR_DEPLOY after recovery", player);
                     this.audit("DIG_FOR_DEPLOY", player, "ok");
-                    this.state.message = "Deck dig — deploy a Digimon from your hand";
+                    this.state.message = this.prepMessageFor(player, { dugDeckForDigimon: true });
                     this.syncPhaseTimer();
                     break;
                 }
@@ -230,12 +247,21 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
                                 ? message.evolutionOptionCardId
                                 : undefined;
                         const evolved = this.evolve(player, message.cardId, evolutionOptionCardId);
-                        this.audit("EVOLVE", player, evolved ? "ok" : "rejected", evolved ? undefined : "invalid_evolution", {
-                            cardId: message.cardId,
-                            evolutionOptionCardId,
-                            dpBefore,
-                            dpAfter: player.dp,
-                        });
+                        this.audit(
+                            "EVOLVE",
+                            player,
+                            evolved ? "ok" : "rejected",
+                            evolved ? undefined : "invalid_evolution",
+                            {
+                                cardId: message.cardId,
+                                evolutionOptionCardId,
+                                dpBefore,
+                                dpAfter: player.dp,
+                                hpAfter: player.hp,
+                                statusAilmentsJson: player.statusAilmentsJson,
+                            },
+                            { fidelityIds: evolved ? ["FC-007", "FC-009"] : ["FC-007"] }
+                        );
                     }
                     break;
                 case "END_PREP":
@@ -250,7 +276,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
                                 this.endGame(player.sessionId, "deck_out");
                             } else {
                                 this.state.prepSubPhase = "deploy";
-                                this.state.message = "Deck dig — deploy a Digimon from your hand";
+                                this.state.message = this.prepMessageFor(player, { dugDeckForDigimon: true });
                                 this.logDrawSnapshot("END_PREP after recovery", player);
                             }
                         }
@@ -370,6 +396,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             p.needsOpeningDeploy = true;
             p.mulligansRemaining = this.ruleProfile.mulligan.maxRedraws;
             p.openingPenaltyActive = false;
+            p.statusAilmentsJson = "[]";
             p.afkStrikes = 0;
 
             const deckIds =
@@ -495,15 +522,17 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
     }
 
     private discardForDp(player: PlayerSchema, cardIds: string[]) {
-        for (const cardId of cardIds) {
-            const idx = player.hand.findIndex(c => c.id === cardId);
-            if (idx === -1) continue;
-            const card = player.hand[idx];
-            player.dp += card.plusDp;
-            player.trash.push(card);
-            player.hand.splice(idx, 1);
+        type DiscardRow = { id: string; cardKind: string; plusDp: number };
+        const hand = player.hand as unknown as DiscardRow[];
+        const trash = player.trash as unknown as DiscardRow[];
+        const result = applyDiscardForDp(hand, trash, cardIds);
+        if (result.dpGained > 0) {
+            player.dp += result.dpGained;
         }
-        this.state.message = "Step 1: Discard cards for DP";
+        if (result.discardedIds.length > 0) {
+            this.state.message = this.prepMessageFor(player);
+        }
+        return result;
     }
 
     private beginPrepSubPhase(player: PlayerSchema) {
@@ -513,24 +542,26 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             player.mulligansRemaining,
             this.ruleProfile
         );
+        this.state.message = this.prepMessageFor(player);
         this.syncPhaseTimer();
     }
 
-    private prepMessageFor(player: PlayerSchema): string {
-        switch (this.state.prepSubPhase) {
-            case "mulligan":
-                return `Opening hand (${this.ruleProfile.handTarget} cards) — keep or mulligan?`;
-            case "deploy":
-                return player.needsOpeningDeploy
-                    ? "Deploy your battle Digimon"
-                    : "Deploy a Rookie from your hand";
-            case "discard":
-                return "Step 1: Discard cards for DP";
-            case "evolve":
-                return "Step 2: Evolve or end prep";
-            default:
-                return this.getActive(player) ? "Step 1: Discard cards for DP" : "Deploy your battle Digimon";
-        }
+    private prepMessageFor(
+        player: PlayerSchema,
+        extras: {
+            dugDeckForDigimon?: boolean;
+            isKoRedeploy?: boolean;
+            isDoubleKoRedeploy?: boolean;
+        } = {}
+    ): string {
+        return getPrepServerMessage(this.state.prepSubPhase as "" | "mulligan" | "deploy" | "discard" | "evolve", {
+            handTarget: this.ruleProfile.handTarget,
+            mulligansRemaining: player.mulligansRemaining,
+            needsOpeningDeploy: player.needsOpeningDeploy,
+            dugDeckForDigimon: extras.dugDeckForDigimon,
+            isKoRedeploy: extras.isKoRedeploy,
+            isDoubleKoRedeploy: extras.isDoubleKoRedeploy,
+        });
     }
 
     private toOptionCardView(card: CardSchema): OptionCardLike {
@@ -588,11 +619,12 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         }
 
         const dpBefore = player.dp;
-        const hpBefore = player.hp;
+        const active = this.getActive(player);
+        const hpBefore = active?.hp ?? player.hp;
         const prepState = {
             dp: player.dp,
-            hp: player.hp,
-            maxHp: player.active?.maxHp ?? 0,
+            hp: hpBefore,
+            maxHp: active?.maxHp ?? 0,
             hand: player.hand as unknown as OptionCardLike[],
             deck: player.deck as unknown as OptionCardLike[],
             trash: player.trash as unknown as OptionCardLike[],
@@ -614,6 +646,9 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
 
         player.dp = prepState.dp;
         player.hp = prepState.hp;
+        if (active) {
+            active.hp = prepState.hp;
+        }
 
         player.hand.splice(idx, 1);
         player.trash.push(card);
@@ -636,6 +671,10 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
 
         const current = this.getActive(player);
         if (!current) return false;
+
+        // FC-007: only Digimon cards may be digivolution targets (options/Armor paths excluded).
+        const evoKind = (evo.cardKind ?? "digimon").trim().toLowerCase();
+        if (evoKind !== "digimon" && evoKind !== "") return false;
 
         let modifiers = parseEvolutionModifiers(null);
         let optionIdx = -1;
@@ -672,11 +711,24 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         player.dp -= adjustedCost;
         player.evolutionStack.push(evoCard);
         player.active = evoCard;
-        player.hp = evoCard.maxHp;
+
+        // FC-009: full HP to new max + cure status ailments (GDD evolution bonuses).
+        const penaltyWasActive = player.openingPenaltyActive;
+        const ailments = parseStatusAilmentsJson(player.statusAilmentsJson);
+        const recoveryState = {
+            hp: player.hp,
+            active: evoCard,
+            statusAilments: ailments,
+            openingPenaltyActive: penaltyWasActive,
+        };
+        applyPostEvolutionRecovery(recoveryState);
+        player.hp = recoveryState.hp;
+        player.statusAilmentsJson = serializeStatusAilments(recoveryState.statusAilments);
+        player.openingPenaltyActive = recoveryState.openingPenaltyActive;
 
         const restore = shouldRestoreFullStatsAfterEvolve(
             modifiers,
-            player.openingPenaltyActive,
+            penaltyWasActive,
             fromLevel,
             evoCard.level
         );
@@ -685,11 +737,11 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             if (stats) {
                 applyFullStatsFromCatalog(evoCard, stats);
                 player.hp = evoCard.maxHp;
+                evoCard.hp = evoCard.maxHp;
             }
-            player.openingPenaltyActive = false;
         }
 
-        this.state.message = "Step 2: Evolve or end prep";
+        this.state.message = this.prepMessageFor(player);
         return true;
     }
 
@@ -734,6 +786,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
 
         player.active = card;
         player.hp = card.maxHp;
+        player.statusAilmentsJson = "[]";
         player.needsOpeningDeploy = false;
         this.audit("DEPLOY_DIGIMON", player, "ok", undefined, {
             cardId,
@@ -750,7 +803,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         }
 
         this.state.prepSubPhase = "discard";
-        this.state.message = "Step 1: Discard cards for DP";
+        this.state.message = this.prepMessageFor(player);
         this.syncPhaseTimer();
     }
 
@@ -1146,7 +1199,10 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             this.state.activePlayerSessionId = sessionId;
             this.state.phase = "preparation";
             this.state.prepSubPhase = "deploy";
-            this.state.message = "KO — deploy a Rookie from your hand";
+            const koPlayer = this.state.players.get(sessionId);
+            this.state.message = koPlayer
+                ? this.prepMessageFor(koPlayer, { isKoRedeploy: true })
+                : getPrepServerMessage("deploy", { isKoRedeploy: true });
             this.syncPhaseTimer();
             return;
         }
@@ -1166,7 +1222,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         if (ko.isDoubleKo) {
             this.trashEvolutionStack(pA);
             this.trashEvolutionStack(pB);
-            this.state.message = "Double KO — deploy a Digimon from your hand";
+            this.state.message = getPrepServerMessage("deploy", { isDoubleKoRedeploy: true });
             this.auditLog.emit({
                 turn: this.state.turn,
                 phase: this.state.phase,
@@ -1412,7 +1468,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
                 this.auditPhaseTimeout(phaseKey, [player.sessionId], "auto_end_discard");
                 if (this.applyTimeoutStrike(player.sessionId)) return;
                 this.state.prepSubPhase = "evolve";
-                this.state.message = "Step 2: Evolve or end prep";
+                this.state.message = this.prepMessageFor(player);
                 this.syncPhaseTimer();
                 break;
             }
@@ -1488,7 +1544,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             auto,
         });
         this.state.message = dugDeckForDigimon
-            ? "Deck dig — deploy a Digimon from your hand"
+            ? this.prepMessageFor(player, { dugDeckForDigimon: true })
             : this.prepMessageFor(player);
     }
 
@@ -1533,7 +1589,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
                     this.endGame(player.sessionId, "deck_out");
                 } else {
                     this.state.prepSubPhase = "deploy";
-                    this.state.message = "Deck dig — deploy a Digimon from your hand";
+                    this.state.message = this.prepMessageFor(player, { dugDeckForDigimon: true });
                     this.syncPhaseTimer();
                 }
             }

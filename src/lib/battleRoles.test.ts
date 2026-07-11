@@ -57,6 +57,20 @@ describe("battleRoles (FC-003 UI)", () => {
         expect(hint).toContain("first");
     });
 
+    it("shows mulligan redraw hint with count", () => {
+        const hint = getTurnStatusHint({
+            phase: "preparation",
+            prepSubPhase: "mulligan",
+            yourRole: "attacker",
+            isYourTurn: true,
+            supportPickDefenderFirst: true,
+            isYourSupportPickTurn: false,
+            attackLocked: false,
+            mulligansRemaining: 1,
+        });
+        expect(hint).toBe("Keep hand or redraw once.");
+    });
+
     it("headline is compact for preparation", () => {
         const title = getTurnStatusTitle({
             phase: "preparation",

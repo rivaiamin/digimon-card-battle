@@ -12,6 +12,21 @@ export const DRAW_BEAT_MS = 1_100;
 /** How long newly drawn hand cards stay highlighted after landing. */
 export const DRAW_CARD_HIGHLIGHT_MS = 1_400;
 
+/** Client beat after mulligan before highlighting the new hand. */
+export const MULLIGAN_REDRAW_MS = 700;
+
+/** How long mulligan-redrawn cards stay highlighted. */
+export const MULLIGAN_CARD_HIGHLIGHT_MS = 1_200;
+
+/** How long +DP gain flash stays visible after discard. */
+export const DISCARD_DP_GAIN_MS = 1_000;
+
+/** How long prep option result feedback stays visible. */
+export const PREP_OPTION_FEEDBACK_MS = 1_200;
+
+/** Brief highlight when prep sub-phase advances (P2-9). */
+export const PREP_SUBPHASE_TRANSITION_MS = 450;
+
 /** Full-screen flash during field digivolution (PS1 burst). */
 export const EVOLUTION_FLASH_MS = 480;
 

@@ -5,8 +5,7 @@
 
 import type { EffectArgs } from "../types";
 import { readNumberArg } from "./effectArgs";
-import { isValidEvolutionLevel } from "./evolutionEligibility";
-import { EVOLUTION_LEVEL_ORDER } from "./evolutionEligibility";
+import { evaluateEvolution } from "./evolutionEligibility";
 
 export interface OptionCardLike {
     id: string;
@@ -94,30 +93,14 @@ export function mergeEvolutionModifiers(a: EvolutionModifiers, b: EvolutionModif
 
 export function canEvolveWithOption(
     active: { level: string; type: string } | null | undefined,
-    target: { level: string; type: string; evoCost: number },
+    target: { level: string; type: string; evoCost: number; cardKind?: string },
     playerDp: number,
     modifiers: EvolutionModifiers
 ): boolean {
-    if (!active) return false;
-    const adjustedCost = Math.max(0, target.evoCost + modifiers.dpCostDelta);
-    if (playerDp < adjustedCost) return false;
-
-    if (
-        String(active.type).trim().toLowerCase() !== String(target.type).trim().toLowerCase()
-    ) {
-        return false;
-    }
-
-    const fi = EVOLUTION_LEVEL_ORDER.indexOf(active.level as (typeof EVOLUTION_LEVEL_ORDER)[number]);
-    const ti = EVOLUTION_LEVEL_ORDER.indexOf(target.level as (typeof EVOLUTION_LEVEL_ORDER)[number]);
-    if (fi === -1 || ti === -1) return false;
-
-    if (modifiers.warpSkipLevels > 0) {
-        const maxJump = 1 + modifiers.warpSkipLevels;
-        return ti > fi && ti - fi <= maxJump;
-    }
-
-    return isValidEvolutionLevel(active.level, target.level);
+    return evaluateEvolution(active, target, playerDp, {
+        dpCostDelta: modifiers.dpCostDelta,
+        warpSkipLevels: modifiers.warpSkipLevels,
+    }).ok;
 }
 
 export function resolvePrepOption(

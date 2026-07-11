@@ -1,7 +1,11 @@
 import React from "react";
 import { DigimonCard } from "../Card";
 import { HandDrawStatus } from "./HandDrawStatus";
+import { HandMulliganStatus } from "./HandMulliganStatus";
+import { HandDiscardStatus } from "./HandDiscardStatus";
+import { HandPrepOptionStatus } from "./HandPrepOptionStatus";
 import type { DrawOverlayMode } from "../../hooks/useDrawPhaseBeat";
+import type { MulliganOverlayMode } from "../../hooks/useMulliganBeat";
 import {
     getHandCardInteraction,
     type HandCardInteraction,
@@ -24,6 +28,26 @@ type DrawStatusProps = {
     cardsLanded: number;
 };
 
+type MulliganStatusProps = {
+    visible: boolean;
+    mode: MulliganOverlayMode;
+    mulligansRemaining: number;
+    cardsLanded: number;
+};
+
+type DiscardStatusProps = {
+    visible: boolean;
+    playerDp: number;
+    lastDpGain: number;
+    isYourTurn: boolean;
+};
+
+type PrepOptionStatusProps = {
+    visible: boolean;
+    feedback: string | null;
+    isYourTurn: boolean;
+};
+
 type PlayerHandZoneProps = {
     hand: DigimonCardData[];
     context: HandInteractionContext;
@@ -34,6 +58,9 @@ type PlayerHandZoneProps = {
     supportHint?: string | null;
     newlyDrawnCardIds?: ReadonlySet<string>;
     drawStatus?: DrawStatusProps;
+    mulliganStatus?: MulliganStatusProps;
+    discardStatus?: DiscardStatusProps;
+    prepOptionStatus?: PrepOptionStatusProps;
 };
 
 function handleCardClick(
@@ -74,9 +101,18 @@ export const PlayerHandZone: React.FC<PlayerHandZoneProps> = ({
     supportHint,
     newlyDrawnCardIds,
     drawStatus,
+    mulliganStatus,
+    discardStatus,
+    prepOptionStatus,
 }) => {
     const showBar =
-        hand.length > 0 || phaseActions || phaseActionsFooter || drawStatus?.visible;
+        hand.length > 0 ||
+        phaseActions ||
+        phaseActionsFooter ||
+        drawStatus?.visible ||
+        mulliganStatus?.visible ||
+        discardStatus?.visible ||
+        prepOptionStatus?.visible;
 
     if (!showBar) return null;
 
@@ -95,6 +131,29 @@ export const PlayerHandZone: React.FC<PlayerHandZoneProps> = ({
                                     mode={drawStatus.mode}
                                     handTarget={drawStatus.handTarget}
                                     cardsLanded={drawStatus.cardsLanded}
+                                />
+                            )}
+                            {mulliganStatus && (
+                                <HandMulliganStatus
+                                    visible={mulliganStatus.visible}
+                                    mode={mulliganStatus.mode}
+                                    mulligansRemaining={mulliganStatus.mulligansRemaining}
+                                    cardsLanded={mulliganStatus.cardsLanded}
+                                />
+                            )}
+                            {discardStatus && (
+                                <HandDiscardStatus
+                                    visible={discardStatus.visible}
+                                    playerDp={discardStatus.playerDp}
+                                    lastDpGain={discardStatus.lastDpGain}
+                                    isYourTurn={discardStatus.isYourTurn}
+                                />
+                            )}
+                            {prepOptionStatus && (
+                                <HandPrepOptionStatus
+                                    visible={prepOptionStatus.visible}
+                                    feedback={prepOptionStatus.feedback}
+                                    isYourTurn={prepOptionStatus.isYourTurn}
                                 />
                             )}
                         </div>
@@ -118,8 +177,7 @@ export const PlayerHandZone: React.FC<PlayerHandZoneProps> = ({
                         <div className="flex w-full justify-center gap-3 overflow-x-auto overflow-y-visible px-1 pb-1 pt-2 scrollbar-thin">
                             {hand.map(card => {
                                 const interaction = getHandCardInteraction(card, context);
-                                const dimmed =
-                                    !interaction.enabled && interaction.mode !== "view";
+                                const dimmed = interaction.mode === "inactive";
                                 const clickable = interaction.enabled;
                                 const isNewlyDrawn = newlyDrawnCardIds?.has(card.id) ?? false;
                                 const newCardIndex = isNewlyDrawn
