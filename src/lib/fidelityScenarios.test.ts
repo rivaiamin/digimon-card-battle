@@ -40,7 +40,11 @@ describe("Fidelity Scenario Suite (FC-030)", () => {
         const results = runAllFidelityScenarios();
         const report = formatScenarioReport(results);
         expect(report).toContain("passed");
-        expect(results.every(r => r.passed)).toBe(true);
+        const failed = results.filter(r => !r.passed);
+        expect(
+            failed.map(r => `${r.scenarioId}: ${r.failures.join("; ")}`),
+            "one or more fidelity scenarios failed"
+        ).toEqual([]);
     });
 });
 

@@ -6,7 +6,7 @@ import { shouldForfeitAfk, strikesAfterTimeout, strikesAfterVoluntaryAction } fr
 import { resolveArenaVariant } from "./arenaVariant";
 import { resolveFullBattle, resolveKoScoring, type BattleCombatant } from "./battleEffectEngine";
 import type { BattleAuditEntry } from "./battleAuditLog";
-import { buildDefaultDeckCardIds } from "./defaultDeckBuilder";
+import { buildDefaultDeckCardIds, buildSyntheticDefaultDeck } from "./defaultDeckBuilder";
 import { validateDeck } from "./deckValidator";
 import { drawToTarget, mulliganHand, validateDeployDigimon } from "./openingFlow";
 import { applyDiscardForDp, canDiscardForDp } from "./discardForDp";
@@ -678,7 +678,15 @@ export const FIDELITY_SCENARIOS: FidelityScenario[] = [
         fidelityIds: ["FC-029"],
         description: "no_options arena rejects option cards in deck",
         run() {
-            const ids = buildDefaultDeckCardIds(CATALOG, 0);
+            // Use a deck that is known to include options. Random/index base decks can be
+            // digimon-only (~2%), which would incorrectly pass no_options validation.
+            const ids = buildSyntheticDefaultDeck(CATALOG, 0);
+            const hasOption = ids.some(id => {
+                const card = CATALOG_BY_ID.get(id);
+                return card?.cardKind === "option" || card?.cardKind === "evolution_option";
+            });
+            if (!hasOption) throw new Error("synthetic default deck must include option cards");
+
             const result = validateDeck(ids, CATALOG_BY_ID, resolveArenaVariant("no_options"));
             if (result.ok !== false) {
                 throw new Error("expected deck to be invalid in no_options arena");
