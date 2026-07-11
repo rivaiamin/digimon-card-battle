@@ -1591,7 +1591,8 @@
       "description": "If own Specialty is Ice, opponent's Support Effect is voided.",
       "value": 0,
       "priority": 3,
-      "type": "void_enemy_support"
+      "type": "void_enemy_support",
+      "requireType": "Ice"
     }
   },
   {
@@ -6579,7 +6580,8 @@
       "description": "If opponent's Specialty is Darkness, opponent's Support Effect is voided.",
       "value": 0,
       "priority": 3,
-      "type": "void_enemy_support"
+      "type": "void_enemy_support",
+      "requireOpponentType": "Dark"
     }
   },
   {

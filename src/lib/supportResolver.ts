@@ -1,3 +1,9 @@
+/**
+ * Support phase resolution + nullification / jamming (FC-015).
+ * Cancellation (void) resolves before other support and battle-option effects.
+ * @see docs/fidelity-rules-contract.md FC-015, GDD.md Phase 3 Step 2
+ */
+
 import type { CardSchema, PlayerSchema, SupportEffectSchema } from "../schema/BattleState";
 import { sortEffectsByConflictPolicy } from "./effectConflictResolver";
 
@@ -29,6 +35,7 @@ export type SupportEffectInput = {
     value?: number;
     description?: string;
     requireType?: string;
+    requireOpponentType?: string;
     priority?: number;
 };
 
@@ -74,15 +81,77 @@ function effectPriority(effect: SupportEffectSchema | SupportEffectInput): numbe
     return SUPPORT_PRIORITY[t] ?? 99;
 }
 
-function passesTypeGate(source: PlayerSchema, effect: SupportEffectSchema): boolean {
-    const required = String((effect as SupportEffectSchema & { requireType?: string }).requireType ?? "").trim();
-    if (!required) return true;
-    const activeType = source.active?.type ?? "";
-    return activeType === required;
+/** Normalize specialty labels (Darkness → Dark). */
+export function normalizeSpecialty(type: string): string {
+    const t = String(type).trim().toLowerCase();
+    if (t === "darkness") return "dark";
+    return t;
 }
 
-function isVoidEffect(effect: SupportEffectSchema | null | undefined): boolean {
+export function specialtiesMatch(a: string, b: string): boolean {
+    return normalizeSpecialty(a) === normalizeSpecialty(b);
+}
+
+function passesTypeGate(source: PlayerSchema, effect: SupportEffectSchema | SupportEffectInput): boolean {
+    const required = String((effect as SupportEffectInput).requireType ?? "").trim();
+    if (!required) return true;
+    const activeType = source.active?.type ?? "";
+    return specialtiesMatch(activeType, required);
+}
+
+function passesOpponentTypeGate(
+    opponent: PlayerSchema,
+    effect: SupportEffectSchema | SupportEffectInput
+): boolean {
+    const required = String((effect as SupportEffectInput).requireOpponentType ?? "").trim();
+    if (!required) return true;
+    const oppType = opponent.active?.type ?? "";
+    return specialtiesMatch(oppType, required);
+}
+
+export function isVoidEffect(effect: SupportEffectSchema | SupportEffectInput | null | undefined): boolean {
     return effect?.type === "void_enemy_support";
+}
+
+/**
+ * True when this support effect can nullify the opponent's support this reveal.
+ * Specialty gates (own / opponent) must pass; enemy must have a support card.
+ */
+export function canVoidEnemySupport(
+    source: PlayerSchema,
+    effect: SupportEffectSchema | SupportEffectInput | null | undefined,
+    opponent: PlayerSchema,
+    opponentHasSupport: boolean
+): boolean {
+    if (!isVoidEffect(effect) || !opponentHasSupport || !effect) return false;
+    if (!passesTypeGate(source, effect)) return false;
+    if (!passesOpponentTypeGate(opponent, effect)) return false;
+    return true;
+}
+
+export type SupportNullificationResult = {
+    /** Active player's support was cancelled by defender void/jamming. */
+    activeVoided: boolean;
+    /** Defender's support was cancelled by active void/jamming. */
+    defenderVoided: boolean;
+};
+
+export function evaluateSupportNullification(
+    active: PlayerSchema,
+    defender: PlayerSchema,
+    activeSupport: CardSchema | null,
+    defenderSupport: CardSchema | null
+): SupportNullificationResult {
+    const activeEffect = activeSupport?.supportEffect ?? null;
+    const defenderEffect = defenderSupport?.supportEffect ?? null;
+
+    const activeVoidsEnemy = canVoidEnemySupport(active, activeEffect, defender, !!defenderSupport);
+    const defenderVoidsEnemy = canVoidEnemySupport(defender, defenderEffect, active, !!activeSupport);
+
+    return {
+        activeVoided: defenderVoidsEnemy,
+        defenderVoided: activeVoidsEnemy,
+    };
 }
 
 type QueuedEffect = {
@@ -159,6 +228,7 @@ function applySingleEffect(
 
     switch (type) {
         case "void_enemy_support":
+            // Nullification already applied before the stack; keep as no-op safety.
             target.supportCard = null;
             break;
         case "first_strike":
@@ -212,9 +282,23 @@ function applySingleEffect(
     }
 }
 
+export type ResolveSupportHooks = {
+    /**
+     * Apply a surviving battle option card (after void checks).
+     * Caller typically adds ATK buffs and moves the card to trash.
+     */
+    applyBattleOption?: (
+        source: PlayerSchema,
+        card: CardSchema,
+        ctx: SupportBattleContext
+    ) => void;
+};
+
 /**
- * Resolve both players' support cards using the 5-tier stack (§2.B).
- * Void checks run before queuing; remaining effects sort by priority then active player first.
+ * Resolve both players' support cards.
+ * 1) Void/jamming nullification (FC-015)
+ * 2) Surviving battle options
+ * 3) Remaining digimon support stack by priority
  */
 export function resolveSupportPhase(
     active: PlayerSchema,
@@ -222,18 +306,30 @@ export function resolveSupportPhase(
     activeSupport: CardSchema | null,
     defenderSupport: CardSchema | null,
     ctx: SupportBattleContext,
-    tieBreak?: { activeSessionId: string; sessionOrder: string[] }
-): void {
-    const activeEffect = activeSupport?.supportEffect ?? null;
-    const defenderEffect = defenderSupport?.supportEffect ?? null;
+    tieBreak?: { activeSessionId: string; sessionOrder: string[] },
+    hooks?: ResolveSupportHooks
+): SupportNullificationResult {
+    const nullify = evaluateSupportNullification(active, defender, activeSupport, defenderSupport);
 
-    const activeVoided =
-        isVoidEffect(defenderEffect) && !!activeSupport;
-    const defenderVoided =
-        isVoidEffect(activeEffect) && !!defenderSupport;
+    if (nullify.activeVoided) active.supportCard = null;
+    if (nullify.defenderVoided) defender.supportCard = null;
 
-    if (activeVoided) active.supportCard = null;
-    if (defenderVoided) defender.supportCard = null;
+    const survivingActive = nullify.activeVoided ? null : activeSupport;
+    const survivingDefender = nullify.defenderVoided ? null : defenderSupport;
+
+    if (survivingActive?.cardKind === "option") {
+        hooks?.applyBattleOption?.(active, survivingActive, ctx);
+        active.supportCard = null;
+    }
+    if (survivingDefender?.cardKind === "option") {
+        hooks?.applyBattleOption?.(defender, survivingDefender, ctx);
+        defender.supportCard = null;
+    }
+
+    const digimonActive =
+        survivingActive && survivingActive.cardKind !== "option" ? survivingActive : null;
+    const digimonDefender =
+        survivingDefender && survivingDefender.cardKind !== "option" ? survivingDefender : null;
 
     const queue: QueuedEffect[] = [];
 
@@ -241,11 +337,13 @@ export function resolveSupportPhase(
         source: PlayerSchema,
         target: PlayerSchema,
         card: CardSchema | null,
-        voided: boolean,
         isActivePlayer: boolean
     ) => {
-        if (voided || !card?.supportEffect) return;
+        if (!card?.supportEffect) return;
+        // Void already resolved; do not re-run void in the stack.
+        if (isVoidEffect(card.supportEffect)) return;
         if (!passesTypeGate(source, card.supportEffect)) return;
+        if (!passesOpponentTypeGate(target, card.supportEffect)) return;
         queue.push({
             source,
             target,
@@ -255,8 +353,8 @@ export function resolveSupportPhase(
         });
     };
 
-    enqueue(active, defender, activeVoided ? null : activeSupport, activeVoided, true);
-    enqueue(defender, active, defenderVoided ? null : defenderSupport, defenderVoided, false);
+    enqueue(active, defender, digimonActive, true);
+    enqueue(defender, active, digimonDefender, false);
 
     const sessionOrder = tieBreak?.sessionOrder ?? [];
     const ordered = sortEffectsByConflictPolicy(
@@ -273,6 +371,8 @@ export function resolveSupportPhase(
     for (const { effect: entry } of ordered) {
         applySingleEffect(entry.source, entry.target, entry.effect, ctx);
     }
+
+    return nullify;
 }
 
 export type DamageSourcePlayer = {

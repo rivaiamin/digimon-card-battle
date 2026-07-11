@@ -2,18 +2,55 @@ import React from "react";
 import { motion } from "motion/react";
 import { DigimonCard } from "../Card";
 import type { DigimonCardData } from "../../types";
+import { SUPPORT_REVEAL_STAGGER_S } from "../../lib/battleTurnFlow";
 
 type SupportZoneProps = {
     side: "player" | "opponent";
     phase: string;
     supportCard: DigimonCardData | null;
     supportLocked: boolean;
-    /** Client-only face-down preview after locking (before server reveal). */
+    /** Client-only face-down preview after locking a real card (before server reveal). */
     committedFaceDown?: DigimonCardData | null;
+    /** Player locked with NO SUPPORT — still show a bluff face-down (GDD / P3-6). */
+    bluffEmpty?: boolean;
     /** Staggered flip order during battle_reveal (defender reveals first). */
     revealOrder?: "first" | "second" | null;
     onHover?: (data: DigimonCardData | null) => void;
 };
+
+function FaceDownBluff({
+    side,
+    label,
+}: {
+    side: "player" | "opponent";
+    label: string;
+}) {
+    const isPlayer = side === "player";
+    return (
+        <motion.div
+            className={`relative ${isPlayer ? "rotate-12" : "-rotate-12"}`}
+            initial={{ y: 24, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ opacity: 0, scale: 0.85 }}
+        >
+            <div
+                className={`w-[72px] h-[100px] rounded border-2 bg-panel flex items-center justify-center ${
+                    isPlayer
+                        ? "border-ps-blue/60 shadow-[0_0_20px_rgba(60,155,255,0.35)]"
+                        : "border-ps-red/50 shadow-[0_0_16px_rgba(255,60,60,0.25)]"
+                }`}
+            >
+                <span
+                    className={`text-xs font-black uppercase tracking-widest ${
+                        isPlayer ? "text-ps-blue rotate-180" : "text-ps-red"
+                    }`}
+                >
+                    {label}
+                </span>
+            </div>
+        </motion.div>
+    );
+}
 
 export const SupportZone: React.FC<SupportZoneProps> = ({
     side,
@@ -21,18 +58,26 @@ export const SupportZone: React.FC<SupportZoneProps> = ({
     supportCard,
     supportLocked,
     committedFaceDown,
+    bluffEmpty = false,
     revealOrder = null,
     onHover,
 }) => {
     const isReveal = phase === "battle_reveal";
-    const revealDelay = isReveal && revealOrder === "second" ? 0.38 : 0;
+    const revealDelay = isReveal && revealOrder === "second" ? SUPPORT_REVEAL_STAGGER_S : 0;
     const isSupportPhase = phase === "battle_support";
     const showFaceDown =
-        isSupportPhase && supportLocked && !supportCard && committedFaceDown;
+        isSupportPhase && supportLocked && !supportCard && !!committedFaceDown;
+    const showEmptyBluff =
+        isSupportPhase && supportLocked && !supportCard && !committedFaceDown && bluffEmpty;
     const showRevealed = !!supportCard && (isReveal || phase === "battle_attack" || phase === "resolution");
-    const showOpponentBack = side === "opponent" && isSupportPhase && supportLocked && !supportCard;
+    const showOpponentBack =
+        side === "opponent" && isSupportPhase && supportLocked && !supportCard;
+    const showEmptyReveal =
+        isReveal && supportLocked && !supportCard && (side === "player" ? bluffEmpty : true);
 
-    if (!showFaceDown && !showRevealed && !showOpponentBack) return null;
+    if (!showFaceDown && !showRevealed && !showOpponentBack && !showEmptyBluff && !showEmptyReveal) {
+        return null;
+    }
 
     const positionClass =
         side === "player" ? "absolute -right-32 top-0" : "absolute -left-32 top-0";
@@ -45,11 +90,11 @@ export const SupportZone: React.FC<SupportZoneProps> = ({
                 scale: isReveal ? [0.6, 1.12, 1] : showRevealed ? 0.85 : 0.75,
                 rotateY: isReveal && showRevealed
                     ? [180, -8, 0]
-                    : showFaceDown || showOpponentBack
+                    : showFaceDown || showOpponentBack || showEmptyBluff
                       ? 180
                       : 0,
-                opacity: showRevealed ? 1 : 0.85,
-                y: isReveal && showRevealed ? [24, -6, 0] : 0,
+                opacity: showRevealed || showEmptyReveal ? 1 : 0.85,
+                y: isReveal && (showRevealed || showEmptyReveal) ? [24, -6, 0] : 0,
             }}
             transition={{
                 duration: isReveal ? 0.65 : 0.35,
@@ -94,24 +139,27 @@ export const SupportZone: React.FC<SupportZoneProps> = ({
                 </>
             )}
 
-            {(showFaceDown && committedFaceDown) && (
-                <motion.div
-                    className="relative rotate-12"
-                    initial={{ y: 24, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                >
-                    <div className="w-[72px] h-[100px] rounded border-2 border-ps-blue/60 bg-panel shadow-[0_0_20px_rgba(60,155,255,0.35)] flex items-center justify-center">
-                        <span className="text-xs font-black text-ps-blue uppercase tracking-widest rotate-180">
-                            Support
-                        </span>
-                    </div>
-                </motion.div>
+            {showFaceDown && committedFaceDown && (
+                <FaceDownBluff side={side} label="Support" />
             )}
 
-            {showOpponentBack && (
-                <div className="w-[72px] h-[100px] rounded border-2 border-ps-red/50 bg-panel shadow-[0_0_16px_rgba(255,60,60,0.25)] flex items-center justify-center -rotate-12">
-                    <span className="text-xs font-black text-ps-red uppercase tracking-widest">???</span>
-                </div>
+            {(showEmptyBluff || (showOpponentBack && !committedFaceDown)) && !showEmptyReveal && (
+                <FaceDownBluff side={side} label={side === "opponent" ? "???" : "Bluff"} />
+            )}
+
+            {showEmptyReveal && (
+                <motion.div
+                    className={`w-[72px] h-[100px] rounded border border-dashed border-line/60 bg-panel/40 flex items-center justify-center ${
+                        side === "player" ? "rotate-12" : "-rotate-12"
+                    }`}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: [0, 1, 0.7], scale: [0.8, 1.05, 1] }}
+                    transition={{ duration: 0.55, delay: revealDelay }}
+                >
+                    <span className="text-[10px] font-black uppercase tracking-widest text-muted">
+                        None
+                    </span>
+                </motion.div>
             )}
         </motion.div>
     );

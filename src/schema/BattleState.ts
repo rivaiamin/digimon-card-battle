@@ -17,6 +17,8 @@ export class SupportEffectSchema extends Schema {
     @type("string") description: string = "";
     /** When set, effect only applies if the active Digimon's type matches (e.g. Fire). */
     @type("string") requireType: string = "";
+    /** When set, effect only applies if the opponent's active Digimon type matches (e.g. Dark). */
+    @type("string") requireOpponentType: string = "";
     /** Override stack tier (1–5); 0 = derive from type. */
     @type("number") priority: number = 0;
 }

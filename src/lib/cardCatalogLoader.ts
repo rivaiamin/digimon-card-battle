@@ -6,6 +6,7 @@ type LegacySupportEffect = {
     value?: unknown;
     description?: unknown;
     requireType?: unknown;
+    requireOpponentType?: unknown;
     priority?: unknown;
 };
 
@@ -15,6 +16,7 @@ export type NormalizedSupportEffect = {
     value: number;
     description: string;
     requireType: string;
+    requireOpponentType: string;
     priority: number;
 };
 
@@ -135,6 +137,7 @@ function normalizeSupportEffect(raw: LegacySupportEffect | null): NormalizedSupp
         value: Number(raw.value ?? 0),
         description: String(raw.description ?? ""),
         requireType: String(raw.requireType ?? ""),
+        requireOpponentType: String(raw.requireOpponentType ?? ""),
         priority: Number(raw.priority ?? 0),
     };
 }

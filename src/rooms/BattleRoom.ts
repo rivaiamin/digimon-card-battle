@@ -77,6 +77,7 @@ import {
     resolveTimedPhaseKey,
     type TimedPhaseKey,
 } from "../lib/phaseTimer";
+import { SUPPORT_REVEAL_MS } from "../lib/battleTurnFlow";
 
 /** Set `DEBUG_BATTLE_ROOM=0` when starting the server to silence draw/deck-out traces. */
 const DEBUG_BATTLE_ROOM = process.env.DEBUG_BATTLE_ROOM !== "0";
@@ -101,7 +102,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
     private koRedeployQueue: string[] = [];
 
     /** Pause on reveal so clients can play flip / hologram FX before effects resolve. */
-    private static readonly REVEAL_MS = 1600;
+    private static readonly REVEAL_MS = SUPPORT_REVEAL_MS;
 
     onCreate(options: any) {
         console.log("[SERVER] BattleRoom created", options);
@@ -467,6 +468,9 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             se.value = Number(rawEffect.value ?? 0);
             se.description = String(rawEffect.description ?? "");
             se.requireType = String((rawEffect as { requireType?: string }).requireType ?? "");
+            se.requireOpponentType = String(
+                (rawEffect as { requireOpponentType?: string }).requireOpponentType ?? ""
+            );
             se.priority = Number((rawEffect as { priority?: number }).priority ?? 0);
             card.supportEffect = se;
         } else {
@@ -1024,23 +1028,23 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         let activeSupport = active.supportCard;
         let defenderSupport = defender.supportCard;
 
-        if (activeSupport?.cardKind === "option") {
-            applyBattleOptionToContext(this.toOptionCardView(activeSupport), active.sessionId, this.supportCtx);
-            active.trash.push(activeSupport);
-            active.supportCard = null;
-            activeSupport = null;
-        }
-        if (defenderSupport?.cardKind === "option") {
-            applyBattleOptionToContext(this.toOptionCardView(defenderSupport), defender.sessionId, this.supportCtx);
-            defender.trash.push(defenderSupport);
-            defender.supportCard = null;
-            defenderSupport = null;
-        }
-
-        resolveSupportPhase(active, defender, activeSupport, defenderSupport, this.supportCtx, {
-            activeSessionId: this.state.activePlayerSessionId,
-            sessionOrder: sessions,
-        });
+        resolveSupportPhase(
+            active,
+            defender,
+            activeSupport,
+            defenderSupport,
+            this.supportCtx,
+            {
+                activeSessionId: this.state.activePlayerSessionId,
+                sessionOrder: sessions,
+            },
+            {
+                applyBattleOption: (source, card, ctx) => {
+                    applyBattleOptionToContext(this.toOptionCardView(card), source.sessionId, ctx);
+                    source.trash.push(card);
+                },
+            }
+        );
 
         if (this.ruleProfile.battle.attackLockBeforeSupport) {
             this.state.phase = "resolution";

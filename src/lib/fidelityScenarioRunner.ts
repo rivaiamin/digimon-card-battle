@@ -34,7 +34,11 @@ import {
     initialSupportPicker,
     nextSupportPickerAfterLock,
 } from "./supportPhase";
-import { createSupportBattleContext } from "./supportResolver";
+import {
+    canVoidEnemySupport,
+    createSupportBattleContext,
+    evaluateSupportNullification,
+} from "./supportResolver";
 import type { ScenarioRunResult } from "./battleReplay";
 import type { NormalizedCardCatalogEntry } from "./cardCatalogLoader";
 import cardsData from "../data/cards.json";
@@ -485,6 +489,56 @@ export const FIDELITY_SCENARIOS: FidelityScenario[] = [
             if (canLockSupport("active", first, true, false)) throw new Error("active should wait");
             const next = nextSupportPickerAfterLock(defender, defender, "active");
             if (next !== "active") throw new Error("active should pick after defender");
+        },
+    },
+    {
+        id: "support-void-jamming",
+        fidelityIds: ["FC-015"],
+        description: "Void/jamming cancels enemy support before options and buffs resolve",
+        run() {
+            const active = {
+                sessionId: "a",
+                active: { type: "Fire" },
+            };
+            const defender = {
+                sessionId: "d",
+                active: { type: "Ice" },
+            };
+            const voidEffect = { type: "void_enemy_support", requireType: "", requireOpponentType: "" };
+            const iceGated = { type: "void_enemy_support", requireType: "Ice", requireOpponentType: "" };
+
+            if (!canVoidEnemySupport(active as never, voidEffect, defender as never, true)) {
+                throw new Error("unconditional void should apply");
+            }
+            if (canVoidEnemySupport(active as never, iceGated, defender as never, true)) {
+                throw new Error("Fire active must fail Ice-gated void");
+            }
+            if (!canVoidEnemySupport(defender as never, iceGated, active as never, true)) {
+                throw new Error("Ice active must pass Ice-gated void");
+            }
+
+            const mutual = evaluateSupportNullification(
+                active as never,
+                defender as never,
+                { supportEffect: voidEffect } as never,
+                { supportEffect: voidEffect } as never
+            );
+            if (!mutual.activeVoided || !mutual.defenderVoided) {
+                throw new Error("mutual void must cancel both");
+            }
+
+            const optionNullify = evaluateSupportNullification(
+                active as never,
+                defender as never,
+                { cardKind: "option", supportEffect: null } as never,
+                { cardKind: "digimon", supportEffect: voidEffect } as never
+            );
+            if (!optionNullify.activeVoided) {
+                throw new Error("void must cancel enemy battle option");
+            }
+            if (optionNullify.defenderVoided) {
+                throw new Error("option without void must not cancel defender void");
+            }
         },
     },
     {
