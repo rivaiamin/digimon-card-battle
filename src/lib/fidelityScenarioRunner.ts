@@ -39,6 +39,7 @@ import {
     createSupportBattleContext,
     evaluateSupportNullification,
 } from "./supportResolver";
+import { attemptOnlineDeckSupportGamble } from "./supportGamble";
 import type { ScenarioRunResult } from "./battleReplay";
 import type { NormalizedCardCatalogEntry } from "./cardCatalogLoader";
 import cardsData from "../data/cards.json";
@@ -538,6 +539,39 @@ export const FIDELITY_SCENARIOS: FidelityScenario[] = [
             }
             if (optionNullify.defenderVoided) {
                 throw new Error("option without void must not cancel defender void");
+            }
+        },
+    },
+    {
+        id: "support-online-deck-gamble",
+        fidelityIds: ["FC-013"],
+        description: "Online Deck All-or-Nothing gamble draws top card when enabled",
+        run() {
+            const profile = getRuleProfile("fidelity_ps1");
+            if (!profile.battle.allowOnlineDeckGamble) {
+                throw new Error("fidelity_ps1 must allow online-deck gamble");
+            }
+            const deck = [
+                { id: "top", name: "Agumon" },
+                { id: "next", name: "Gabumon" },
+            ];
+            const result = attemptOnlineDeckSupportGamble(deck, true);
+            if (result.ok === false) {
+                throw new Error(`expected gamble ok, got ${result.reason}`);
+            }
+            if (result.card.id !== "top" || result.deckSizeAfter !== 1) {
+                throw new Error("gamble must take the top Online Deck card");
+            }
+            if (deck.length !== 1 || deck[0].id !== "next") {
+                throw new Error("deck must shrink after gamble");
+            }
+            const empty = attemptOnlineDeckSupportGamble([], true);
+            if (empty.ok !== false || empty.reason !== "empty_deck") {
+                throw new Error("empty Online Deck must reject gamble");
+            }
+            const disabled = attemptOnlineDeckSupportGamble([{ id: "x" }], false);
+            if (disabled.ok !== false || disabled.reason !== "gamble_disabled") {
+                throw new Error("disabled profile must reject gamble");
             }
         },
     },

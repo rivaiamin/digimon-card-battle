@@ -51,7 +51,7 @@ Primary objective for E0 / T0-1:
 | FC-010 | Partner / Armor evolution paths MUST be explicitly supported or formally scoped out for v1 with no silent mismatch. | `MANUAL` L128, L368; `WIKIMON` L36 | `EVOLVE` L1-L8 (linear ladder only); `CARDS` L287-L329 (Armor cards present but not in ladder) |
 | FC-011 | Attack selection MUST use hidden lock-in and deterministic reveal/resolve sequencing. | `MANUAL` L341, L384; `WIKIMON` L50 | `ROOM` L553-L577, L562-L580 |
 | FC-012 | Support card choice order MUST follow canonical attacker/defender ordering (attacking second chooses first). | `MANUAL` L399-L400 | `ROOM` L495-L510 (unordered lock model) |
-| FC-013 | Support phase MUST allow hand selection and (if in-scope) online-deck gamble support draw with legal constraints. | `MANUAL` L401-L405; `WIKIMON` L50 | `ROOM` L500-L506 (hand only + none) |
+| FC-013 | Support phase MUST allow hand selection and (if in-scope) online-deck gamble support draw with legal constraints. | `MANUAL` L401-L405; `WIKIMON` L50 | `ROOM` `lockSupport` + `supportGamble.ts` (hand or `{ gamble: true }`) |
 | FC-014 | Support/effect resolution MUST use deterministic speed/priority ordering, with explicit tie-break behavior. | `MANUAL` L413-L417 | `SUPPORT` L14-L23, L259-L263 |
 | FC-015 | Nullification/jamming-style effects MUST be represented and resolved at correct timing/scope. | `MANUAL` L389, L413-L417 | `SUPPORT` L5-L12, L160-L162 (void only) |
 | FC-016 | Circle/Triangle/Cross base attack characteristics MUST match canonical behavior per card and selection. | `MANUAL` L386; `WIKIMON` L50 | `SUPPORT` L270-L285; `ROOM` L581-L596 |
@@ -146,7 +146,7 @@ This section freezes the initial implementation scope so E1+ can execute without
 | FC ID | Deferred reason | Planned epic entry point |
 |---|---|---|
 | FC-010 | Partner/Armor progression introduces cross-cutting data, UX, and long-tail balancing beyond core online parity. | E7 (after deck/runtime stabilization) |
-| FC-013 | "Online Deck gamble" support draw is a canonical behavior but lower priority than deterministic support order/effect engine correctness. | E5 follow-up after E4 completion |
+| FC-013 | "Online Deck gamble" support draw is a canonical behavior; implemented as All-or-Nothing top-of-deck support (`allowOnlineDeckGamble`). | DONE (P3-4) |
 | FC-029 | Arena-specific/special-rule profiles are important, but add mode complexity best layered after baseline parity is stable. | E7 |
 
 ### 6.4 Change policy for frozen scope

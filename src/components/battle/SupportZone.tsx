@@ -13,6 +13,8 @@ type SupportZoneProps = {
     committedFaceDown?: DigimonCardData | null;
     /** Player locked with NO SUPPORT — still show a bluff face-down (GDD / P3-6). */
     bluffEmpty?: boolean;
+    /** Player gambled the Online Deck top card (FC-013) — face-down until reveal. */
+    bluffGamble?: boolean;
     /** Staggered flip order during battle_reveal (defender reveals first). */
     revealOrder?: "first" | "second" | null;
     onHover?: (data: DigimonCardData | null) => void;
@@ -59,6 +61,7 @@ export const SupportZone: React.FC<SupportZoneProps> = ({
     supportLocked,
     committedFaceDown,
     bluffEmpty = false,
+    bluffGamble = false,
     revealOrder = null,
     onHover,
 }) => {
@@ -67,15 +70,29 @@ export const SupportZone: React.FC<SupportZoneProps> = ({
     const isSupportPhase = phase === "battle_support";
     const showFaceDown =
         isSupportPhase && supportLocked && !supportCard && !!committedFaceDown;
+    const showGambleBluff =
+        isSupportPhase && supportLocked && !supportCard && !committedFaceDown && bluffGamble;
     const showEmptyBluff =
-        isSupportPhase && supportLocked && !supportCard && !committedFaceDown && bluffEmpty;
+        isSupportPhase &&
+        supportLocked &&
+        !supportCard &&
+        !committedFaceDown &&
+        !bluffGamble &&
+        bluffEmpty;
     const showRevealed = !!supportCard && (isReveal || phase === "battle_attack" || phase === "resolution");
     const showOpponentBack =
         side === "opponent" && isSupportPhase && supportLocked && !supportCard;
     const showEmptyReveal =
         isReveal && supportLocked && !supportCard && (side === "player" ? bluffEmpty : true);
 
-    if (!showFaceDown && !showRevealed && !showOpponentBack && !showEmptyBluff && !showEmptyReveal) {
+    if (
+        !showFaceDown &&
+        !showRevealed &&
+        !showOpponentBack &&
+        !showEmptyBluff &&
+        !showGambleBluff &&
+        !showEmptyReveal
+    ) {
         return null;
     }
 
@@ -90,7 +107,7 @@ export const SupportZone: React.FC<SupportZoneProps> = ({
                 scale: isReveal ? [0.6, 1.12, 1] : showRevealed ? 0.85 : 0.75,
                 rotateY: isReveal && showRevealed
                     ? [180, -8, 0]
-                    : showFaceDown || showOpponentBack || showEmptyBluff
+                    : showFaceDown || showOpponentBack || showEmptyBluff || showGambleBluff
                       ? 180
                       : 0,
                 opacity: showRevealed || showEmptyReveal ? 1 : 0.85,
@@ -143,7 +160,10 @@ export const SupportZone: React.FC<SupportZoneProps> = ({
                 <FaceDownBluff side={side} label="Support" />
             )}
 
-            {(showEmptyBluff || (showOpponentBack && !committedFaceDown)) && !showEmptyReveal && (
+            {showGambleBluff && <FaceDownBluff side={side} label="Deck" />}
+
+            {(showEmptyBluff || (showOpponentBack && !committedFaceDown && !bluffGamble)) &&
+                !showEmptyReveal && (
                 <FaceDownBluff side={side} label={side === "opponent" ? "???" : "Bluff"} />
             )}
 

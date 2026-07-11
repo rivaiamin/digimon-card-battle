@@ -44,6 +44,7 @@ import {
     type AttackType,
     type SupportBattleContext,
 } from "../lib/supportResolver";
+import { attemptOnlineDeckSupportGamble } from "../lib/supportGamble";
 import {
     resolveFullBattle,
     resolveKoScoring,
@@ -288,6 +289,11 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
                     break;
                 case "LOCK_SUPPORT":
                     if (this.state.phase !== "battle_support") return;
+                    if (message.gamble === true) {
+                        this.recordVoluntaryAction(client.sessionId);
+                        this.lockSupport(client.sessionId, null, { gamble: true });
+                        break;
+                    }
                     if (message.cardId != null && typeof message.cardId !== "string") return;
                     this.recordVoluntaryAction(client.sessionId);
                     this.lockSupport(client.sessionId, message.cardId ?? null);
@@ -937,7 +943,11 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         this.syncPhaseTimer();
     }
 
-    private lockSupport(sessionId: string, cardId: string | null) {
+    private lockSupport(
+        sessionId: string,
+        cardId: string | null,
+        options?: { gamble?: boolean }
+    ) {
         const player = this.state.players.get(sessionId);
         if (!player) return;
         if (
@@ -952,7 +962,15 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         }
 
         let chosen: CardSchema | null = null;
-        if (cardId) {
+        if (options?.gamble) {
+            // FC-013: All-or-Nothing — top Online Deck card, no hand legality filter.
+            const result = attemptOnlineDeckSupportGamble(
+                player.deck,
+                this.ruleProfile.battle.allowOnlineDeckGamble
+            );
+            if (!result.ok) return;
+            chosen = result.card;
+        } else if (cardId) {
             const idx = player.hand.findIndex(c => c.id === cardId);
             if (idx === -1) return;
             chosen = player.hand[idx];
@@ -989,6 +1007,20 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
                 this.syncPhaseTimer();
             }
         }
+    }
+
+    /** Move a resolved support card to trash if it is not already there. */
+    private discardResolvedSupport(player: PlayerSchema, card: CardSchema | null) {
+        if (!card) return;
+        let inTrash = false;
+        for (let i = 0; i < player.trash.length; i++) {
+            if (player.trash[i] === card) {
+                inTrash = true;
+                break;
+            }
+        }
+        if (!inTrash) player.trash.push(card);
+        player.supportCard = null;
     }
 
     private maybeRevealSupportAndAdvance() {
@@ -1045,6 +1077,11 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
                 },
             }
         );
+
+        // Digimon supports (and voided options) must reach trash; surviving options
+        // are already trashed by applyBattleOption.
+        this.discardResolvedSupport(active, activeSupport);
+        this.discardResolvedSupport(defender, defenderSupport);
 
         if (this.ruleProfile.battle.attackLockBeforeSupport) {
             this.state.phase = "resolution";
