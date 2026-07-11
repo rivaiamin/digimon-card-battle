@@ -90,11 +90,35 @@ function classifyAndMap(sourceText: string): Omit<EffectCatalogEntry, "id" | "te
     if (lower === "eat-up hp" || lower === "eat up hp") {
         return { kind: "cross", implementedEffectId: "cross.eat_up_hp", implementedArgs: {}, status: "implemented" };
     }
-    if (/foe x3/.test(lower)) {
-        return { kind: "cross", status: "catalog_only" };
+    if (/foe x\d/.test(lower)) {
+        const foe = text.match(/^(Dark(?:ness)?|Fire|Ice|Nature|Rare)\s+Foe\s+x(\d+)\.?$/i);
+        if (foe) {
+            const specialty = /^dark/i.test(foe[1] ?? "")
+                ? "Dark"
+                : String(foe[1]?.[0] ?? "X").toUpperCase() + String(foe[1] ?? "").slice(1).toLowerCase();
+            return {
+                kind: "cross",
+                implementedEffectId: "attack.specialty_mult",
+                implementedArgs: { specialty, multiplier: Number(foe[2]) },
+                status: "implemented",
+            };
+        }
     }
-    if (lower === "jamming" || lower === "1st attack") {
-        return { kind: "cross", status: "catalog_only" };
+    if (lower === "jamming") {
+        return {
+            kind: "cross",
+            implementedEffectId: "attack.jamming",
+            implementedArgs: {},
+            status: "implemented",
+        };
+    }
+    if (lower === "1st attack") {
+        return {
+            kind: "cross",
+            implementedEffectId: "attack.first_strike",
+            implementedArgs: {},
+            status: "implemented",
+        };
     }
 
     // --- Evolution options ---

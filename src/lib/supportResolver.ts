@@ -136,21 +136,42 @@ export type SupportNullificationResult = {
     defenderVoided: boolean;
 };
 
+function attackHasEffect(
+    player: PlayerSchema,
+    attack: AttackType | null | undefined,
+    effectId: string
+): boolean {
+    if (!attack || !player.active) return false;
+    const slot =
+        attack === "circle"
+            ? player.active.circle
+            : attack === "triangle"
+              ? player.active.triangle
+              : player.active.cross;
+    return String(slot.effectId ?? "") === effectId;
+}
+
 export function evaluateSupportNullification(
     active: PlayerSchema,
     defender: PlayerSchema,
     activeSupport: CardSchema | null,
-    defenderSupport: CardSchema | null
+    defenderSupport: CardSchema | null,
+    lockedAttacks?: {
+        activeAttack?: AttackType | null;
+        defenderAttack?: AttackType | null;
+    }
 ): SupportNullificationResult {
     const activeEffect = activeSupport?.supportEffect ?? null;
     const defenderEffect = defenderSupport?.supportEffect ?? null;
 
     const activeVoidsEnemy = canVoidEnemySupport(active, activeEffect, defender, !!defenderSupport);
     const defenderVoidsEnemy = canVoidEnemySupport(defender, defenderEffect, active, !!activeSupport);
+    const activeJams = attackHasEffect(active, lockedAttacks?.activeAttack, "attack.jamming");
+    const defenderJams = attackHasEffect(defender, lockedAttacks?.defenderAttack, "attack.jamming");
 
     return {
-        activeVoided: defenderVoidsEnemy,
-        defenderVoided: activeVoidsEnemy,
+        activeVoided: defenderVoidsEnemy || defenderJams,
+        defenderVoided: activeVoidsEnemy || activeJams,
     };
 }
 
@@ -307,9 +328,19 @@ export function resolveSupportPhase(
     defenderSupport: CardSchema | null,
     ctx: SupportBattleContext,
     tieBreak?: { activeSessionId: string; sessionOrder: string[] },
-    hooks?: ResolveSupportHooks
+    hooks?: ResolveSupportHooks,
+    lockedAttacks?: {
+        activeAttack?: AttackType | null;
+        defenderAttack?: AttackType | null;
+    }
 ): SupportNullificationResult {
-    const nullify = evaluateSupportNullification(active, defender, activeSupport, defenderSupport);
+    const nullify = evaluateSupportNullification(
+        active,
+        defender,
+        activeSupport,
+        defenderSupport,
+        lockedAttacks
+    );
 
     if (nullify.activeVoided) active.supportCard = null;
     if (nullify.defenderVoided) defender.supportCard = null;

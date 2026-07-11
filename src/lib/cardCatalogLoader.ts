@@ -1,4 +1,10 @@
 import type { CardKind, EffectArgs } from "../types";
+import {
+    inferSupportEffectFromDescription,
+    letterToAttack,
+    parseAttackEffectFromDescription,
+    supportTypeToEffectId,
+} from "./effectTextNormalize";
 
 type LegacySupportEffect = {
     type?: unknown;
@@ -64,6 +70,8 @@ export const KNOWN_EFFECT_IDS = new Set<string>([
     "cross.crash",
     "cross.eat_up_hp",
     "attack.specialty_mult",
+    "attack.first_strike",
+    "attack.jamming",
 ]);
 
 function toCardKind(rawKind: unknown): CardKind {
@@ -83,15 +91,6 @@ function normalizeEffectArgs(rawArgs: unknown): EffectArgs {
         }
     }
     return args;
-}
-
-function letterToAttack(letter: string | undefined): "circle" | "triangle" | "cross" | null {
-    if (!letter) return null;
-    const l = letter.toLowerCase();
-    if (l === "o" || l === "circle") return "circle";
-    if (l === "t" || l === "triangle") return "triangle";
-    if (l === "x" || l === "cross") return "cross";
-    return null;
 }
 
 function parseLegacySupportId(supportId: string, cardId: string): LegacySupportEffect | null {
@@ -132,13 +131,35 @@ function parseLegacySupportId(supportId: string, cardId: string): LegacySupportE
 
 function normalizeSupportEffect(raw: LegacySupportEffect | null): NormalizedSupportEffect | null {
     if (!raw || typeof raw !== "object") return null;
-    const type = String(raw.type ?? "").trim();
+    let type = String(raw.type ?? "").trim();
+    let targetAttack = String(raw.targetAttack ?? "");
+    let value = Number(raw.value ?? 0);
+    const description = String(raw.description ?? "");
     if (!type) return null;
+
+    if (type === "catalog_text") {
+        const inferred = inferSupportEffectFromDescription(description);
+        if (!inferred) {
+            return {
+                type: "catalog_text",
+                targetAttack: "",
+                value: 0,
+                description,
+                requireType: String(raw.requireType ?? ""),
+                requireOpponentType: String(raw.requireOpponentType ?? ""),
+                priority: Number(raw.priority ?? 0),
+            };
+        }
+        type = inferred.type;
+        targetAttack = inferred.targetAttack ?? "";
+        value = inferred.value ?? 0;
+    }
+
     return {
         type,
-        targetAttack: String(raw.targetAttack ?? ""),
-        value: Number(raw.value ?? 0),
-        description: String(raw.description ?? ""),
+        targetAttack,
+        value,
+        description,
         requireType: String(raw.requireType ?? ""),
         requireOpponentType: String(raw.requireOpponentType ?? ""),
         priority: Number(raw.priority ?? 0),
@@ -205,9 +226,22 @@ function toNormalizedEffectDescriptor(cardId: string, raw: {
             };
         case "hp_heal":
             return { effectId: "support.hp_heal", effectArgs: { value } };
-        case "catalog_text":
-            // Display-only support text from the full catalog; no mechanical effect yet.
-            return { effectId: "", effectArgs: {} };
+        case "catalog_text": {
+            const inferred = inferSupportEffectFromDescription(
+                String(supportEffect.description ?? "")
+            );
+            if (!inferred) return { effectId: "", effectArgs: {} };
+            const mapped = supportTypeToEffectId(inferred.type);
+            if (!mapped) return { effectId: "", effectArgs: {} };
+            return {
+                effectId: mapped.effectId,
+                effectArgs: {
+                    ...mapped.effectArgs,
+                    ...(inferred.targetAttack ? { targetAttack: inferred.targetAttack } : {}),
+                    ...(inferred.value != null ? { value: inferred.value } : {}),
+                },
+            };
+        }
         default:
             throw new Error(
                 `[cardCatalogLoader] Unsupported legacy supportEffect.type "${type}" on card "${cardId}". Add a normalized mapping first.`
@@ -231,10 +265,10 @@ function normalizeAttack<T extends "circle" | "triangle" | "cross">(
     let effectArgs = normalizeEffectArgs(a.effectArgs);
     const description = String(a.description ?? "");
     if (!effectId) {
-        const foe = parseSpecialtyFoeFromDescription(description);
-        if (foe) {
-            effectId = foe.effectId;
-            effectArgs = foe.effectArgs;
+        const parsed = parseAttackEffectFromDescription(description);
+        if (parsed) {
+            effectId = parsed.effectId;
+            effectArgs = { ...parsed.effectArgs, ...effectArgs };
         }
     }
     if (effectId) {
@@ -247,23 +281,6 @@ function normalizeAttack<T extends "circle" | "triangle" | "cross">(
         description,
         effectId,
         effectArgs,
-    };
-}
-
-/** Catalog "Ice Foe x3" → attack.specialty_mult (FC-016). */
-function parseSpecialtyFoeFromDescription(
-    description: string
-): { effectId: string; effectArgs: EffectArgs } | null {
-    const m = description.trim().match(/^(Dark(?:ness)?|Fire|Ice|Nature|Rare)\s+Foe\s+x(\d+)\.?$/i);
-    if (!m) return null;
-    const multiplier = parseInt(m[2] ?? "0", 10);
-    if (!Number.isFinite(multiplier) || multiplier <= 1) return null;
-    const raw = String(m[1] ?? "");
-    const specialty =
-        /^dark/i.test(raw) ? "Dark" : raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase();
-    return {
-        effectId: "attack.specialty_mult",
-        effectArgs: { specialty, multiplier },
     };
 }
 

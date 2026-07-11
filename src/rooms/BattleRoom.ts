@@ -1145,7 +1145,13 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
                     applyBattleOptionToContext(this.toOptionCardView(card), source.sessionId, ctx);
                     source.trash.push(card);
                 },
-            }
+            },
+            this.ruleProfile.battle.attackLockBeforeSupport
+                ? {
+                      activeAttack: this.attackChoices.get(active.sessionId) ?? null,
+                      defenderAttack: this.attackChoices.get(defender.sessionId) ?? null,
+                  }
+                : undefined
         );
 
         // Digimon supports (and voided options) must reach trash; surviving options

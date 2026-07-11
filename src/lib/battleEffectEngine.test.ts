@@ -134,6 +134,25 @@ describe("first strike cancel (FC-018)", () => {
         expect(attackerHp).toBe(500);
         expect(events.some(e => e.type === "first_strike_cancel")).toBe(true);
     });
+
+    it("honors attack.first_strike on the selected attack (FC-027)", () => {
+        const ctx = createSupportBattleContext();
+        const attacker = combatant("a", 500, "attack.first_strike", 400);
+        const defender = combatant("d", 300);
+
+        const { defenderHp, attackerHp, events } = resolveBattleExchange({
+            attacker,
+            defender,
+            attackerAttack: "cross",
+            defenderAttack: "circle",
+            activeSessionId: "a",
+            supportCtx: ctx,
+        });
+
+        expect(defenderHp).toBe(0);
+        expect(attackerHp).toBe(500);
+        expect(events.some(e => e.type === "first_strike_cancel")).toBe(true);
+    });
 });
 
 describe("cross.crash and double KO (FC-019)", () => {

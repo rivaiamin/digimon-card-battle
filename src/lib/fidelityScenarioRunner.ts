@@ -732,6 +732,29 @@ export const FIDELITY_SCENARIOS: FidelityScenario[] = [
         },
     },
     {
+        id: "catalog-taxonomy-effect-normalize",
+        fidelityIds: ["FC-026", "FC-027"],
+        description: "All cardKinds present; 1st Attack/Jamming/Foe normalize to effectIds",
+        run() {
+            const kinds = new Set(CATALOG.map(c => c.cardKind));
+            if (!kinds.has("digimon") || !kinds.has("option") || !kinds.has("evolution_option")) {
+                throw new Error("missing cardKind in taxonomy");
+            }
+            const first = CATALOG.find(c => c.attacks.cross.description === "1st Attack");
+            if (!first || first.attacks.cross.effectId !== "attack.first_strike") {
+                throw new Error("1st Attack must normalize to attack.first_strike");
+            }
+            const jam = CATALOG.find(c => c.attacks.cross.description === "Jamming");
+            if (!jam || jam.attacks.cross.effectId !== "attack.jamming") {
+                throw new Error("Jamming must normalize to attack.jamming");
+            }
+            const foe = CATALOG.find(c => /Foe x\d/i.test(c.attacks.cross.description));
+            if (!foe || foe.attacks.cross.effectId !== "attack.specialty_mult") {
+                throw new Error("Specialty Foe must normalize to attack.specialty_mult");
+            }
+        },
+    },
+    {
         id: "deck-validation-canonical",
         fidelityIds: ["FC-028", "FC-029"],
         description: "Default deck is legal for standard arena",

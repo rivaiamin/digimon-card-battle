@@ -300,8 +300,14 @@ export function resolveBattleExchange(input: BattleExchangeInput): BattleExchang
         events
     );
 
-    const attackerFirst = input.supportCtx.firstStrikePlayers.has(input.attacker.sessionId);
-    const defenderFirst = input.supportCtx.firstStrikePlayers.has(input.defender.sessionId);
+    const attackerFirst =
+        input.supportCtx.firstStrikePlayers.has(input.attacker.sessionId) ||
+        getAttackEffect(input.attacker.active, input.attackerAttack)?.effectId ===
+            "attack.first_strike";
+    const defenderFirst =
+        input.supportCtx.firstStrikePlayers.has(input.defender.sessionId) ||
+        getAttackEffect(input.defender.active, input.defenderAttack)?.effectId ===
+            "attack.first_strike";
 
     const applyHit = (
         from: BattleCombatant,
