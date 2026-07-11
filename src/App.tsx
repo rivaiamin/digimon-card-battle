@@ -100,7 +100,9 @@ export default function App() {
         </div>
       )}
 
-      {screen === "game" && room && <Arena room={room} />}
+      {screen === "game" && room && (
+        <Arena room={room} onReturnToWorldMap={handleCancel} />
+      )}
     </div>
   );
 }

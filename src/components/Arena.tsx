@@ -38,6 +38,7 @@ import {
     getPrepPrimaryActionLabel,
     getPrepSecondaryActionLabel,
 } from "../lib/prepPhaseCopy";
+import { VictoryOverlay } from "./battle/VictoryOverlay";
 
 const INITIAL_PLAYER_STATE: PlayerState = {
     active: null,
@@ -148,10 +149,11 @@ const mapSchemaToPlayerState = (schema: any): PlayerState => {
 };
 
 type ArenaProps = {
+    onReturnToWorldMap: () => void;
     room: Room<BattleStateSchema>;
 };
 
-export const Arena: React.FC<ArenaProps> = ({ room }) => {
+export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap }) => {
     const audio = useAudio();
     const [clickDebug, setClickDebug] = useState<string>("");
     const [gameState, setGameState] = useState<GameState>({
@@ -1086,38 +1088,16 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                 </div>
             )}
 
-            {gameState.phase === 'victory' && !vfx.isAnimating && (
-                <motion.div
-                    className="fixed inset-0 bg-overlay z-[200] flex items-center justify-center"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.35 }}
-                >
-                    <motion.div
-                        className="text-center"
-                        initial={{ opacity: 0, y: 16, scale: 0.96 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-                    >
-                        <h1 className="text-8xl font-black text-ps-yellow italic mb-4">
-                            {gameState.winnerSessionId === room.sessionId ? "BATTLE WON" : "BATTLE LOST"}
-                        </h1>
-                        <div className="text-muted text-sm font-mono mb-2 uppercase tracking-wide">
-                            {gameState.player.score} — {gameState.opponent.score}
-                        </div>
-                        {gameState.loserReason && (
-                            <div className="text-muted text-sm font-mono mb-6 uppercase">
-                                {String(gameState.loserReason).replace("_", " ")}
-                            </div>
-                        )}
-                        <button 
-                            onClick={() => window.location.reload()}
-                            className="bg-ps-yellow px-12 py-4 font-black"
-                        >
-                            RETURN TO WORLD MAP
-                        </button>
-                    </motion.div>
-                </motion.div>
+            {gameState.phase === "victory" && !vfx.isAnimating && (
+                <VictoryOverlay
+                    outcome={
+                        gameState.winnerSessionId === room.sessionId ? "won" : "lost"
+                    }
+                    playerScore={gameState.player.score}
+                    opponentScore={gameState.opponent.score}
+                    loserReason={gameState.loserReason}
+                    onReturnToWorldMap={onReturnToWorldMap}
+                />
             )}
         </div>
     );
