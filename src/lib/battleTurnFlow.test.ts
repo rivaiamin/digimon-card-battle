@@ -3,6 +3,7 @@ import {
     canonicalTurnPhases,
     DRAW_BEAT_MS,
     fidelityBattlePhaseChain,
+    isLegalPhaseTransition,
     isPlayerActionLegal,
     prepSubPhaseAfterDraw,
     SUPPORT_REVEAL_MS,
@@ -46,6 +47,16 @@ describe("canonical phase chain (FC-003)", () => {
         const profile = getRuleProfile("fidelity_ps1");
         expect(prepSubPhaseAfterDraw(true, false, 0, profile)).toBe("discard");
     });
+
+    it("allows only forward battle transitions for fidelity_ps1", () => {
+        expect(isLegalPhaseTransition("preparation", "battle_attack", true)).toBe(true);
+        expect(isLegalPhaseTransition("battle_attack", "battle_support", true)).toBe(true);
+        expect(isLegalPhaseTransition("battle_support", "battle_reveal", true)).toBe(true);
+        expect(isLegalPhaseTransition("battle_reveal", "resolution", true)).toBe(true);
+        expect(isLegalPhaseTransition("resolution", "draw", true)).toBe(true);
+        expect(isLegalPhaseTransition("battle_attack", "battle_reveal", true)).toBe(false);
+        expect(isLegalPhaseTransition("draw", "battle_attack", true)).toBe(false);
+    });
 });
 
 describe("player action legality (FC-003)", () => {
@@ -88,6 +99,35 @@ describe("player action legality (FC-003)", () => {
                 attackLocked: false,
             })
         ).toBe(true);
+    });
+
+    it("rejects all actions during reveal / resolution / victory", () => {
+        for (const phase of ["battle_reveal", "resolution", "victory"] as const) {
+            expect(
+                isPlayerActionLegal("LOCK_ATTACK", { ...base, phase, prepSubPhase: "" })
+            ).toBe(false);
+            expect(
+                isPlayerActionLegal("LOCK_SUPPORT", { ...base, phase, prepSubPhase: "" })
+            ).toBe(false);
+            expect(isPlayerActionLegal("DRAW", { ...base, phase, prepSubPhase: "" })).toBe(false);
+        }
+    });
+
+    it("rejects attack lock during support and support lock during attack", () => {
+        expect(
+            isPlayerActionLegal("LOCK_SUPPORT", {
+                ...base,
+                phase: "battle_attack",
+                prepSubPhase: "",
+            })
+        ).toBe(false);
+        expect(
+            isPlayerActionLegal("LOCK_ATTACK", {
+                ...base,
+                phase: "battle_support",
+                prepSubPhase: "",
+            })
+        ).toBe(false);
     });
 
     it("exposes draw beat timing for client pacing", () => {

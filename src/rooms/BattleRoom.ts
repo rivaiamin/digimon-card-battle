@@ -12,7 +12,6 @@ import {
     isRookieLevel,
     mulliganHand,
     resolveInitialPrepSubPhase,
-    shouldDeckOutOnDraw,
     validateDeployDigimon,
 } from "../lib/openingFlow";
 import { applyDiscardForDp } from "../lib/discardForDp";
@@ -85,6 +84,10 @@ import {
     type TimedPhaseKey,
 } from "../lib/phaseTimer";
 import { SUPPORT_REVEAL_MS } from "../lib/battleTurnFlow";
+import {
+    isDeckOutOnDraw,
+    loserSessionIdIfPointVictory,
+} from "../lib/matchOutcome";
 
 /** Set `DEBUG_BATTLE_ROOM=0` when starting the server to silence draw/deck-out traces. */
 const DEBUG_BATTLE_ROOM = process.env.DEBUG_BATTLE_ROOM !== "0";
@@ -1383,8 +1386,13 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
                 },
             });
 
-            if (winner.score >= 3) {
-                this.endGame(loser.sessionId, "points");
+            const pointLoser = loserSessionIdIfPointVictory(
+                { p1: pA.score, p2: pB.score },
+                pA.sessionId,
+                pB.sessionId
+            );
+            if (pointLoser) {
+                this.endGame(pointLoser, "points");
                 return;
             }
 
@@ -1633,7 +1641,12 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         });
 
         if (hasActive) {
-            if (shouldDeckOutOnDraw(true, player.hand.length, player.deck.length, target)) {
+            if (isDeckOutOnDraw({
+                hasActive: true,
+                handSize: player.hand.length,
+                deckSize: player.deck.length,
+                handTarget: target,
+            })) {
                 this.audit("DRAW", player, "rejected", "deck_out_active", {
                     handSize: player.hand.length,
                     deckSize: player.deck.length,

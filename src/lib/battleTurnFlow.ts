@@ -107,6 +107,16 @@ export function isPlayerActionLegal(
 ): boolean {
     const { phase, prepSubPhase, isYourTurn } = ctx;
 
+    // Non-interactive phases reject all player actions (battle slice FC-003).
+    if (
+        phase === "waiting" ||
+        phase === "battle_reveal" ||
+        phase === "resolution" ||
+        phase === "victory"
+    ) {
+        return false;
+    }
+
     if (!isYourTurn) {
         return action === "LOCK_SUPPORT" || action === "LOCK_ATTACK";
     }
@@ -138,4 +148,33 @@ export function isPlayerActionLegal(
         default:
             return false;
     }
+}
+
+/**
+ * Legal forward transitions for a normal turn (excluding KO-redeploy shortcuts).
+ * Victory may be entered from any non-waiting phase via match-end rules (FC-005).
+ */
+export function isLegalPhaseTransition(
+    from: TurnPhase,
+    to: TurnPhase,
+    attackLockBeforeSupport: boolean
+): boolean {
+    if (from === to) return true;
+    if (to === "victory") return from !== "waiting" && from !== "victory";
+    if (from === "victory" || from === "waiting") return false;
+
+    const battle = fidelityBattlePhaseChain(attackLockBeforeSupport);
+    const edges = new Set<string>([
+        "draw->preparation",
+        `preparation->${battle[0]}`,
+        `${battle[0]}->${battle[1]}`,
+        `${battle[1]}->${battle[2]}`,
+        `${battle[2]}->${battle[3]}`,
+        // After resolution, next turn starts with draw (FC-004 handoff).
+        "resolution->draw",
+        // KO redeploy / double-KO return to preparation deploy.
+        "resolution->preparation",
+    ]);
+
+    return edges.has(`${from}->${to}`);
 }

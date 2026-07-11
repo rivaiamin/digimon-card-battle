@@ -29,8 +29,15 @@ import {
 } from "./optionResolver";
 import { canPlayEvolutionOption, canPlayPrepOption } from "./optionEligibility";
 import { getPrepOptionBadge } from "./prepOptionPresentation";
-import { isPlayerActionLegal, prepSubPhaseAfterDraw } from "./battleTurnFlow";
+import { isPlayerActionLegal, prepSubPhaseAfterDraw, isLegalPhaseTransition } from "./battleTurnFlow";
 import type { PlayerActionType } from "./battleTurnFlow";
+import {
+    applyScoreDelta,
+    isDeckOutOnDraw,
+    isDeckOutOnRequiredDeploy,
+    loserSessionIdIfPointVictory,
+    MATCH_POINTS_TO_WIN,
+} from "./matchOutcome";
 import { PHASE_TIMER_MS, phaseTimerDurationMs } from "./phaseTimer";
 import { getRuleProfile } from "./ruleProfile";
 import { createSeededRng, shuffleInPlace } from "./seededRng";
@@ -146,6 +153,40 @@ export const FIDELITY_SCENARIOS: FidelityScenario[] = [
             }
             if (!isPlayerActionLegal("DISCARD_FOR_DP", { ...ctx, phase: "preparation", prepSubPhase: "discard" })) {
                 throw new Error("discard should be legal in discard sub-phase");
+            }
+        },
+    },
+    {
+        id: "battle-phase-action-guards",
+        fidelityIds: ["FC-003"],
+        description: "Battle lock actions only in their phases; reveal/resolution reject inputs",
+        run() {
+            const ctx = {
+                isYourTurn: true,
+                hasActive: true,
+                supportLocked: false,
+                attackLocked: false,
+            };
+            if (!isPlayerActionLegal("LOCK_ATTACK", { ...ctx, phase: "battle_attack", prepSubPhase: "" })) {
+                throw new Error("LOCK_ATTACK should be legal in battle_attack");
+            }
+            if (isPlayerActionLegal("LOCK_SUPPORT", { ...ctx, phase: "battle_attack", prepSubPhase: "" })) {
+                throw new Error("LOCK_SUPPORT must be rejected during battle_attack");
+            }
+            if (!isPlayerActionLegal("LOCK_SUPPORT", { ...ctx, phase: "battle_support", prepSubPhase: "" })) {
+                throw new Error("LOCK_SUPPORT should be legal in battle_support");
+            }
+            if (isPlayerActionLegal("LOCK_ATTACK", { ...ctx, phase: "battle_reveal", prepSubPhase: "" })) {
+                throw new Error("LOCK_ATTACK must be rejected during battle_reveal");
+            }
+            if (isPlayerActionLegal("DRAW", { ...ctx, phase: "resolution", prepSubPhase: "" })) {
+                throw new Error("DRAW must be rejected during resolution");
+            }
+            if (!isLegalPhaseTransition("battle_attack", "battle_support", true)) {
+                throw new Error("fidelity battle must allow attack→support");
+            }
+            if (isLegalPhaseTransition("draw", "battle_support", true)) {
+                throw new Error("draw must not skip to battle_support");
             }
         },
     },
@@ -505,6 +546,48 @@ export const FIDELITY_SCENARIOS: FidelityScenario[] = [
             if (!ko.isDoubleKo) throw new Error("expected double KO");
             if (ko.scoreDelta.p1 !== 0 || ko.scoreDelta.p2 !== 0) {
                 throw new Error("double KO should not award points");
+            }
+        },
+    },
+    {
+        id: "match-win-loss-triggers",
+        fidelityIds: ["FC-005"],
+        description: "3-point win, deck-out on draw, deploy deck-out, double-KO tie continues",
+        run() {
+            if (MATCH_POINTS_TO_WIN !== 3) throw new Error("match is first-to-3");
+
+            const afterTwo = applyScoreDelta({ p1: 2, p2: 1 }, resolveKoScoring(0, 400).scoreDelta);
+            if (loserSessionIdIfPointVictory(afterTwo, "a", "b") !== null) {
+                throw new Error("2-2 should not end the match");
+            }
+            const afterThree = applyScoreDelta(afterTwo, resolveKoScoring(0, 100).scoreDelta);
+            if (loserSessionIdIfPointVictory(afterThree, "a", "b") !== "a") {
+                throw new Error("p2 at 3 points should make a the loser");
+            }
+
+            const tied = applyScoreDelta({ p1: 2, p2: 2 }, resolveKoScoring(0, 0).scoreDelta);
+            if (tied.p1 !== 2 || tied.p2 !== 2) throw new Error("double KO must not change score");
+            if (loserSessionIdIfPointVictory(tied, "a", "b") !== null) {
+                throw new Error("double KO tie must continue the match");
+            }
+
+            if (
+                !isDeckOutOnDraw({
+                    hasActive: true,
+                    handSize: 1,
+                    deckSize: 0,
+                    handTarget: 4,
+                })
+            ) {
+                throw new Error("deck-out on draw when below hand target");
+            }
+            if (
+                !isDeckOutOnRequiredDeploy({
+                    hasLegalDeployInHand: false,
+                    recoveredFromDeck: false,
+                })
+            ) {
+                throw new Error("deck-out when required deploy impossible");
             }
         },
     },
