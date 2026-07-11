@@ -817,7 +817,7 @@ export const FIDELITY_SCENARIOS: FidelityScenario[] = [
     {
         id: "catalog-taxonomy-effect-normalize",
         fidelityIds: ["FC-026", "FC-027"],
-        description: "All cardKinds present; 1st Attack/Jamming/Foe normalize to effectIds",
+        description: "All cardKinds present; attack + compound support text normalize",
         run() {
             const kinds = new Set(CATALOG.map(c => c.cardKind));
             if (!kinds.has("digimon") || !kinds.has("option") || !kinds.has("evolution_option")) {
@@ -834,6 +834,23 @@ export const FIDELITY_SCENARIOS: FidelityScenario[] = [
             const foe = CATALOG.find(c => /Foe x\d/i.test(c.attacks.cross.description));
             if (!foe || foe.attacks.cross.effectId !== "attack.specialty_mult") {
                 throw new Error("Specialty Foe must normalize to attack.specialty_mult");
+            }
+            const compose = CATALOG.find(
+                c =>
+                    c.supportEffect?.type === "compose" ||
+                    /Attack first\.\s*Boost own Attack Power/i.test(
+                        String(c.supportEffect?.description ?? "")
+                    )
+            );
+            if (compose && compose.supportEffect?.type !== "compose" && compose.supportEffect?.type !== "first_strike") {
+                // Prefer compose when multi-clause text was promoted.
+                if (
+                    /Attack first/i.test(String(compose.supportEffect?.description ?? "")) &&
+                    /Boost/i.test(String(compose.supportEffect?.description ?? "")) &&
+                    compose.supportEffect?.type === "catalog_text"
+                ) {
+                    throw new Error("multi-clause Attack first+Boost should promote off catalog_text");
+                }
             }
         },
     },

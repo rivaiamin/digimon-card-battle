@@ -226,7 +226,13 @@ function hasCrash(active: BattleCombatant["active"], attack: AttackType): boolea
     return getAttackEffect(active, "cross")?.effectId === "cross.crash";
 }
 
-function hasEatUp(active: BattleCombatant["active"], attack: AttackType): boolean {
+function hasEatUp(
+    active: BattleCombatant["active"],
+    attack: AttackType,
+    sessionId: string,
+    supportCtx: SupportBattleContext
+): boolean {
+    if (supportCtx.eatUpHpPlayers.has(sessionId)) return true;
     if (attack !== "cross" || !active) return false;
     return getAttackEffect(active, "cross")?.effectId === "cross.eat_up_hp";
 }
@@ -386,10 +392,28 @@ export function resolveBattleExchange(input: BattleExchangeInput): BattleExchang
         strikeAttackerFirst();
     }
 
-    if (hasEatUp(input.attacker.active, input.attackerAttack) && toDefender > 0 && defenderHp >= 0) {
+    if (
+        hasEatUp(
+            input.attacker.active,
+            input.attackerAttack,
+            input.attacker.sessionId,
+            input.supportCtx
+        ) &&
+        toDefender > 0 &&
+        defenderHp >= 0
+    ) {
         attackerHp = applyEatUpHp({ ...input.attacker, hp: attackerHp }, toDefender, events);
     }
-    if (hasEatUp(input.defender.active, input.defenderAttack) && toAttacker > 0 && attackerHp >= 0) {
+    if (
+        hasEatUp(
+            input.defender.active,
+            input.defenderAttack,
+            input.defender.sessionId,
+            input.supportCtx
+        ) &&
+        toAttacker > 0 &&
+        attackerHp >= 0
+    ) {
         defenderHp = applyEatUpHp({ ...input.defender, hp: defenderHp }, toAttacker, events);
     }
 

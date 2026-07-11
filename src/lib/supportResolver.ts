@@ -6,6 +6,7 @@
 
 import type { CardSchema, PlayerSchema, SupportEffectSchema } from "../schema/BattleState";
 import { sortEffectsByConflictPolicy } from "./effectConflictResolver";
+import { inferSupportEffectFromDescription, splitEffectClauses } from "./effectTextNormalize";
 
 export type AttackType = "circle" | "triangle" | "cross";
 
@@ -13,20 +14,42 @@ export type SupportEffectType =
     | "void_enemy_support"
     | "first_strike"
     | "change_attack"
+    | "both_change_attack"
     | "atk_mult"
     | "halve_hp"
+    | "self_halve_hp"
+    | "both_halve_hp"
     | "atk_buff"
-    | "hp_heal";
+    | "both_atk_buff"
+    | "both_atk_zero"
+    | "hp_heal"
+    | "change_own_specialty"
+    | "hand_x_atk"
+    | "grant_eat_up_hp"
+    | "zero_attacks"
+    | "draw_cards"
+    | "compose";
 
 /** Spec §2.B — lower runs first within the battle support stack. */
 export const SUPPORT_PRIORITY: Record<SupportEffectType, number> = {
     void_enemy_support: 1,
     first_strike: 1,
     change_attack: 2,
+    both_change_attack: 2,
+    change_own_specialty: 2,
     atk_mult: 3,
+    zero_attacks: 3,
+    both_atk_zero: 3,
     halve_hp: 3,
+    self_halve_hp: 3,
+    both_halve_hp: 3,
     atk_buff: 4,
+    both_atk_buff: 4,
+    hand_x_atk: 4,
+    grant_eat_up_hp: 4,
+    draw_cards: 5,
     hp_heal: 5,
+    compose: 4,
 };
 
 export type SupportEffectInput = {
@@ -47,6 +70,8 @@ export interface SupportBattleContext {
     attackMultiplier: Map<string, AttackMultipliers>;
     firstStrikePlayers: Set<string>;
     forcedAttack: Map<string, AttackType>;
+    /** Support-granted Eat-up HP for the rest of this exchange (FC-027). */
+    eatUpHpPlayers: Set<string>;
 }
 
 export function createSupportBattleContext(): SupportBattleContext {
@@ -55,6 +80,7 @@ export function createSupportBattleContext(): SupportBattleContext {
         attackMultiplier: new Map(),
         firstStrikePlayers: new Set(),
         forcedAttack: new Map(),
+        eatUpHpPlayers: new Set(),
     };
 }
 
@@ -239,17 +265,74 @@ function letterToAttack(letter: string | undefined): AttackType | null {
     return null;
 }
 
+function applyAtkBuff(
+    ctx: SupportBattleContext,
+    sessionId: string,
+    value: number,
+    targetAttack: string
+) {
+    const bonus = getBonuses(ctx, sessionId);
+    const t = targetAttack;
+    if (t === "all" || !t) {
+        bonus.circle += value;
+        bonus.triangle += value;
+        bonus.cross += value;
+    } else if (t === "circle" || t === "triangle" || t === "cross") {
+        bonus[t] += value;
+    }
+    ctx.attackBonus.set(sessionId, bonus);
+}
+
+function applyZeroAttacks(ctx: SupportBattleContext, sessionId: string, targetsCsv: string) {
+    const mult = getMultipliers(ctx, sessionId);
+    const parts = targetsCsv.split(",").map(s => s.trim().toLowerCase());
+    for (const p of parts) {
+        if (p === "circle" || p === "triangle" || p === "cross") {
+            mult[p] = 0;
+        } else if (p === "all" || !p) {
+            mult.circle = 0;
+            mult.triangle = 0;
+            mult.cross = 0;
+        }
+    }
+    ctx.attackMultiplier.set(sessionId, mult);
+}
+
 function applySingleEffect(
     source: PlayerSchema,
     target: PlayerSchema,
     effect: SupportEffectSchema,
-    ctx: SupportBattleContext
+    ctx: SupportBattleContext,
+    hooks?: ResolveSupportHooks
 ): void {
-    const type = effect.type as SupportEffectType;
+    const type = String(effect.type ?? "");
 
-    switch (type) {
+    if (type === "compose") {
+        const clauses = splitEffectClauses(String(effect.description ?? ""));
+        for (const clause of clauses) {
+            const step = inferSupportEffectFromDescription(clause);
+            if (!step) continue;
+            applySingleEffect(
+                source,
+                target,
+                {
+                    type: step.type,
+                    targetAttack: step.targetAttack ?? "",
+                    value: step.value ?? 0,
+                    description: step.description,
+                    requireType: "",
+                    requireOpponentType: "",
+                    priority: 0,
+                } as SupportEffectSchema,
+                ctx,
+                hooks
+            );
+        }
+        return;
+    }
+
+    switch (type as SupportEffectType) {
         case "void_enemy_support":
-            // Nullification already applied before the stack; keep as no-op safety.
             target.supportCard = null;
             break;
         case "first_strike":
@@ -258,6 +341,14 @@ function applySingleEffect(
         case "change_attack": {
             const forced = effect.targetAttack as AttackType;
             if (forced === "circle" || forced === "triangle" || forced === "cross") {
+                ctx.forcedAttack.set(target.sessionId, forced);
+            }
+            break;
+        }
+        case "both_change_attack": {
+            const forced = effect.targetAttack as AttackType;
+            if (forced === "circle" || forced === "triangle" || forced === "cross") {
+                ctx.forcedAttack.set(source.sessionId, forced);
                 ctx.forcedAttack.set(target.sessionId, forced);
             }
             break;
@@ -276,21 +367,33 @@ function applySingleEffect(
             ctx.attackMultiplier.set(source.sessionId, mult);
             break;
         }
+        case "zero_attacks":
+            applyZeroAttacks(ctx, source.sessionId, String(effect.targetAttack || "all"));
+            break;
+        case "both_atk_zero":
+            applyZeroAttacks(ctx, source.sessionId, "all");
+            applyZeroAttacks(ctx, target.sessionId, "all");
+            break;
         case "halve_hp":
             target.hp = Math.floor(target.hp / 2);
             break;
-        case "atk_buff": {
-            const bonus = getBonuses(ctx, source.sessionId);
-            const v = effect.value ?? 0;
-            const t = effect.targetAttack;
-            if (t === "all" || !t) {
-                bonus.circle += v;
-                bonus.triangle += v;
-                bonus.cross += v;
-            } else if (t === "circle" || t === "triangle" || t === "cross") {
-                bonus[t] += v;
-            }
-            ctx.attackBonus.set(source.sessionId, bonus);
+        case "self_halve_hp":
+            source.hp = Math.floor(source.hp / 2);
+            break;
+        case "both_halve_hp":
+            source.hp = Math.floor(source.hp / 2);
+            target.hp = Math.floor(target.hp / 2);
+            break;
+        case "atk_buff":
+            applyAtkBuff(ctx, source.sessionId, effect.value ?? 0, effect.targetAttack || "all");
+            break;
+        case "both_atk_buff":
+            applyAtkBuff(ctx, source.sessionId, effect.value ?? 0, effect.targetAttack || "all");
+            applyAtkBuff(ctx, target.sessionId, effect.value ?? 0, effect.targetAttack || "all");
+            break;
+        case "hand_x_atk": {
+            const per = effect.value > 0 ? effect.value : 100;
+            applyAtkBuff(ctx, source.sessionId, source.hand.length * per, "all");
             break;
         }
         case "hp_heal": {
@@ -298,6 +401,19 @@ function applySingleEffect(
             source.hp = Math.min(max, source.hp + (effect.value ?? 0));
             break;
         }
+        case "change_own_specialty": {
+            if (source.active) {
+                const specialty = String(effect.targetAttack || "").trim();
+                if (specialty) source.active.type = specialty;
+            }
+            break;
+        }
+        case "grant_eat_up_hp":
+            ctx.eatUpHpPlayers.add(source.sessionId);
+            break;
+        case "draw_cards":
+            hooks?.drawCards?.(source, Math.max(0, effect.value ?? 0));
+            break;
         default:
             break;
     }
@@ -313,6 +429,8 @@ export type ResolveSupportHooks = {
         card: CardSchema,
         ctx: SupportBattleContext
     ) => void;
+    /** Draw N cards from online deck into hand (FC-027 draw_cards). */
+    drawCards?: (source: PlayerSchema, count: number) => void;
 };
 
 /**
@@ -400,7 +518,7 @@ export function resolveSupportPhase(
     );
 
     for (const { effect: entry } of ordered) {
-        applySingleEffect(entry.source, entry.target, entry.effect, ctx);
+        applySingleEffect(entry.source, entry.target, entry.effect, ctx, hooks);
     }
 
     return nullify;

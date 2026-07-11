@@ -1148,6 +1148,12 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
                     applyBattleOptionToContext(this.toOptionCardView(card), source.sessionId, ctx);
                     source.trash.push(card);
                 },
+                drawCards: (source, count) => {
+                    for (let i = 0; i < count; i++) {
+                        if (source.deck.length <= 0) break;
+                        source.hand.push(source.deck.shift()!);
+                    }
+                },
             },
             this.ruleProfile.battle.attackLockBeforeSupport
                 ? {

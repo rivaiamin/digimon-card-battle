@@ -1,6 +1,6 @@
 import type { CardKind, EffectArgs } from "../types";
 import {
-    inferSupportEffectFromDescription,
+    inferCompoundSupportEffect,
     letterToAttack,
     parseAttackEffectFromDescription,
     supportTypeToEffectId,
@@ -72,6 +72,17 @@ export const KNOWN_EFFECT_IDS = new Set<string>([
     "attack.specialty_mult",
     "attack.first_strike",
     "attack.jamming",
+    "support.compose",
+    "support.self_halve_hp",
+    "support.both_halve_hp",
+    "support.both_atk_buff",
+    "support.both_atk_zero",
+    "support.both_change_attack",
+    "support.change_own_specialty",
+    "support.hand_x_atk",
+    "support.grant_eat_up_hp",
+    "support.zero_attacks",
+    "support.draw_cards",
 ]);
 
 function toCardKind(rawKind: unknown): CardKind {
@@ -138,7 +149,7 @@ function normalizeSupportEffect(raw: LegacySupportEffect | null): NormalizedSupp
     if (!type) return null;
 
     if (type === "catalog_text") {
-        const inferred = inferSupportEffectFromDescription(description);
+        const inferred = inferCompoundSupportEffect(description);
         if (!inferred) {
             return {
                 type: "catalog_text",
@@ -227,7 +238,7 @@ function toNormalizedEffectDescriptor(cardId: string, raw: {
         case "hp_heal":
             return { effectId: "support.hp_heal", effectArgs: { value } };
         case "catalog_text": {
-            const inferred = inferSupportEffectFromDescription(
+            const inferred = inferCompoundSupportEffect(
                 String(supportEffect.description ?? "")
             );
             if (!inferred) return { effectId: "", effectArgs: {} };
@@ -242,10 +253,23 @@ function toNormalizedEffectDescriptor(cardId: string, raw: {
                 },
             };
         }
-        default:
-            throw new Error(
-                `[cardCatalogLoader] Unsupported legacy supportEffect.type "${type}" on card "${cardId}". Add a normalized mapping first.`
-            );
+        default: {
+            const mapped = supportTypeToEffectId(type);
+            if (!mapped) {
+                throw new Error(
+                    `[cardCatalogLoader] Unsupported legacy supportEffect.type "${type}" on card "${cardId}". Add a normalized mapping first.`
+                );
+            }
+            assertKnownEffectId(mapped.effectId, cardId);
+            return {
+                effectId: mapped.effectId,
+                effectArgs: {
+                    ...mapped.effectArgs,
+                    ...(targetAttack ? { targetAttack } : {}),
+                    ...(value ? { value } : {}),
+                },
+            };
+        }
     }
 }
 

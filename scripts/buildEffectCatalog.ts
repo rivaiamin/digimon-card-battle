@@ -10,6 +10,11 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+    inferCompoundSupportEffect,
+    parseAttackEffectFromDescription,
+    supportTypeToEffectId,
+} from "../src/lib/effectTextNormalize";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -235,12 +240,37 @@ function classifyAndMap(sourceText: string): Omit<EffectCatalogEntry, "id" | "te
     }
 
     // Draw / heal patterns often appear on options
-    const draw = text.match(/^draw (\d+) cards?/i);
-    if (draw) {
+    const draw = text.match(/^draw (\d+) cards?(?:\s|$)/i);
+    if (draw && !text.includes(".")) {
         return {
             kind: "option",
             implementedEffectId: "option.prep.draw",
             implementedArgs: { count: Number(draw[1]) },
+            status: "implemented",
+        };
+    }
+
+    const attackMapped = parseAttackEffectFromDescription(text);
+    if (attackMapped) {
+        return {
+            kind: "cross",
+            implementedEffectId: attackMapped.effectId,
+            implementedArgs: attackMapped.effectArgs,
+            status: "implemented",
+        };
+    }
+
+    const compound = inferCompoundSupportEffect(text);
+    if (compound) {
+        const mapped = supportTypeToEffectId(compound.type);
+        const clauseCount = text.split(".").filter(s => s.trim()).length;
+        return {
+            kind: clauseCount > 1 ? "mixed" : "support",
+            implementedEffectId: mapped?.effectId,
+            implementedArgs: {
+                ...(compound.targetAttack ? { targetAttack: compound.targetAttack } : {}),
+                ...(compound.value != null ? { value: compound.value } : {}),
+            },
             status: "implemented",
         };
     }
