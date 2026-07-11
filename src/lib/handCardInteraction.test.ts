@@ -171,4 +171,33 @@ describe("getHandCardInteraction", () => {
         expect(support.mode).toBe("support");
         expect(support.enabled).toBe(false);
     });
+
+    it("shows digivolve reject hints for DP, type, and level", () => {
+        const active = digimon("active", "Rookie");
+        const noDp = getHandCardInteraction(digimon("c1", "Champion"), baseCtx({
+            prepSubPhase: "evolve",
+            activeDigimon: active,
+            playerDp: 0,
+        }));
+        expect(noDp.mode).toBe("evolve_target");
+        expect(noDp.enabled).toBe(false);
+        expect(noDp.statusHint).toBe("NO DP");
+
+        const wrongType = getHandCardInteraction(
+            { ...digimon("c2", "Champion"), type: "Ice" },
+            baseCtx({
+                prepSubPhase: "evolve",
+                activeDigimon: active,
+                playerDp: 500,
+            })
+        );
+        expect(wrongType.statusHint).toBe("WRONG TYPE");
+
+        const wrongLevel = getHandCardInteraction(digimon("u1", "Ultimate"), baseCtx({
+            prepSubPhase: "evolve",
+            activeDigimon: active,
+            playerDp: 500,
+        }));
+        expect(wrongLevel.statusHint).toBe("WRONG LEVEL");
+    });
 });

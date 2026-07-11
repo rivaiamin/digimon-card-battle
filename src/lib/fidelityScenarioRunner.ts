@@ -10,6 +10,7 @@ import { buildDefaultDeckCardIds } from "./defaultDeckBuilder";
 import { validateDeck } from "./deckValidator";
 import { drawToTarget, mulliganHand, validateDeployDigimon } from "./openingFlow";
 import { applyDiscardForDp, canDiscardForDp } from "./discardForDp";
+import { evaluateEvolution } from "./evolutionEligibility";
 import { resolvePrepOption } from "./optionResolver";
 import { getPrepOptionBadge } from "./prepOptionPresentation";
 import { isPlayerActionLegal } from "./battleTurnFlow";
@@ -170,6 +171,46 @@ export const FIDELITY_SCENARIOS: FidelityScenario[] = [
             const result = resolvePrepOption(hand[0]!, state, () => 0);
             if (!result.ok || state.hp !== 700) {
                 throw new Error(`expected heal to 700 hp, got ${state.hp}`);
+            }
+        },
+    },
+    {
+        id: "prep-digivolve-legality",
+        fidelityIds: ["FC-007"],
+        description: "Normal digivolve requires adjacent level, matching specialty, DP, and digimon target",
+        run() {
+            const active = { level: "Rookie", type: "Nature" };
+            const legal = {
+                level: "Champion",
+                type: "Nature",
+                evoCost: 30,
+                cardKind: "digimon",
+            };
+            const ok = evaluateEvolution(active, legal, 30);
+            if (!ok.ok) throw new Error("legal Rookie→Champion same specialty should pass");
+
+            const wrongType = evaluateEvolution(active, { ...legal, type: "Fire" }, 100);
+            if (wrongType.ok !== false || wrongType.reason !== "wrong_specialty") {
+                throw new Error("wrong specialty must reject");
+            }
+
+            const skip = evaluateEvolution(
+                active,
+                { level: "Ultimate", type: "Nature", evoCost: 50, cardKind: "digimon" },
+                100
+            );
+            if (skip.ok !== false || skip.reason !== "invalid_level_path") {
+                throw new Error("Rookie→Ultimate without warp must reject");
+            }
+
+            const noDp = evaluateEvolution(active, legal, 29);
+            if (noDp.ok !== false || noDp.reason !== "insufficient_dp") {
+                throw new Error("insufficient DP must reject");
+            }
+
+            const optionTarget = evaluateEvolution(active, { ...legal, cardKind: "option" }, 100);
+            if (optionTarget.ok !== false || optionTarget.reason !== "not_digimon") {
+                throw new Error("option cards must not be digivolve targets");
             }
         },
     },

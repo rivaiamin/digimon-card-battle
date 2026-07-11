@@ -132,11 +132,28 @@ describe("evolution modifiers (FC-008)", () => {
         expect(
             canEvolveWithOption(
                 { level: "Rookie", type: "Fire" },
-                { level: "Ultimate", type: "Fire", evoCost: 50 },
+                { level: "Ultimate", type: "Fire", evoCost: 50, cardKind: "digimon" },
                 60,
                 mods
             )
         ).toBe(true);
+    });
+
+    it("rejects non-digimon evolve targets even with warp", () => {
+        const mods = parseEvolutionModifiers({
+            id: "warp",
+            cardKind: "evolution_option",
+            effectId: "evolution_option.warp_evolve",
+            effectArgs: { skipLevels: 1 },
+        });
+        expect(
+            canEvolveWithOption(
+                { level: "Rookie", type: "Fire" },
+                { level: "Ultimate", type: "Fire", evoCost: 0, cardKind: "option" },
+                100,
+                mods
+            )
+        ).toBe(false);
     });
 
     it("restores full stats for penalized champion to ultimate with any evo option", () => {

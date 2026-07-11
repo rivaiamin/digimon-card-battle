@@ -1,4 +1,8 @@
-import { canEvolveDigimon, matchesEvolutionType } from "./evolutionEligibility";
+import {
+    canEvolveDigimon,
+    evaluateEvolution,
+    evolutionStatusHint,
+} from "./evolutionEligibility";
 import { canDiscardForDp } from "./discardForDp";
 import { getPrepOptionBadge } from "./prepOptionPresentation";
 import {
@@ -192,12 +196,11 @@ export function getHandCardInteraction(
                 ? canEvolveWithOption(active, card, ctx.playerDp, ctx.evoModifiers)
                 : canEvolveDigimon(active, card, ctx.playerDp);
             const adjustedCost = Math.max(0, card.evoCost + ctx.evoModifiers.dpCostDelta);
-            const canAfford = ctx.playerDp >= adjustedCost;
-            const sameType = active ? matchesEvolutionType(active.type, card.type) : false;
-            let statusHint: string | null = null;
-            if (!canAfford) statusHint = "NO DP";
-            else if (!sameType) statusHint = "WRONG TYPE";
-            else if (!canEvolve) statusHint = "INVALID";
+            const gate = evaluateEvolution(active, card, ctx.playerDp, {
+                dpCostDelta: ctx.evoModifiers.dpCostDelta,
+                warpSkipLevels: ctx.selectedEvoOption ? ctx.evoModifiers.warpSkipLevels : 0,
+            });
+            const statusHint = !canEvolve && gate.ok === false ? evolutionStatusHint(gate.reason) : null;
 
             return {
                 mode: "evolve_target",
