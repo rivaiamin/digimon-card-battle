@@ -232,6 +232,44 @@ export const FIDELITY_SCENARIOS: FidelityScenario[] = [
         },
     },
     {
+        id: "prep-armor-evolution",
+        fidelityIds: ["FC-010"],
+        description: "Online Armor: Rookie→Armor; ArmorCrush A→C/U; De-Armor A→R",
+        run() {
+            const rookie = { level: "Rookie", type: "Fire" };
+            const armorCard = { level: "Armor", type: "Fire", evoCost: 0, cardKind: "digimon" };
+            const toArmor = evaluateEvolution(rookie, armorCard, 0);
+            if (!toArmor.ok) throw new Error("Rookie→Armor should pass at 0 DP");
+
+            const armorActive = { level: "Armor", type: "Fire" };
+            const champion = { level: "Champion", type: "Fire", evoCost: 20, cardKind: "digimon" };
+            const bareCrush = evaluateEvolution(armorActive, champion, 100);
+            if (bareCrush.ok !== false || bareCrush.reason !== "needs_armor_option") {
+                throw new Error("Armor→Champion without ArmorCrush must need option");
+            }
+
+            const crush = evaluateEvolution(armorActive, champion, 20, { armorCrush: true });
+            if (!crush.ok) throw new Error("ArmorCrush should allow Armor→Champion");
+
+            const deArmor = evaluateEvolution(
+                armorActive,
+                { level: "Rookie", type: "Fire", evoCost: 0, cardKind: "digimon" },
+                0,
+                { deArmor: true }
+            );
+            if (!deArmor.ok) throw new Error("De-Armor should allow Armor→Rookie");
+
+            const crushOpt = CATALOG_BY_ID.get("294");
+            const deOpt = CATALOG_BY_ID.get("298");
+            if (crushOpt?.effectId !== "evolution_option.armor_crush") {
+                throw new Error("ArmorCrush Digivolve must normalize to evolution_option.armor_crush");
+            }
+            if (deOpt?.effectId !== "evolution_option.de_armor") {
+                throw new Error("De-Armor Digivolve must normalize to evolution_option.de_armor");
+            }
+        },
+    },
+    {
         id: "prep-post-evolution-recovery",
         fidelityIds: ["FC-009"],
         description: "Evolve restores HP to new max and clears status ailments",

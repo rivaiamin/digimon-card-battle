@@ -682,7 +682,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         const current = this.getActive(player);
         if (!current) return false;
 
-        // FC-007: only Digimon cards may be digivolution targets (options/Armor paths excluded).
+        // FC-007 / FC-010: Digimon targets only (Armor paths via eligibility).
         const evoKind = (evo.cardKind ?? "digimon").trim().toLowerCase();
         if (evoKind !== "digimon" && evoKind !== "") return false;
 

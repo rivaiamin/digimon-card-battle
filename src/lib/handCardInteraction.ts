@@ -199,6 +199,8 @@ export function getHandCardInteraction(
             const gate = evaluateEvolution(active, card, ctx.playerDp, {
                 dpCostDelta: ctx.evoModifiers.dpCostDelta,
                 warpSkipLevels: ctx.selectedEvoOption ? ctx.evoModifiers.warpSkipLevels : 0,
+                armorCrush: ctx.selectedEvoOption ? ctx.evoModifiers.armorCrush : false,
+                deArmor: ctx.selectedEvoOption ? ctx.evoModifiers.deArmor : false,
             });
             const statusHint = !canEvolve && gate.ok === false ? evolutionStatusHint(gate.reason) : null;
 

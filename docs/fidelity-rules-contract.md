@@ -48,7 +48,7 @@ Primary objective for E0 / T0-1:
 | FC-007 | Normal evolution MUST enforce level path, specialty compatibility, and DP cost gates. | `MANUAL` L340, L374; `WIKIMON` L46 | `EVOLVE` L1-L8, L14-L23; `ROOM` L372-L386 |
 | FC-008 | Evolution Option cards MUST be executable in authoritative server flow at the proper phase timing. | `MANUAL` L376 | `ROOM` L40-L156 (no option action handlers); `CARDS` L1-L439 (Digimon-only set) |
 | FC-009 | Evolution outcome MUST apply post-evolution restoration behavior per selected canonical rule (full-power recovery). | `MANUAL` L378 | `ROOM` L384 |
-| FC-010 | Partner / Armor evolution paths MUST be explicitly supported or formally scoped out for v1 with no silent mismatch. | `MANUAL` L128, L368; `WIKIMON` L36 | `EVOLVE` L1-L8 (linear ladder only); `CARDS` L287-L329 (Armor cards present but not in ladder) |
+| FC-010 | Partner / Armor evolution paths MUST be explicitly supported or formally scoped out for v1 with no silent mismatch. | `MANUAL` L128, L368; `WIKIMON` L36; `GDD` L65 | `evolutionEligibility.ts` (Rookie→Armor, ArmorCrush, De-Armor); partner Digi-Egg inventory scoped out |
 | FC-011 | Attack selection MUST use hidden lock-in and deterministic reveal/resolve sequencing. | `MANUAL` L341, L384; `WIKIMON` L50 | `ROOM` L553-L577, L562-L580 |
 | FC-012 | Support card choice order MUST follow canonical attacker/defender ordering (attacking second chooses first). | `MANUAL` L399-L400 | `ROOM` L495-L510 (unordered lock model) |
 | FC-013 | Support phase MUST allow hand selection and (if in-scope) online-deck gamble support draw with legal constraints. | `MANUAL` L401-L405; `WIKIMON` L50 | `ROOM` `lockSupport` + `supportGamble.ts` (hand or `{ gamble: true }`) |
@@ -135,7 +135,7 @@ This section freezes the initial implementation scope so E1+ can execute without
 | Group | FC IDs | Scope note |
 |---|---|---|
 | Core flow and outcomes | FC-001, FC-002, FC-003, FC-004, FC-005 | Canonical opening, turn flow, and match results for online play. |
-| DP/evolution baseline | FC-006, FC-007, FC-008, FC-009 | Includes Evolution Option support, excludes partner progression mechanics. |
+| DP/evolution baseline | FC-006, FC-007, FC-008, FC-009, FC-010 | Includes Evolution Option support and online Armor paths; partner Digi-Egg inventory scoped out. |
 | Battle/support core | FC-011, FC-012, FC-014, FC-015, FC-016, FC-017, FC-018, FC-019, FC-020 | Full battle resolver parity for online matches. |
 | Multiplayer integrity | FC-021, FC-022, FC-023, FC-024, FC-025 | Timers, anti-griefing, hidden-information integrity. |
 | Data/deck baseline | FC-026, FC-027, FC-028 | Card taxonomy, effect normalization, legal deck enforcement. |
@@ -145,7 +145,6 @@ This section freezes the initial implementation scope so E1+ can execute without
 
 | FC ID | Deferred reason | Planned epic entry point |
 |---|---|---|
-| FC-010 | Partner/Armor progression introduces cross-cutting data, UX, and long-tail balancing beyond core online parity. | E7 (after deck/runtime stabilization) |
 | FC-013 | "Online Deck gamble" support draw is a canonical behavior; implemented as All-or-Nothing top-of-deck support (`allowOnlineDeckGamble`). | DONE (P3-4) |
 | FC-029 | Arena-specific/special-rule profiles are important, but add mode complexity best layered after baseline parity is stable. | E7 |
 

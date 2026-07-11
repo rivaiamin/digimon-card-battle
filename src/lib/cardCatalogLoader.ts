@@ -57,6 +57,8 @@ export const KNOWN_EFFECT_IDS = new Set<string>([
     "evolution_option.warp_evolve",
     "evolution_option.dp_adjust",
     "evolution_option.restore_full_stats",
+    "evolution_option.armor_crush",
+    "evolution_option.de_armor",
     "cross.counter",
     "cross.to_zero",
     "cross.crash",

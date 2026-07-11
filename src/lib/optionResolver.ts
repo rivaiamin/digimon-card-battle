@@ -47,12 +47,18 @@ export interface EvolutionModifiers {
     warpSkipLevels: number;
     dpCostDelta: number;
     restoreFullStats: boolean;
+    /** ArmorCrush Digivolve: Armor → Champion or Ultimate. */
+    armorCrush: boolean;
+    /** De-Armor Digivolve: Armor → Rookie. */
+    deArmor: boolean;
 }
 
 const EMPTY_MODIFIERS: EvolutionModifiers = {
     warpSkipLevels: 0,
     dpCostDelta: 0,
     restoreFullStats: false,
+    armorCrush: false,
+    deArmor: false,
 };
 
 export function parseEvolutionModifiers(card: OptionCardLike | null | undefined): EvolutionModifiers {
@@ -62,21 +68,31 @@ export function parseEvolutionModifiers(card: OptionCardLike | null | undefined)
     switch (card.effectId) {
         case "evolution_option.warp_evolve":
             return {
+                ...EMPTY_MODIFIERS,
                 warpSkipLevels: Math.max(0, readNumberArg(args, "skipLevels", 1)),
                 dpCostDelta: readNumberArg(args, "dpCostDelta", 0),
-                restoreFullStats: false,
             };
         case "evolution_option.dp_adjust":
             return {
+                ...EMPTY_MODIFIERS,
                 warpSkipLevels: Math.max(0, readNumberArg(args, "skipLevels", 0)),
                 dpCostDelta: readNumberArg(args, "delta", 0),
-                restoreFullStats: false,
             };
         case "evolution_option.restore_full_stats":
             return {
-                warpSkipLevels: 0,
+                ...EMPTY_MODIFIERS,
                 dpCostDelta: readNumberArg(args, "dpCostDelta", 0),
                 restoreFullStats: true,
+            };
+        case "evolution_option.armor_crush":
+            return {
+                ...EMPTY_MODIFIERS,
+                armorCrush: true,
+            };
+        case "evolution_option.de_armor":
+            return {
+                ...EMPTY_MODIFIERS,
+                deArmor: true,
             };
         default:
             return { ...EMPTY_MODIFIERS };
@@ -88,6 +104,8 @@ export function mergeEvolutionModifiers(a: EvolutionModifiers, b: EvolutionModif
         warpSkipLevels: Math.max(a.warpSkipLevels, b.warpSkipLevels),
         dpCostDelta: a.dpCostDelta + b.dpCostDelta,
         restoreFullStats: a.restoreFullStats || b.restoreFullStats,
+        armorCrush: a.armorCrush || b.armorCrush,
+        deArmor: a.deArmor || b.deArmor,
     };
 }
 
@@ -100,6 +118,8 @@ export function canEvolveWithOption(
     return evaluateEvolution(active, target, playerDp, {
         dpCostDelta: modifiers.dpCostDelta,
         warpSkipLevels: modifiers.warpSkipLevels,
+        armorCrush: modifiers.armorCrush,
+        deArmor: modifiers.deArmor,
     }).ok;
 }
 

@@ -171,6 +171,38 @@ describe("evolution modifiers (FC-008)", () => {
             )
         ).toBe(true);
     });
+    it("parses ArmorCrush and De-Armor options", () => {
+        expect(
+            parseEvolutionModifiers({
+                id: "294",
+                cardKind: "evolution_option",
+                effectId: "evolution_option.armor_crush",
+            }).armorCrush
+        ).toBe(true);
+        expect(
+            parseEvolutionModifiers({
+                id: "298",
+                cardKind: "evolution_option",
+                effectId: "evolution_option.de_armor",
+            }).deArmor
+        ).toBe(true);
+    });
+
+    it("allows Armor → Champion with ArmorCrush option", () => {
+        const mods = parseEvolutionModifiers({
+            id: "294",
+            cardKind: "evolution_option",
+            effectId: "evolution_option.armor_crush",
+        });
+        expect(
+            canEvolveWithOption(
+                { level: "Armor", type: "Fire" },
+                { level: "Champion", type: "Fire", evoCost: 20, cardKind: "digimon" },
+                20,
+                mods
+            )
+        ).toBe(true);
+    });
 });
 
 describe("battle options", () => {
