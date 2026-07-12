@@ -44,17 +44,15 @@ export interface TurnStatusContext {
     needsOpeningDeploy?: boolean;
 }
 
-/** One-line phase title for the match header. */
+/** One-line phase title for the match header (role lives on seat plaques). */
 export function getTurnStatusTitle(ctx: TurnStatusContext): string {
-    const role = formatBattleRoleLabel(ctx.yourRole);
-
     if (ctx.phase === "draw") {
-        return ctx.isYourTurn ? `Turn · Draw (${role})` : `Waiting · opponent draws (${role})`;
+        return ctx.isYourTurn ? "Draw" : "Waiting · opponent draws";
     }
 
     if (ctx.phase === "preparation") {
         if (!ctx.isYourTurn) {
-            return `Waiting · opponent prepares (${role})`;
+            return "Waiting · opponent prepares";
         }
         return getPrepSubPhaseTitle(ctx.prepSubPhase, {
             handTarget: ctx.handTarget,
@@ -63,13 +61,13 @@ export function getTurnStatusTitle(ctx: TurnStatusContext): string {
     }
 
     if (ctx.phase === "battle_support") {
-        return `Battle · Support (${role})`;
+        return "Battle · Support";
     }
     if (ctx.phase === "battle_reveal") {
-        return `Battle · Reveal (${role})`;
+        return "Battle · Reveal";
     }
     if (ctx.phase === "battle_attack") {
-        return `Battle · Choose attack (${role})`;
+        return "Battle · Choose attack";
     }
     if (ctx.phase === "resolution") {
         return "Resolving battle";
@@ -78,7 +76,7 @@ export function getTurnStatusTitle(ctx: TurnStatusContext): string {
         return "Match over";
     }
 
-    return `Turn · ${role}`;
+    return "Turn";
 }
 
 /** Short action hint; empty when nothing useful to say. */

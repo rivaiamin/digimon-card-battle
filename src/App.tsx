@@ -4,8 +4,7 @@
  */
 
 import { Arena } from "./components/Arena";
-import { AudioSettings } from "./components/AudioSettings";
-import { ThemeToggle } from "./components/ThemeToggle";
+import { SystemMenu } from "./components/SystemMenu";
 import { HomeScreen } from "./components/HomeScreen";
 import { useAudio } from "./context/AudioProvider";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -119,9 +118,8 @@ export default function App() {
 
   return (
     <div className="w-full h-screen bg-app text-fg">
-      <div className="fixed top-4 right-4 z-[500] flex items-center gap-2">
-        <ThemeToggle />
-        <AudioSettings />
+      <div className="fixed top-4 right-4 z-[500]">
+        <SystemMenu />
       </div>
       {screen === "home" && <HomeScreen onJoinMatch={handleJoin} joinError={joinError} />}
 

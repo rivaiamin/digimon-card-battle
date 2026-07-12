@@ -1,8 +1,12 @@
 import React from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { cardImageSrc } from "../lib/cardImageSrc";
+import { Circle, Triangle, X, Swords, Shield } from "lucide-react";
 import { DigimonCardData, GameState } from "../types";
-import { Circle, Triangle, X } from "lucide-react";
+import {
+  getBattleRole,
+  getOpponentBattleRole,
+  type BattleRole,
+} from "../lib/battleRoles";
 
 interface HUDProps {
   player: {
@@ -10,60 +14,73 @@ interface HUDProps {
     hp: number;
     maxHp: number;
   };
-  opponent: {
-    active: DigimonCardData | null;
-    hp: number;
-    maxHp: number;
-  };
   onAttack: (type: "circle" | "triangle" | "cross") => void;
   disabled?: boolean;
   state: GameState;
+  yourSessionId: string;
 }
 
-function ResourceStack({
-  deck,
-  trash,
-  dp,
-  align,
-}: {
-  deck: number;
-  trash: number;
-  dp: number;
-  align: "left" | "right";
-}) {
+function ScorePips({ score, color }: { score: number; color: "ps-blue" | "ps-red" }) {
+  const fill = color === "ps-blue" ? "bg-ps-blue border-fg" : "bg-ps-red border-fg";
+  const empty =
+    color === "ps-blue" ? "bg-transparent border-ps-blue/40" : "bg-transparent border-ps-red/40";
   return (
-    <div
-      className={`flex flex-col gap-2 p-2 ${align === "right" ? "items-end" : "items-start"}`}
-    >
-      <div className="flex gap-2">
-        <StatBox label="Deck" value={deck} />
-        <StatBox label="Trash" value={trash} />
-      </div>
-      <StatBox label="DP" value={dp} accent />
+    <div className="flex gap-1" aria-label={`Score ${score}`}>
+      {[0, 1, 2].map(i => (
+        <div
+          key={i}
+          className={`h-2 w-2 rotate-45 border-2 sm:h-2.5 sm:w-2.5 ${i < score ? fill : empty}`}
+        />
+      ))}
     </div>
   );
 }
 
-function StatBox({
+function RoleBadge({ role }: { role: BattleRole }) {
+  const isAttacker = role === "attacker";
+  const Icon = isAttacker ? Swords : Shield;
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[9px] font-semibold sm:text-[10px] ${
+        isAttacker
+          ? "bg-ps-yellow/15 text-ps-yellow border border-ps-yellow/30"
+          : "bg-ps-blue/10 text-ps-blue border border-ps-blue/25"
+      }`}
+    >
+      <Icon className="h-3 w-3" aria-hidden />
+      {isAttacker ? "Attacker" : "Defender"}
+    </span>
+  );
+}
+
+function StatChip({
   label,
   value,
   accent,
+  compact,
 }: {
   label: string;
   value: number;
   accent?: boolean;
+  compact?: boolean;
 }) {
   return (
     <div
-      className={`min-w-[4.5rem] rounded border px-2 py-1.5 bg-surface-strong ${
-        accent ? "border-ps-blue/40" : "border-line"
-      }`}
+      className={`rounded-md bg-surface-strong/95 ring-1 ${
+        compact ? "px-1.5 py-0.5" : "px-2 py-1"
+      } ${accent ? "ring-ps-blue/35" : "ring-line"}`}
     >
-      <div className="text-[10px] font-medium text-muted">{label}</div>
       <div
-        className={`text-lg font-bold tabular-nums leading-none ${
-          accent ? "text-ps-blue" : "text-fg"
+        className={`font-medium uppercase tracking-[0.14em] text-muted leading-none ${
+          compact ? "text-[8px]" : "text-[9px]"
         }`}
+      >
+        {label}
+      </div>
+      <div
+        className={`font-bold tabular-nums leading-none ${
+          compact ? "mt-0 text-xs" : "mt-0.5 text-sm"
+        } ${accent ? "text-ps-blue" : "text-fg"}`}
       >
         {value}
       </div>
@@ -71,198 +88,227 @@ function StatBox({
   );
 }
 
-function UnitPanel({
-  unit,
-  hp,
-  side,
+function ResourceRow({
+  deck,
+  trash,
+  dp,
+  compact,
 }: {
-  unit: DigimonCardData | null;
-  hp: number;
-  side: "player" | "opponent";
+  deck: number;
+  trash: number;
+  dp: number;
+  compact?: boolean;
 }) {
-  const isOpponent = side === "opponent";
-
   return (
-    <div
-      className={`bg-surface-strong shadow-lg p-3 flex gap-3 h-full min-h-[9rem] ${
-        isOpponent
-          ? "border-b-4 border-ps-red rounded-b-lg"
-          : "border-t-4 border-ps-blue rounded-t-lg"
-      }`}
-    >
-      <div
-        className={`relative w-24 shrink-0 aspect-square rounded border-2 overflow-hidden bg-neutral-900 ${
-          isOpponent ? "border-ps-red/30" : "border-ps-blue/30"
-        }`}
-      >
-        {unit ? (
-          <img
-            src={cardImageSrc(unit)}
-            alt={unit.name}
-            className="h-full w-full object-cover"
-            referrerPolicy="no-referrer"
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center p-2 text-center text-[10px] font-semibold text-muted">
-            {isOpponent ? "No Digimon" : "Deploy a Digimon"}
-          </div>
-        )}
+    <div className={`flex flex-wrap items-center ${compact ? "gap-1" : "gap-1.5"}`}>
+      <StatChip label="Deck" value={deck} compact={compact} />
+      <StatChip label="Trash" value={trash} compact={compact} />
+      <StatChip label="DP" value={dp} accent compact={compact} />
+    </div>
+  );
+}
+
+/** Opponent seat: score + role + resources */
+function SeatPlaque({
+  score,
+  scoreColor,
+  role,
+  deck,
+  trash,
+  dp,
+}: {
+  score: number;
+  scoreColor: "ps-blue" | "ps-red";
+  role: BattleRole;
+  deck: number;
+  trash: number;
+  dp: number;
+}) {
+  return (
+    <div className="flex flex-col gap-1 rounded-xl bg-panel/90 p-1.5 ring-1 ring-line backdrop-blur-md battle-hand-island">
+      <div className="flex items-center gap-1.5 px-0.5">
+        <ScorePips score={score} color={scoreColor} />
+        <RoleBadge role={role} />
       </div>
+      <ResourceRow deck={deck} trash={trash} dp={dp} />
+    </div>
+  );
+}
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <h2 className="truncate text-lg font-bold uppercase leading-tight text-fg">
-              {unit?.name ?? "—"}
-            </h2>
-            <p className="text-xs text-muted">
-              {unit ? `${unit.level} · ${unit.type}` : "—"}
-            </p>
-          </div>
-        </div>
+type AttackBtn = {
+  type: "circle" | "triangle" | "cross";
+  icon: typeof Circle;
+  name: string;
+  damage: number;
+  colorClass: string;
+  borderClass: string;
+  hoverBorder: string;
+  hoverBg: string;
+  filled: boolean;
+};
 
-        <div className="mt-auto space-y-1">
-          <div className="flex justify-between text-xs text-muted">
-            <span>HP</span>
-            <span className="font-semibold tabular-nums text-fg">
-              {unit ? (
-                <>
-                  {hp} / {unit.maxHp}
-                </>
-              ) : (
-                "—"
-              )}
-            </span>
-          </div>
-          <div
-            className={`h-2 rounded-sm bg-fg/10 overflow-hidden border ${
-              isOpponent ? "border-ps-red/20" : "border-ps-blue/20"
-            }`}
-          >
-            <motion.div
-              initial={false}
-              animate={{
-                width: `${unit && unit.maxHp > 0 ? (hp / unit.maxHp) * 100 : 0}%`,
-              }}
-              className={`h-full ${isOpponent ? "bg-ps-red" : "bg-ps-blue"}`}
+function AttackRow({
+  attacks,
+  onAttack,
+  disabled,
+}: {
+  attacks: AttackBtn[];
+  onAttack: (type: "circle" | "triangle" | "cross") => void;
+  disabled?: boolean;
+}) {
+  return (
+    <div className="flex w-full items-stretch gap-1 sm:gap-1.5">
+      {attacks.map(btn => (
+        <button
+          key={btn.type}
+          type="button"
+          onClick={() => onAttack(btn.type)}
+          disabled={disabled}
+          className={`flex min-w-0 flex-1 flex-row items-center justify-between gap-1 rounded-lg bg-surface-strong/95 px-1.5 py-1 text-left ring-1 transition duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] sm:gap-2 sm:rounded-xl sm:px-2.5 sm:py-1.5 ${btn.borderClass} ${
+            disabled
+              ? "opacity-40 cursor-not-allowed"
+              : `${btn.hoverBorder} ${btn.hoverBg} active:scale-[0.98]`
+          }`}
+        >
+          <div className="flex min-w-0 items-center gap-1 sm:gap-1.5">
+            <btn.icon
+              className={`h-3.5 w-3.5 shrink-0 sm:h-5 sm:w-5 ${btn.colorClass} ${
+                btn.filled ? "fill-current" : "font-bold"
+              }`}
             />
+            <div className="min-w-0">
+              <div
+                className={`text-[8px] font-bold uppercase tracking-[0.1em] sm:text-[9px] ${btn.colorClass}`}
+              >
+                {btn.type}
+              </div>
+              <div className="truncate text-[9px] font-semibold text-fg sm:text-xs max-w-[4.5rem] sm:max-w-[7rem]">
+                {btn.name}
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+          <span className={`shrink-0 text-sm font-bold tabular-nums sm:text-base ${btn.colorClass}`}>
+            {btn.damage}
+          </span>
+        </button>
+      ))}
     </div>
   );
 }
 
 export const BattleHUD: React.FC<HUDProps> = ({
   player,
-  opponent,
   onAttack,
   disabled,
   state,
+  yourSessionId,
 }) => {
+  const showAttack =
+    state.phase === "battle_attack" && !state.player.attackLocked && !!player.active;
+
+  const yourRole = getBattleRole(yourSessionId, state.activePlayerSessionId ?? "");
+  const oppRole = getOpponentBattleRole(yourRole);
+  const showRoles = !!state.activePlayerSessionId && state.phase !== "waiting";
+
+  const attacks: AttackBtn[] | null =
+    showAttack && player.active?.attacks
+      ? [
+          {
+            type: "circle",
+            icon: Circle,
+            name: player.active.attacks.circle.name,
+            damage: player.active.attacks.circle.damage,
+            colorClass: "text-ps-red",
+            borderClass: "ring-ps-red/35",
+            hoverBorder: "hover:ring-ps-red",
+            hoverBg: "hover:bg-ps-red/10",
+            filled: true,
+          },
+          {
+            type: "triangle",
+            icon: Triangle,
+            name: player.active.attacks.triangle.name,
+            damage: player.active.attacks.triangle.damage,
+            colorClass: "text-ps-blue",
+            borderClass: "ring-ps-blue/35",
+            hoverBorder: "hover:ring-ps-blue",
+            hoverBg: "hover:bg-ps-blue/10",
+            filled: true,
+          },
+          {
+            type: "cross",
+            icon: X,
+            name: player.active.attacks.cross.name,
+            damage: player.active.attacks.cross.damage,
+            colorClass: "text-ps-yellow",
+            borderClass: "ring-ps-yellow/35",
+            hoverBorder: "hover:ring-ps-yellow",
+            hoverBg: "hover:bg-ps-yellow/10",
+            filled: false,
+          },
+        ]
+      : null;
+
   return (
-    <div className="fixed inset-0 pointer-events-none flex flex-col justify-between pt-28 pb-4 px-3 z-50 overflow-hidden">
-      {/* Opponent row */}
-      <div className="grid grid-cols-[auto_1fr] gap-3 max-w-5xl mx-auto w-full">
-        <ResourceStack
-          deck={state.opponent.deck.length}
-          trash={state.opponent.trash.length}
-          dp={state.opponent.dp}
-          align="left"
-        />
-        <div className="pointer-events-auto max-w-md justify-self-center w-full">
-          <UnitPanel unit={opponent.active} hp={opponent.hp} side="opponent" />
-        </div>
-      </div>
-
-      {/* Player row */}
-      <div className="grid grid-cols-[1fr_auto] gap-3 max-w-5xl mx-auto w-full items-end">
-        <div className="pointer-events-auto max-w-md justify-self-center w-full">
-          <UnitPanel unit={player.active} hp={player.hp} side="player" />
-        </div>
-        <ResourceStack
-          deck={state.player.deck.length}
-          trash={state.player.trash.length}
-          dp={state.player.dp}
-          align="right"
-        />
-      </div>
-
-      {/* Attack picker */}
-      <AnimatePresence>
-        {state.phase === "battle_attack" && !state.player.attackLocked && player.active && (
-          <motion.div
-            initial={{ opacity: 0, x: 24 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 24 }}
-            className="fixed right-4 bottom-[15.5rem] z-[1100] pointer-events-auto flex flex-col gap-2"
-          >
-            {(
-              [
-                {
-                  type: "circle" as const,
-                  icon: Circle,
-                  atk: player.active.attacks!.circle,
-                  colorClass: "text-ps-red",
-                  borderClass: "border-ps-red/35",
-                  hoverBorder: "hover:border-ps-red",
-                  hoverBg: "hover:bg-ps-red/10",
-                  filled: true,
-                },
-                {
-                  type: "triangle" as const,
-                  icon: Triangle,
-                  atk: player.active.attacks!.triangle,
-                  colorClass: "text-ps-blue",
-                  borderClass: "border-ps-blue/35",
-                  hoverBorder: "hover:border-ps-blue",
-                  hoverBg: "hover:bg-ps-blue/10",
-                  filled: true,
-                },
-                {
-                  type: "cross" as const,
-                  icon: X,
-                  atk: player.active.attacks!.cross,
-                  colorClass: "text-ps-yellow",
-                  borderClass: "border-ps-yellow/35",
-                  hoverBorder: "hover:border-ps-yellow",
-                  hoverBg: "hover:bg-ps-yellow/10",
-                  filled: false,
-                },
-              ] as const
-            ).map(btn => (
-              <button
-                key={btn.type}
-                type="button"
-                onClick={() => onAttack(btn.type)}
-                disabled={disabled}
-                className={`flex w-56 items-center justify-between gap-3 rounded border bg-surface-strong px-3 py-2.5 text-left shadow-md transition -skew-x-6 ${btn.borderClass} ${
-                  disabled
-                    ? "opacity-40 cursor-not-allowed"
-                    : `${btn.hoverBorder} ${btn.hoverBg} hover:-translate-x-0.5 active:scale-[0.98]`
-                }`}
-              >
-                <div className="flex min-w-0 skew-x-6 items-center gap-2">
-                  <btn.icon
-                    className={`h-6 w-6 shrink-0 ${btn.colorClass} ${
-                      btn.filled ? "fill-current" : "font-bold"
-                    }`}
-                  />
-                  <div className="min-w-0">
-                    <div className={`text-[10px] font-bold uppercase tracking-wide ${btn.colorClass}`}>
-                      {btn.type}
-                    </div>
-                    <div className="truncate text-sm font-semibold text-fg">{btn.atk.name}</div>
-                  </div>
-                </div>
-                <span className={`skew-x-6 text-lg font-bold tabular-nums ${btn.colorClass}`}>
-                  {btn.atk.damage}
-                </span>
-              </button>
-            ))}
-          </motion.div>
+    <div className="fixed inset-0 z-50 pointer-events-none overflow-hidden px-2 sm:px-3">
+      {/* Opponent seat — top left */}
+      <div className="absolute top-3 left-2 sm:top-4 sm:left-3 z-[1090]">
+        {showRoles ? (
+          <SeatPlaque
+            score={state.opponent.score}
+            scoreColor="ps-red"
+            role={oppRole}
+            deck={state.opponent.deck.length}
+            trash={state.opponent.trash.length}
+            dp={state.opponent.dp}
+          />
+        ) : (
+          <ResourceRow
+            deck={state.opponent.deck.length}
+            trash={state.opponent.trash.length}
+            dp={state.opponent.dp}
+          />
         )}
-      </AnimatePresence>
+      </div>
+
+      {/* Player seat — above hand; attacks nest inside during choose-attack */}
+      <div
+        className="absolute inset-x-2 z-[1100] flex justify-center sm:inset-x-3"
+        style={{ bottom: "var(--battle-hand-clearance)" }}
+      >
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={showAttack ? "seat-attack" : "seat"}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 6 }}
+            transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
+            className={`pointer-events-auto w-full max-w-lg rounded-xl bg-panel/94 p-1.5 ring-1 ring-line backdrop-blur-md battle-hand-island ${
+              showAttack ? "battle-player-seat--attack" : ""
+            }`}
+          >
+            <div className="flex flex-col gap-1.5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-2 px-0.5 pb-1.5">
+              <div className="flex items-center gap-1.5">
+                {showRoles && (
+                  <>
+                    <ScorePips score={state.player.score} color="ps-blue" />
+                    <RoleBadge role={yourRole} />
+                  </>
+                )}
+              </div>
+              <ResourceRow
+                deck={state.player.deck.length}
+                trash={state.player.trash.length}
+                dp={state.player.dp}
+                compact={false}
+              />
+            </div>
+            {attacks && (
+              <AttackRow attacks={attacks} onAttack={onAttack} disabled={disabled} />
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </div>
     </div>
   );
 };

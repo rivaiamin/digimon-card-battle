@@ -61,6 +61,8 @@ type PlayerHandZoneProps = {
     mulliganStatus?: MulliganStatusProps;
     discardStatus?: DiscardStatusProps;
     prepOptionStatus?: PrepOptionStatusProps;
+    /** Tighter chrome while attack picker is up */
+    compact?: boolean;
 };
 
 function handleCardClick(
@@ -104,6 +106,7 @@ export const PlayerHandZone: React.FC<PlayerHandZoneProps> = ({
     mulliganStatus,
     discardStatus,
     prepOptionStatus,
+    compact = false,
 }) => {
     const showBar =
         hand.length > 0 ||
@@ -116,13 +119,34 @@ export const PlayerHandZone: React.FC<PlayerHandZoneProps> = ({
 
     if (!showBar) return null;
 
+    // Status chips already cover mulligan/draw copy — skip duplicate footer text
+    const showFooterHint = !!(
+        supportHint ||
+        (phaseActionsFooter &&
+            !mulliganStatus?.visible &&
+            !drawStatus?.visible &&
+            !discardStatus?.visible)
+    );
+
     return (
-        <div className="fixed bottom-0 inset-x-0 z-[1000] pointer-events-none flex flex-col items-center">
-            <div className="pointer-events-auto w-full border-t border-line bg-panel/95 backdrop-blur-sm px-4 py-3 shadow-[0_-8px_32px_rgba(0,0,0,0.25)]">
-                <div className="mx-auto flex w-full max-w-[min(100vw-2rem,64rem)] flex-col gap-2">
-                    <div className="flex items-center justify-between gap-3 border-b border-line/40 pb-2">
-                        <div className="flex min-w-0 items-center gap-2">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-muted shrink-0">
+        <div
+            className={`fixed bottom-0 inset-x-0 z-[1000] pointer-events-none flex flex-col items-center px-2 pb-[max(0.35rem,env(safe-area-inset-bottom))] sm:px-3 ${
+                compact ? "battle-hand--compact" : ""
+            }`}
+        >
+            <div
+                className={`pointer-events-auto w-full max-w-3xl rounded-2xl bg-panel/92 ring-1 ring-line backdrop-blur-md battle-hand-island ${
+                    compact ? "p-1" : "p-1.5"
+                }`}
+            >
+                <div
+                    className={`rounded-[calc(1rem-0.2rem)] bg-surface-strong/85 shadow-[inset_0_1px_0_rgba(255,255,255,0.28)] ${
+                        compact ? "px-2 py-1" : "px-2.5 py-1.5"
+                    }`}
+                >
+                    <div className="flex min-w-0 items-center gap-2">
+                        <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto scrollbar-thin">
+                            <span className="shrink-0 text-[10px] font-black uppercase tracking-[0.18em] text-muted">
                                 Hand ({hand.length})
                             </span>
                             {drawStatus && (
@@ -157,24 +181,25 @@ export const PlayerHandZone: React.FC<PlayerHandZoneProps> = ({
                                 />
                             )}
                         </div>
+
                         {phaseActions && (
-                            <div className="flex shrink-0 items-center justify-end gap-2 [&_button]:whitespace-nowrap [&_button]:text-xs [&_button]:font-black [&_button]:px-3 [&_button]:py-1.5 [&_button]:border-2 [&_button]:border-fg">
+                            <div className="flex shrink-0 items-center gap-1.5 [&_button]:whitespace-nowrap [&_button]:rounded-full [&_button]:px-3 [&_button]:py-1.5 [&_button]:text-[10px] sm:[&_button]:text-[11px] [&_button]:font-black [&_button]:tracking-wide [&_button]:transition [&_button]:duration-500 [&_button]:ease-[cubic-bezier(0.32,0.72,0,1)] [&_button]:active:scale-[0.98]">
                                 {phaseActions}
                             </div>
                         )}
                     </div>
 
-                    {(supportHint || phaseActionsFooter) && (
-                        <div className="flex flex-col items-center gap-1 text-center">
+                    {showFooterHint && (
+                        <div className="mt-1 text-center">
                             {supportHint && (
-                                <p className="text-xs text-muted">{supportHint}</p>
+                                <p className="text-[10px] text-muted leading-snug">{supportHint}</p>
                             )}
                             {phaseActionsFooter}
                         </div>
                     )}
 
                     {hand.length > 0 && (
-                        <div className="flex w-full justify-center gap-3 overflow-x-auto overflow-y-visible px-1 pb-1 pt-2 scrollbar-thin">
+                        <div className="mt-1.5 flex w-full justify-center gap-1.5 overflow-x-auto overflow-y-visible px-0.5 pb-0.5 scrollbar-thin sm:gap-2">
                             {hand.map(card => {
                                 const interaction = getHandCardInteraction(card, context);
                                 const dimmed = interaction.mode === "inactive";
@@ -195,13 +220,13 @@ export const PlayerHandZone: React.FC<PlayerHandZoneProps> = ({
                                         }
                                         onMouseEnter={() => onHover(card)}
                                         onMouseLeave={() => onHover(null)}
-                                        className={`relative shrink-0 rounded transition-opacity ${
+                                        className={`relative shrink-0 rounded transition-opacity duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${
                                             dimmed ? "opacity-45" : "opacity-100"
                                         } ${clickable ? "cursor-pointer" : "cursor-default"} ${
                                             interaction.ringClass
                                         } ${
                                             isNewlyDrawn
-                                                ? "ring-2 ring-ps-green/70 ring-offset-2 ring-offset-app shadow-[0_0_20px_rgba(34,197,94,0.35)]"
+                                                ? "ring-2 ring-ps-green/70 ring-offset-2 ring-offset-app"
                                                 : ""
                                         }`}
                                     >
@@ -214,13 +239,13 @@ export const PlayerHandZone: React.FC<PlayerHandZoneProps> = ({
                                         />
                                         {interaction.badge && (
                                             <div
-                                                className={`text-[10px] font-black text-center px-0.5 leading-tight ${
+                                                className={`text-[9px] font-black text-center px-0.5 leading-tight ${
                                                     interaction.mode === "deploy"
                                                         ? "bg-ps-green text-black"
                                                         : interaction.mode === "prep_option"
                                                           ? "bg-ps-yellow text-black"
                                                           : interaction.mode ===
-                                                                "evolve_option" ||
+                                                                  "evolve_option" ||
                                                               interaction.mode === "evolve_target"
                                                             ? "bg-ps-blue text-white"
                                                             : interaction.mode === "support"
@@ -234,22 +259,16 @@ export const PlayerHandZone: React.FC<PlayerHandZoneProps> = ({
                                             </div>
                                         )}
                                         {interaction.statusHint && (
-                                            <div className="text-[10px] font-bold text-ps-red text-center leading-none">
+                                            <div className="text-[9px] font-bold text-ps-red text-center leading-none">
                                                 {interaction.statusHint}
                                             </div>
                                         )}
                                         {interaction.mode === "discard" &&
                                             interaction.enabled && (
-                                                <div className="absolute inset-0 bg-ps-red/0 hover:bg-ps-red/75 flex items-center justify-center text-white text-[10px] font-bold text-center p-1 opacity-0 hover:opacity-100 transition-opacity rounded">
+                                                <div className="absolute inset-0 bg-ps-red/0 hover:bg-ps-red/75 flex items-center justify-center text-white text-[9px] font-bold text-center p-1 opacity-0 hover:opacity-100 transition-opacity rounded">
                                                     DISCARD
                                                     <br />
                                                     (+{card.plusDp} DP)
-                                                </div>
-                                            )}
-                                        {interaction.mode === "support" &&
-                                            card.supportEffect && (
-                                                <div className="absolute inset-x-0 bottom-full mb-1 hidden group-hover:block bg-surface-strong text-[10px] p-1.5 border border-line whitespace-nowrap text-fg z-10">
-                                                    {card.supportEffect.description}
                                                 </div>
                                             )}
                                     </div>

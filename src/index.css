@@ -210,3 +210,217 @@ body {
   25% { transform: translate(-3px, 1px); }
   75% { transform: translate(3px, -1px); }
 }
+
+/* Battle chrome — viewport-driven clearance so field Digimon stay visible */
+:root {
+  --battle-hand-clearance: 10.5rem;
+  --battle-top-clearance: 2.5rem;
+  --field-card-scale: 0.48;
+  --battle-center-gap: 5.5rem;
+  --hand-mini-w: 5.25rem;
+  --hand-mini-h: 7.85rem;
+  --attack-dock-height: 3.35rem;
+  --player-seat-attack-extra: 3.35rem;
+  --player-field-lift: 0px;
+  --field-placeholder-w: 18rem;
+  --field-placeholder-h: 30rem;
+  /* DigimonCard field size (w-72 h-[480px]) — used to collapse scale() layout waste */
+  --field-slot-w: 18rem;
+  --field-slot-h: 30rem;
+  /*
+   * Play-field midpoint accounts for hand (and player seat) eating the bottom.
+   * Header is position:fixed → use dvh. Field band is inside a 200vh arena →
+   * shift from 50% by a fraction of --play-bottom.
+   */
+  --play-bottom: var(--battle-hand-clearance);
+  --play-mid: calc((100dvh - var(--play-bottom)) * 0.5);
+  --field-band-top: calc(50% - var(--play-bottom) / 2);
+}
+
+@media (min-width: 1024px) and (min-height: 821px) {
+  :root {
+    --battle-hand-clearance: 11rem;
+    --field-card-scale: 0.55;
+    --battle-center-gap: 6.25rem;
+    --hand-mini-w: 5.75rem;
+    --hand-mini-h: 8.5rem;
+    --attack-dock-height: 3.5rem;
+    --player-seat-attack-extra: 3.5rem;
+  }
+}
+
+/* 1366×768 and other short landscape desktops */
+@media (max-height: 820px) {
+  :root {
+    --battle-hand-clearance: 9.25rem;
+    --battle-top-clearance: 2rem;
+    --field-card-scale: 0.34;
+    --battle-center-gap: 5rem;
+    --hand-mini-w: 4.25rem;
+    --hand-mini-h: 6.4rem;
+    --attack-dock-height: 3.15rem;
+    --player-seat-attack-extra: 3.15rem;
+  }
+}
+
+@media (max-width: 767px) {
+  :root {
+    --battle-hand-clearance: 10.75rem;
+    --battle-top-clearance: 2rem;
+    --field-card-scale: 0.3;
+    --battle-center-gap: 4.75rem;
+    --hand-mini-w: 3.85rem;
+    --hand-mini-h: 5.75rem;
+    --attack-dock-height: 3.1rem;
+    --player-seat-attack-extra: 3.1rem;
+  }
+}
+
+@media (max-width: 767px) and (max-height: 700px) {
+  :root {
+    --battle-hand-clearance: 9.5rem;
+    --field-card-scale: 0.26;
+    --battle-center-gap: 4.25rem;
+    --attack-dock-height: 2.95rem;
+    --player-seat-attack-extra: 2.95rem;
+  }
+}
+
+.battle-stage {
+  padding-bottom: var(--battle-hand-clearance);
+}
+
+/*
+ * Choose-attack: player seat includes attack row → taller bottom chrome.
+ * Digimon sit lower (mild band lift) so top void shrinks into the seat.
+ */
+.battle-stage--choosing-attack {
+  --play-bottom: calc(
+    var(--battle-hand-clearance) + var(--player-seat-attack-extra) + 2.75rem
+  );
+  --play-mid: calc((100dvh - var(--play-bottom)) * 0.55);
+  --field-band-top: calc(50% - var(--play-bottom) * 0.2);
+  --player-field-lift: 0px;
+  --battle-center-gap: 7.25rem;
+}
+
+@media (max-width: 767px) {
+  .battle-stage--choosing-attack {
+    --field-card-scale: 0.3;
+    --battle-center-gap: 7rem;
+    --player-seat-attack-extra: 3.15rem;
+    --hand-mini-w: 3.25rem;
+    --hand-mini-h: 4.85rem;
+    --battle-hand-clearance: 9.5rem;
+    --play-mid: calc((100dvh - var(--play-bottom)) * 0.56);
+    --field-band-top: calc(50% - var(--play-bottom) * 0.16);
+  }
+}
+
+@media (max-width: 767px) and (max-height: 700px) {
+  .battle-stage--choosing-attack {
+    --field-card-scale: 0.26;
+    --battle-center-gap: 5.25rem;
+    --player-seat-attack-extra: 2.85rem;
+    --hand-mini-w: 2.9rem;
+    --hand-mini-h: 4.35rem;
+    --battle-hand-clearance: 8.75rem;
+  }
+}
+
+@media (min-width: 768px) and (max-height: 820px) {
+  .battle-stage--choosing-attack {
+    --field-card-scale: 0.28;
+    --battle-center-gap: 5.75rem;
+    --battle-hand-clearance: 9rem;
+    --hand-mini-w: 3.75rem;
+    --hand-mini-h: 5.6rem;
+    --player-seat-attack-extra: 3.15rem;
+    --play-mid: calc((100dvh - var(--play-bottom)) * 0.6);
+    --field-band-top: calc(50% - var(--play-bottom) * 0.2);
+  }
+}
+
+.battle-field-band {
+  top: var(--field-band-top);
+  transform: translateY(-50%);
+  transform-origin: center center;
+}
+
+.battle-field-center-gap {
+  height: var(--battle-center-gap);
+  width: 1px;
+  flex-shrink: 0;
+}
+
+.battle-field-slot {
+  flex-shrink: 0;
+  width: var(--field-slot-w);
+  height: var(--field-slot-h);
+  /* scale() does not shrink layout — pull margins in so Digimon sit close */
+  margin-block: calc(var(--field-slot-h) * (var(--field-card-scale) - 1) / 2);
+  transform: rotateX(-28deg) scale(var(--field-card-scale));
+  transform-origin: center center;
+}
+
+.battle-field-slot--lifted {
+  transform: rotateX(-28deg) scale(var(--field-card-scale))
+    translateY(var(--player-field-lift));
+}
+
+.battle-field-placeholder {
+  width: var(--field-placeholder-w);
+  height: var(--field-placeholder-h);
+  border-radius: 0.75rem;
+  border: 2px dashed rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 0.28);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.battle-field-placeholder span {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.28);
+}
+
+.battle-field-placeholder--opponent {
+  border-color: rgba(255, 60, 60, 0.28);
+}
+
+.battle-field-placeholder--player {
+  border-color: rgba(60, 155, 255, 0.32);
+}
+
+[data-theme="dark"] .battle-field-placeholder {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.22);
+}
+
+[data-theme="dark"] .battle-field-placeholder span {
+  color: rgba(255, 255, 255, 0.28);
+}
+
+[data-theme="dark"] .battle-field-placeholder--opponent {
+  border-color: rgba(255, 60, 60, 0.35);
+}
+
+[data-theme="dark"] .battle-field-placeholder--player {
+  border-color: rgba(60, 155, 255, 0.4);
+}
+
+.battle-hand-island {
+  box-shadow:
+    0 -1px 0 rgba(255, 255, 255, 0.55) inset,
+    0 18px 40px -24px rgba(15, 23, 42, 0.35);
+}
+
+[data-theme="dark"] .battle-hand-island {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 18px 40px -20px rgba(0, 0, 0, 0.65);
+}

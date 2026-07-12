@@ -185,6 +185,11 @@ export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap, onRoomLe
 
     const [opponentSessionId, setOpponentSessionId] = useState("");
 
+    // Attack picker is the focus — drop the card inspector so it doesn't steal the column.
+    useEffect(() => {
+        if (gameState.phase === "battle_attack") setHoveredCard(null);
+    }, [gameState.phase]);
+
     const commitDrawPhase = useCallback(() => {
         audio.playSfx("chime");
         room.send("action", { type: "DRAW" });
@@ -738,6 +743,11 @@ export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap, onRoomLe
         gameState.phase === 'battle_attack' ||
         gameState.phase === 'resolution';
 
+    const choosingAttack =
+        gameState.phase === "battle_attack" &&
+        !gameState.player.attackLocked &&
+        !!gameState.player.active;
+
     if (
         gameState.phase !== 'victory' &&
         needsBattleActives &&
@@ -764,7 +774,7 @@ export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap, onRoomLe
     }
 
     return (
-        <div className={`relative w-screen h-screen overflow-hidden bg-app text-fg flex items-center justify-center perspective-stage pb-36 ${timerCritical ? "timer-critical-shake" : ""}`}>
+        <div className={`relative w-screen h-[100dvh] overflow-hidden bg-app text-fg flex items-center justify-center perspective-stage battle-stage ${choosingAttack ? "battle-stage--choosing-attack" : ""} ${timerCritical ? "timer-critical-shake" : ""}`}>
             <div className="scanlines" />
 
             <BattleRevealVignette
@@ -778,14 +788,14 @@ export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap, onRoomLe
             />
 
             {!suppressMessageOverlay && gameState.message && (
-            <div className="absolute top-[28%] left-0 w-full flex justify-center z-[70] pointer-events-none px-4">
+            <div className="absolute top-[10%] sm:top-[12%] left-0 w-full flex justify-center z-[70] pointer-events-none px-3 sm:px-4">
                 <motion.div 
                     key={gameState.message}
                     initial={{ scale: 1.05, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    className="bg-ps-blue/95 px-8 py-3 rounded border border-fg/20 shadow-lg max-w-lg"
+                    className="bg-ps-blue/95 px-4 sm:px-8 py-2 sm:py-3 rounded border border-fg/20 shadow-lg max-w-lg"
                 >
-                    <span className="text-xl font-bold text-white text-center block text-balance">
+                    <span className="text-base sm:text-xl font-bold text-white text-center block text-balance">
                         {gameState.message}
                     </span>
                 </motion.div>
@@ -793,7 +803,7 @@ export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap, onRoomLe
             )}
 
             {vfx.koMessage && vfx.phase === "ko_beat" && (
-            <div className="absolute top-[28%] left-0 w-full flex justify-center z-[75] pointer-events-none px-4">
+            <div className="absolute top-[10%] sm:top-[12%] left-0 w-full flex justify-center z-[75] pointer-events-none px-3 sm:px-4">
                 <motion.div
                     key={vfx.koMessage}
                     initial={{ scale: 1.1, opacity: 0 }}
@@ -833,9 +843,9 @@ export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap, onRoomLe
 
             <motion.div 
                 animate={{ 
-                    rotateX: vfx.cameraState === 'attack' ? 28 : vfx.cameraState === 'damage' ? 38 : 45,
-                    translateZ: vfx.cameraState === 'attack' ? 140 : vfx.cameraState === 'damage' ? 80 : 0,
-                    scale: vfx.cameraState === 'attack' ? 1.28 : vfx.cameraState === 'damage' ? 1.18 : 1.1,
+                    rotateX: vfx.cameraState === 'attack' ? 22 : vfx.cameraState === 'damage' ? 30 : 28,
+                    translateZ: vfx.cameraState === 'attack' ? 100 : vfx.cameraState === 'damage' ? 60 : 0,
+                    scale: vfx.cameraState === 'attack' ? 1.18 : vfx.cameraState === 'damage' ? 1.12 : 1.05,
                     x: vfx.phase === "impact" ? [0, -6, 6, -4, 4, 0] : 0,
                 }}
                 transition={{
@@ -844,11 +854,48 @@ export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap, onRoomLe
                 }}
                 className="relative w-[200vw] h-[200vh] bg-app flex items-center justify-center arena-surface digital-grid"
             >
-                {/* 3D Battle Elements */}
-                <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-center gap-64 h-96 items-center">
-                    {/* Player Area */}
-                    <div className="relative" style={{ transform: "rotateX(-45deg)" }}>
-                        {playerActive && (
+                {/* Opponent top · center gap (for MatchHeader) · player bottom */}
+                <div className="absolute inset-x-0 flex flex-col items-center battle-field-band">
+                    <div className="relative battle-field-slot">
+                        {opponentActive ? (
+                            <DigimonCard 
+                                data={{...opponentActive, hp: displayOpponentHp}} 
+                                isOpponent 
+                                fieldEnter={evolutionVfx.opponentFieldEnter}
+                                isRaised={vfx.opponentRaised}
+                                isAttacking={vfx.opponentAttacking}
+                                isHit={vfx.opponentHit}
+                                isKo={vfx.phase === "ko_beat" && vfx.koSide === "opponent"}
+                                onHover={setHoveredCard}
+                            />
+                        ) : (
+                            <div className="battle-field-placeholder battle-field-placeholder--opponent" aria-hidden>
+                                <span>Opponent</span>
+                            </div>
+                        )}
+                        <AttackStrikePanel
+                            strike={vfx.activeStrikeSide === "opponent" ? vfx.activeStrike : null}
+                            side="opponent"
+                            visible={vfx.activeStrikeSide === "opponent" && vfx.phase === "raise"}
+                        />
+                        <SupportZone
+                            side="opponent"
+                            phase={gameState.phase}
+                            supportCard={gameState.opponent.supportCard}
+                            supportLocked={!!gameState.opponent.supportLocked}
+                            revealOrder={opponentRevealOrder}
+                            onHover={setHoveredCard}
+                        />
+                    </div>
+
+                    <div className="battle-field-center-gap" aria-hidden />
+
+                    <div
+                        className={`relative battle-field-slot ${
+                            choosingAttack ? "battle-field-slot--lifted" : ""
+                        }`}
+                    >
+                        {playerActive ? (
                             <DigimonCard 
                                 data={{...playerActive, hp: displayPlayerHp}} 
                                 fieldEnter={evolutionVfx.playerFieldEnter}
@@ -858,6 +905,10 @@ export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap, onRoomLe
                                 isKo={vfx.phase === "ko_beat" && vfx.koSide === "player"}
                                 onHover={setHoveredCard}
                             />
+                        ) : (
+                            <div className="battle-field-placeholder battle-field-placeholder--player" aria-hidden>
+                                <span>Your Digimon</span>
+                            </div>
                         )}
                         <AttackStrikePanel
                             strike={vfx.activeStrikeSide === "player" ? vfx.activeStrike : null}
@@ -876,50 +927,17 @@ export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap, onRoomLe
                             onHover={setHoveredCard}
                         />
                     </div>
-
-                    {/* Opponent Area */}
-                    <div className="relative" style={{ transform: "rotateX(-45deg)" }}>
-                        {opponentActive && (
-                            <DigimonCard 
-                                data={{...opponentActive, hp: displayOpponentHp}} 
-                                isOpponent 
-                                fieldEnter={evolutionVfx.opponentFieldEnter}
-                                isRaised={vfx.opponentRaised}
-                                isAttacking={vfx.opponentAttacking}
-                                isHit={vfx.opponentHit}
-                                isKo={vfx.phase === "ko_beat" && vfx.koSide === "opponent"}
-                                onHover={setHoveredCard}
-                            />
-                        )}
-                        <AttackStrikePanel
-                            strike={vfx.activeStrikeSide === "opponent" ? vfx.activeStrike : null}
-                            side="opponent"
-                            visible={vfx.activeStrikeSide === "opponent" && vfx.phase === "raise"}
-                        />
-                        <SupportZone
-                            side="opponent"
-                            phase={gameState.phase}
-                            supportCard={gameState.opponent.supportCard}
-                            supportLocked={!!gameState.opponent.supportLocked}
-                            revealOrder={opponentRevealOrder}
-                            onHover={setHoveredCard}
-                        />
-                    </div>
                 </div>
             </motion.div>
 
             {/* BATTLE HUD */}
             <BattleHUD 
                 state={gameState}
+                yourSessionId={room.sessionId}
                 player={{
                     active: playerActive,
                     hp: displayPlayerHp,
                     maxHp: playerActive?.maxHp ?? gameState.player.active?.maxHp ?? 0
-                }}
-                opponent={{
-                    active: opponentActive,
-                    hp: displayOpponentHp,
-                    maxHp: opponentActive?.maxHp ?? gameState.opponent.active?.maxHp ?? 0
                 }}
                 onAttack={handleAttack}
                 disabled={
@@ -947,6 +965,7 @@ export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap, onRoomLe
                     context={handInteractionContext}
                     onCardAction={handleHandCardAction}
                     onHover={setHoveredCard}
+                    compact={choosingAttack}
                     phaseActions={handPhaseActions}
                     phaseActionsFooter={handPhaseActionsFooter}
                     drawStatus={
@@ -1020,8 +1039,7 @@ export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap, onRoomLe
                 handTarget={ruleProfile.handTarget}
                 mulligansRemaining={gameState.player.mulligansRemaining ?? 0}
                 needsOpeningDeploy={!!gameState.player.needsOpeningDeploy}
-                playerScore={gameState.player.score}
-                opponentScore={gameState.opponent.score}
+                fieldAnchored={!!(playerActive || opponentActive)}
             />
 
             {/* CARD DETAIL OVERLAY */}
@@ -1031,7 +1049,7 @@ export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap, onRoomLe
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: -20 }}
-                        className="fixed top-24 left-10 z-[150] w-80 bg-surface-strong border-2 border-ps-blue p-5 shadow-[0_0_50px_rgba(60,155,255,0.3)] pointer-events-none"
+                        className="fixed top-20 left-2 sm:left-10 z-[150] w-[min(100%-1rem,20rem)] sm:w-80 bg-surface-strong border-2 border-ps-blue p-3 sm:p-5 shadow-[0_0_50px_rgba(60,155,255,0.3)] pointer-events-none hidden sm:block"
                     >
                         <div className="flex justify-between items-start mb-4 border-b border-ps-blue/30 pb-2">
                             <div>
@@ -1095,7 +1113,10 @@ export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap, onRoomLe
             </AnimatePresence>
             
             {gameState.phase === "battle_support" && gameState.player.supportLocked && (
-                <div className="fixed bottom-36 inset-x-0 z-[90] flex justify-center pointer-events-none">
+                <div
+                    className="fixed inset-x-0 z-[90] flex justify-center pointer-events-none px-3"
+                    style={{ bottom: "var(--battle-hand-clearance)" }}
+                >
                     <span className="text-[10px] font-black uppercase tracking-widest text-ps-blue/80 bg-surface-strong/80 border border-ps-blue/30 px-3 py-1 rounded">
                         {committedGambleSupport
                             ? "Deck gamble set — waiting for opponent"
