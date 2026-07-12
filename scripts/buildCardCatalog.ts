@@ -481,7 +481,7 @@ function mapBattleOption(
     const heal = effect.match(/^recover own hp (?:by )?\+?(\d+)\.?$/i);
     if (heal) {
         return {
-            effectId: "option.prep.heal_active",
+            effectId: "option.battle.hp_heal",
             effectArgs: { value: Number(heal[1]) },
         };
     }
@@ -499,7 +499,10 @@ function mapBattleOption(
         };
     }
     if (/^digi-amethyst$/i.test(name) || /^recovery floppy$/i.test(name)) {
-        return { effectId: "option.prep.heal_active", effectArgs: { value: name.toLowerCase().includes("recovery") ? 300 : 100 } };
+        return {
+            effectId: "option.battle.hp_heal",
+            effectArgs: { value: name.toLowerCase().includes("recovery") ? 300 : 100 },
+        };
     }
     if (/^digi-diamond$/i.test(name)) {
         return { effectId: "option.prep.draw", effectArgs: { count: 2 } };
@@ -511,7 +514,7 @@ function mapBattleOption(
         };
     }
     if (/^holy sevens$/i.test(name)) {
-        return { effectId: "option.prep.heal_active", effectArgs: { value: 1000 } };
+        return { effectId: "option.battle.hp_heal", effectArgs: { value: 1000 } };
     }
 
     return {};

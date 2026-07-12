@@ -11,6 +11,8 @@ export type CombatStrike = {
     totalDamage: number;
     targetHpAfter: number;
     canceled?: boolean;
+    /** True when this strike damage came from a Cross Counter reflection. */
+    isCounterEffect?: boolean;
 };
 
 export function parseCombatStrikesJson(json: string): CombatStrike[] {

@@ -9607,7 +9607,7 @@
     "id": "266",
     "name": "Recovery Floppy",
     "cardKind": "option",
-    "effectId": "option.prep.heal_active",
+    "effectId": "option.battle.hp_heal",
     "effectArgs": {
       "value": 300
     },
@@ -9760,7 +9760,7 @@
     "id": "274",
     "name": "Digi-Amethyst",
     "cardKind": "option",
-    "effectId": "option.prep.heal_active",
+    "effectId": "option.battle.hp_heal",
     "effectArgs": {
       "value": 100
     },
@@ -9984,7 +9984,7 @@
     "id": "286",
     "name": "Holy Sevens",
     "cardKind": "option",
-    "effectId": "option.prep.heal_active",
+    "effectId": "option.battle.hp_heal",
     "effectArgs": {
       "value": 1000
     },

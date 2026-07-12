@@ -145,6 +145,39 @@ describe("support nullification / jamming (FC-015 / P3-5)", () => {
         expect(getEffectiveAttackDamage(active, "circle", ctx)).toBe(650);
     });
 
+    it("applies battle option hp heal on reveal", () => {
+        const active = makePlayer("a", "Fire", 400);
+        active.active!.maxHp = 1000;
+        const defender = makePlayer("d", "Nature");
+        const option = new CardSchema();
+        option.id = "heal";
+        option.cardKind = "option";
+        option.effectId = "option.battle.hp_heal";
+        option.effectArgsJson = JSON.stringify({ value: 300 });
+        const ctx = createSupportBattleContext();
+        resolveSupportPhase(active, defender, option, null, ctx, undefined, {
+            applyBattleOption: (source, card, battleCtx) => {
+                const hpTarget = {
+                    hp: source.hp,
+                    maxHp: source.active?.maxHp ?? source.hp,
+                };
+                applyBattleOptionToContext(
+                    {
+                        id: card.id,
+                        cardKind: card.cardKind,
+                        effectId: card.effectId,
+                        effectArgs: JSON.parse(card.effectArgsJson || "{}"),
+                    },
+                    source.sessionId,
+                    battleCtx,
+                    hpTarget
+                );
+                source.hp = hpTarget.hp;
+            },
+        });
+        expect(active.hp).toBe(700);
+    });
+
     it("respects requireType on void (own specialty gate)", () => {
         const ice = makePlayer("ice", "Ice");
         const fire = makePlayer("fire", "Fire");

@@ -34,7 +34,7 @@ export function isCombatResolutionTransition(
   prev: CombatSnapshot,
   next: CombatSnapshot
 ): boolean {
-  if (prev.phase === "battle_reveal") {
+  if (prev.phase === "battle_reveal" || prev.phase === "battle_effects") {
     return (
       next.phase === "resolution" ||
       next.phase === "draw" ||

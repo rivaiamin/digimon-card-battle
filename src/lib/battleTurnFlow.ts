@@ -28,10 +28,13 @@ export const PREP_OPTION_FEEDBACK_MS = 1_200;
 export const PREP_SUBPHASE_TRANSITION_MS = 450;
 
 /** Server + client support reveal window before resolution (P3-6). */
-export const SUPPORT_REVEAL_MS = 1_600;
+export const SUPPORT_REVEAL_MS = 2_200;
+
+/** Post-support effect notification beat (heal / ATK buff VFX). */
+export const SUPPORT_EFFECTS_MS = 3_000;
 
 /** Second support card flip delay within the reveal window (seconds). */
-export const SUPPORT_REVEAL_STAGGER_S = 0.38;
+export const SUPPORT_REVEAL_STAGGER_S = 0.55;
 
 /** Full-screen flash during field digivolution (PS1 burst). */
 export const EVOLUTION_FLASH_MS = 480;
@@ -48,6 +51,7 @@ export type TurnPhase =
     | "preparation"
     | "battle_support"
     | "battle_reveal"
+    | "battle_effects"
     | "battle_attack"
     | "resolution"
     | "victory";
@@ -78,9 +82,21 @@ export type ActionLegalityContext = {
 /** High-level battle slice for fidelity_ps1 (attack lock before support). */
 export function fidelityBattlePhaseChain(attackLockBeforeSupport: boolean): TurnPhase[] {
     if (attackLockBeforeSupport) {
-        return ["battle_attack", "battle_support", "battle_reveal", "resolution"];
+        return [
+            "battle_attack",
+            "battle_support",
+            "battle_reveal",
+            "battle_effects",
+            "resolution",
+        ];
     }
-    return ["battle_support", "battle_reveal", "battle_attack", "resolution"];
+    return [
+        "battle_support",
+        "battle_reveal",
+        "battle_effects",
+        "battle_attack",
+        "resolution",
+    ];
 }
 
 /** Full turn loop excluding KO redeploy shortcuts. */
@@ -111,6 +127,7 @@ export function isPlayerActionLegal(
     if (
         phase === "waiting" ||
         phase === "battle_reveal" ||
+        phase === "battle_effects" ||
         phase === "resolution" ||
         phase === "victory"
     ) {
@@ -167,14 +184,14 @@ export function isLegalPhaseTransition(
     const edges = new Set<string>([
         "draw->preparation",
         `preparation->${battle[0]}`,
-        `${battle[0]}->${battle[1]}`,
-        `${battle[1]}->${battle[2]}`,
-        `${battle[2]}->${battle[3]}`,
         // After resolution, next turn starts with draw (FC-004 handoff).
         "resolution->draw",
         // KO redeploy / double-KO return to preparation deploy.
         "resolution->preparation",
     ]);
+    for (let i = 0; i < battle.length - 1; i++) {
+        edges.add(`${battle[i]}->${battle[i + 1]}`);
+    }
 
     return edges.has(`${from}->${to}`);
 }

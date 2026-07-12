@@ -86,7 +86,7 @@ export class PlayerSchema extends Schema {
 
 export class BattleStateSchema extends Schema {
     @type({ map: PlayerSchema }) players = new MapSchema<PlayerSchema>();
-    @type("string") phase: string = "waiting"; // waiting, draw, preparation, battle_support, battle_reveal, battle_attack, resolution, victory
+    @type("string") phase: string = "waiting"; // waiting, draw, preparation, battle_support, battle_reveal, battle_effects, battle_attack, resolution, victory
     /** fidelity_ps1 | legacy_online */
     @type("string") ruleProfileId: string = "fidelity_ps1";
     /** standard | no_options — explicit arena variant (FC-029). */
@@ -110,4 +110,6 @@ export class BattleStateSchema extends Schema {
     @type("string") combatStrikesJson: string = "";
     /** Attacker session id for the last resolved battle exchange (for client VFX). */
     @type("string") lastBattleAttackerSessionId: string = "";
+    /** JSON SupportEffectsPayload for the battle_effects notification beat. */
+    @type("string") supportEffectsJson: string = "";
 }

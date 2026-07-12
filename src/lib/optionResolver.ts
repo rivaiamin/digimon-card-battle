@@ -5,6 +5,11 @@
 
 import type { EffectArgs } from "../types";
 import { readNumberArg } from "./effectArgs";
+import {
+    inferCompoundSupportEffect,
+    inferSupportEffectFromDescription,
+    splitEffectClauses,
+} from "./effectTextNormalize";
 import { evaluateEvolution } from "./evolutionEligibility";
 
 export interface OptionCardLike {
@@ -20,7 +25,7 @@ export interface OptionCardLike {
     circle?: { damage: number };
     triangle?: { damage: number };
     cross?: { damage: number };
-    supportEffect?: { type?: string } | null;
+    supportEffect?: { type?: string; description?: string; value?: number; targetAttack?: string } | null;
 }
 
 export interface CatalogStatSnapshot {
@@ -193,25 +198,211 @@ export function getBattleOptionAttackBuff(args: EffectArgs): { targetAttack: str
 
 export interface AttackBonusContext {
     attackBonus: Map<string, { circle: number; triangle: number; cross: number }>;
+    firstStrikePlayers?: Set<string>;
+    eatUpHpPlayers?: Set<string>;
+    attackMultiplier?: Map<string, { circle: number; triangle: number; cross: number }>;
 }
 
-export function applyBattleOptionToContext(
-    card: OptionCardLike,
-    sourceSessionId: string,
-    ctx: AttackBonusContext
-): boolean {
-    if (card.effectId !== "option.battle.atk_buff") return false;
-    const buff = getBattleOptionAttackBuff(card.effectArgs ?? {});
-    if (!buff) return false;
+/** Mutable HP snapshot for battle-option heals (caller writes back to player schema). */
+export interface BattleOptionHpTarget {
+    hp: number;
+    maxHp: number;
+}
 
+function applyAtkBuffToContext(
+    ctx: AttackBonusContext,
+    sourceSessionId: string,
+    value: number,
+    targetAttack: string
+): boolean {
+    if (value === 0) return false;
     const bonus = ctx.attackBonus.get(sourceSessionId) ?? { circle: 0, triangle: 0, cross: 0 };
-    if (buff.targetAttack === "all") {
-        bonus.circle += buff.value;
-        bonus.triangle += buff.value;
-        bonus.cross += buff.value;
-    } else if (buff.targetAttack === "circle" || buff.targetAttack === "triangle" || buff.targetAttack === "cross") {
-        bonus[buff.targetAttack] += buff.value;
+    if (targetAttack === "all" || !targetAttack) {
+        bonus.circle += value;
+        bonus.triangle += value;
+        bonus.cross += value;
+    } else if (
+        targetAttack === "circle" ||
+        targetAttack === "triangle" ||
+        targetAttack === "cross"
+    ) {
+        bonus[targetAttack] += value;
+    } else {
+        return false;
     }
     ctx.attackBonus.set(sourceSessionId, bonus);
     return true;
+}
+
+function applyHpHealToTarget(target: BattleOptionHpTarget | undefined, value: number): boolean {
+    if (!target || value <= 0 || target.maxHp <= 0) return false;
+    const before = target.hp;
+    target.hp = Math.min(target.maxHp, target.hp + value);
+    return target.hp !== before || value > 0;
+}
+
+function applyBattleOptionPrimitive(
+    type: string,
+    args: EffectArgs,
+    sourceSessionId: string,
+    ctx: AttackBonusContext,
+    hpTarget?: BattleOptionHpTarget
+): boolean {
+    switch (type) {
+        case "option.battle.atk_buff":
+        case "support.atk_buff":
+        case "atk_buff": {
+            const buff = getBattleOptionAttackBuff(args);
+            if (!buff) return false;
+            return applyAtkBuffToContext(ctx, sourceSessionId, buff.value, buff.targetAttack);
+        }
+        case "option.battle.hp_heal":
+        case "support.hp_heal":
+        case "hp_heal": {
+            const value = readNumberArg(args, "value", 0);
+            return applyHpHealToTarget(hpTarget, value);
+        }
+        case "support.first_strike":
+        case "first_strike": {
+            ctx.firstStrikePlayers?.add(sourceSessionId);
+            return !!ctx.firstStrikePlayers;
+        }
+        case "support.grant_eat_up_hp":
+        case "grant_eat_up_hp": {
+            ctx.eatUpHpPlayers?.add(sourceSessionId);
+            return !!ctx.eatUpHpPlayers;
+        }
+        case "support.atk_mult":
+        case "atk_mult": {
+            const multMap = ctx.attackMultiplier;
+            if (!multMap) return false;
+            const factor = readNumberArg(args, "value", 2);
+            const t = typeof args.targetAttack === "string" ? args.targetAttack : "all";
+            const mult = multMap.get(sourceSessionId) ?? { circle: 1, triangle: 1, cross: 1 };
+            if (t === "all" || !t) {
+                mult.circle *= factor;
+                mult.triangle *= factor;
+                mult.cross *= factor;
+            } else if (t === "circle" || t === "triangle" || t === "cross") {
+                mult[t] *= factor;
+            } else {
+                return false;
+            }
+            multMap.set(sourceSessionId, mult);
+            return true;
+        }
+        default:
+            return false;
+    }
+}
+
+/**
+ * Apply a surviving battle option (after void checks).
+ * Covers normalized option.battle.* ids, support.* aliases, and legacy supportEffect text.
+ */
+export function applyBattleOptionToContext(
+    card: OptionCardLike,
+    sourceSessionId: string,
+    ctx: AttackBonusContext,
+    hpTarget?: BattleOptionHpTarget
+): boolean {
+    const args = card.effectArgs ?? {};
+    const effectId = String(card.effectId ?? "").trim();
+
+    if (effectId === "option.battle.atk_buff" || effectId === "option.battle.hp_heal") {
+        return applyBattleOptionPrimitive(effectId, args, sourceSessionId, ctx, hpTarget);
+    }
+
+    if (
+        effectId === "support.hp_heal" ||
+        effectId === "support.atk_buff" ||
+        effectId === "support.first_strike" ||
+        effectId === "support.grant_eat_up_hp" ||
+        effectId === "support.atk_mult"
+    ) {
+        return applyBattleOptionPrimitive(effectId, args, sourceSessionId, ctx, hpTarget);
+    }
+
+    // Compose / catalog_text: route clauses through the same primitives as digimon support.
+    const supportType = String(card.supportEffect?.type ?? "").trim();
+    const description = String(card.supportEffect?.description ?? "").trim();
+
+    if (supportType === "compose" || supportType === "catalog_text" || (!effectId && description)) {
+        const inferred =
+            supportType === "compose" && description
+                ? { type: "compose" as const, description }
+                : inferCompoundSupportEffect(description) ??
+                  (supportType && supportType !== "catalog_text"
+                      ? {
+                            type: supportType,
+                            value:
+                                card.supportEffect?.value ??
+                                readNumberArg(args, "value", 0),
+                            targetAttack:
+                                card.supportEffect?.targetAttack ||
+                                (typeof args.targetAttack === "string"
+                                    ? args.targetAttack
+                                    : undefined),
+                            description,
+                        }
+                      : null);
+
+        if (!inferred) return false;
+
+        if (inferred.type === "compose") {
+            const clauses = splitEffectClauses(inferred.description ?? description);
+            let any = false;
+            for (const clause of clauses) {
+                const step = inferSupportEffectFromDescription(clause);
+                if (!step) continue;
+                const stepArgs: EffectArgs = {
+                    ...(step.value != null ? { value: step.value } : {}),
+                    ...(step.targetAttack ? { targetAttack: step.targetAttack } : {}),
+                };
+                if (
+                    applyBattleOptionPrimitive(
+                        step.type,
+                        stepArgs,
+                        sourceSessionId,
+                        ctx,
+                        hpTarget
+                    )
+                ) {
+                    any = true;
+                }
+            }
+            return any;
+        }
+
+        const stepArgs: EffectArgs = {
+            ...args,
+            ...(inferred.value != null ? { value: inferred.value } : {}),
+            ...(inferred.targetAttack ? { targetAttack: inferred.targetAttack } : {}),
+        };
+        return applyBattleOptionPrimitive(
+            inferred.type,
+            stepArgs,
+            sourceSessionId,
+            ctx,
+            hpTarget
+        );
+    }
+
+    if (
+        supportType === "hp_heal" ||
+        supportType === "atk_buff" ||
+        supportType === "first_strike" ||
+        supportType === "grant_eat_up_hp"
+    ) {
+        const stepArgs: EffectArgs = {
+            ...args,
+            ...(card.supportEffect?.value != null ? { value: card.supportEffect.value } : {}),
+            ...(card.supportEffect?.targetAttack
+                ? { targetAttack: card.supportEffect.targetAttack }
+                : {}),
+        };
+        return applyBattleOptionPrimitive(supportType, stepArgs, sourceSessionId, ctx, hpTarget);
+    }
+
+    return false;
 }

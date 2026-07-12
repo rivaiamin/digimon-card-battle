@@ -190,7 +190,19 @@ function applyCrossEffects(
         }
     }
 
-    if (attackerCross?.effectId === "cross.crash" && attackerAttack === "cross") {
+    // Crash must not re-apply damage that Counter already zeroed on that direction.
+    const defenderCounteredIncoming = events.some(
+        (e) => e.type === "cross_counter" && e.sessionId === defender.sessionId
+    );
+    const attackerCounteredIncoming = events.some(
+        (e) => e.type === "cross_counter" && e.sessionId === attacker.sessionId
+    );
+
+    if (
+        attackerCross?.effectId === "cross.crash" &&
+        attackerAttack === "cross" &&
+        !defenderCounteredIncoming
+    ) {
         toDefender = Math.max(0, attacker.hp);
         events.push({
             type: "cross_crash",
@@ -198,7 +210,11 @@ function applyCrossEffects(
             detail: { damage: toDefender },
         });
     }
-    if (defenderCross?.effectId === "cross.crash" && defenderAttack === "cross") {
+    if (
+        defenderCross?.effectId === "cross.crash" &&
+        defenderAttack === "cross" &&
+        !attackerCounteredIncoming
+    ) {
         toAttacker = Math.max(0, defender.hp);
         events.push({
             type: "cross_crash",
@@ -251,7 +267,8 @@ function buildStrike(
     attack: AttackType,
     damage: number,
     targetHpAfter: number,
-    supportCtx: SupportBattleContext
+    supportCtx: SupportBattleContext,
+    isCounterEffect = false
 ): CombatStrike {
     const breakdown = getAttackDamageBreakdown(from, attack, supportCtx);
     return {
@@ -263,6 +280,7 @@ function buildStrike(
         bonusDamage: breakdown.bonusDamage,
         totalDamage: damage,
         targetHpAfter,
+        ...(isCounterEffect ? { isCounterEffect: true } : {}),
     };
 }
 
@@ -323,20 +341,45 @@ export function resolveBattleExchange(input: BattleExchangeInput): BattleExchang
         damage: number,
         attack: AttackType,
         label: "toDefender" | "toAttacker"
-    ): number => {
-        if (damage <= 0) return targetHp;
-        const next = Math.max(0, targetHp - damage);
+    ): { nextHp: number; hpLost: number } => {
+        if (damage <= 0 || targetHp <= 0) return { nextHp: targetHp, hpLost: 0 };
+        const hpLost = Math.min(damage, targetHp);
+        const next = targetHp - hpLost;
         events.push({
             type: "damage_dealt",
             sessionId: fromSessionId,
-            detail: { damage, [label]: true },
+            detail: { damage, hpLost, [label]: true },
         });
-        strikes.push(buildStrike(from, to, attack, damage, next, input.supportCtx));
-        return next;
+        const isCounterEffect = events.some(
+            (e) => e.type === "cross_counter" && e.sessionId === fromSessionId
+        );
+        strikes.push(
+            buildStrike(from, to, attack, damage, next, input.supportCtx, isCounterEffect)
+        );
+        return { nextHp: next, hpLost };
+    };
+
+    let attackerEatUpHeal = 0;
+    let defenderEatUpHeal = 0;
+
+    const noteEatUp = (
+        healer: BattleCombatant,
+        attack: AttackType,
+        hpLost: number,
+        side: "attacker" | "defender"
+    ) => {
+        if (
+            hpLost <= 0 ||
+            !hasEatUp(healer.active, attack, healer.sessionId, input.supportCtx)
+        ) {
+            return;
+        }
+        if (side === "attacker") attackerEatUpHeal += hpLost;
+        else defenderEatUpHeal += hpLost;
     };
 
     const strikeAttackerFirst = () => {
-        defenderHp = applyHit(
+        const hit = applyHit(
             input.attacker,
             input.defender,
             input.attacker.sessionId,
@@ -345,8 +388,10 @@ export function resolveBattleExchange(input: BattleExchangeInput): BattleExchang
             input.attackerAttack,
             "toDefender"
         );
+        defenderHp = hit.nextHp;
+        noteEatUp(input.attacker, input.attackerAttack, hit.hpLost, "attacker");
         if (defenderHp > 0) {
-            attackerHp = applyHit(
+            const ret = applyHit(
                 input.defender,
                 input.attacker,
                 input.defender.sessionId,
@@ -355,13 +400,15 @@ export function resolveBattleExchange(input: BattleExchangeInput): BattleExchang
                 input.defenderAttack,
                 "toAttacker"
             );
+            attackerHp = ret.nextHp;
+            noteEatUp(input.defender, input.defenderAttack, ret.hpLost, "defender");
         } else if (toAttacker > 0) {
             emitAttackCanceled(events, input.defender.sessionId, toAttacker);
         }
     };
 
     const strikeDefenderFirst = () => {
-        attackerHp = applyHit(
+        const hit = applyHit(
             input.defender,
             input.attacker,
             input.defender.sessionId,
@@ -370,8 +417,10 @@ export function resolveBattleExchange(input: BattleExchangeInput): BattleExchang
             input.defenderAttack,
             "toAttacker"
         );
+        attackerHp = hit.nextHp;
+        noteEatUp(input.defender, input.defenderAttack, hit.hpLost, "defender");
         if (attackerHp > 0) {
-            defenderHp = applyHit(
+            const ret = applyHit(
                 input.attacker,
                 input.defender,
                 input.attacker.sessionId,
@@ -380,6 +429,8 @@ export function resolveBattleExchange(input: BattleExchangeInput): BattleExchang
                 input.attackerAttack,
                 "toDefender"
             );
+            defenderHp = ret.nextHp;
+            noteEatUp(input.attacker, input.attackerAttack, ret.hpLost, "attacker");
         } else if (toDefender > 0) {
             emitAttackCanceled(events, input.attacker.sessionId, toDefender);
         }
@@ -392,35 +443,33 @@ export function resolveBattleExchange(input: BattleExchangeInput): BattleExchang
         strikeAttackerFirst();
     }
 
-    if (
-        hasEatUp(
-            input.attacker.active,
-            input.attackerAttack,
-            input.attacker.sessionId,
-            input.supportCtx
-        ) &&
-        toDefender > 0 &&
-        defenderHp >= 0
-    ) {
-        attackerHp = applyEatUpHp({ ...input.attacker, hp: attackerHp }, toDefender, events);
+    if (attackerEatUpHeal > 0) {
+        attackerHp = applyEatUpHp(
+            { ...input.attacker, hp: attackerHp },
+            attackerEatUpHeal,
+            events
+        );
     }
-    if (
-        hasEatUp(
-            input.defender.active,
-            input.defenderAttack,
-            input.defender.sessionId,
-            input.supportCtx
-        ) &&
-        toAttacker > 0 &&
-        attackerHp >= 0
-    ) {
-        defenderHp = applyEatUpHp({ ...input.defender, hp: defenderHp }, toAttacker, events);
+    if (defenderEatUpHeal > 0) {
+        defenderHp = applyEatUpHp(
+            { ...input.defender, hp: defenderHp },
+            defenderEatUpHeal,
+            events
+        );
     }
 
-    if (hasCrash(input.attacker.active, input.attackerAttack) && input.attackerAttack === "cross") {
+    if (
+        hasCrash(input.attacker.active, input.attackerAttack) &&
+        input.attackerAttack === "cross" &&
+        !events.some((e) => e.type === "cross_counter" && e.sessionId === input.defender.sessionId)
+    ) {
         attackerHp = 0;
     }
-    if (hasCrash(input.defender.active, input.defenderAttack) && input.defenderAttack === "cross") {
+    if (
+        hasCrash(input.defender.active, input.defenderAttack) &&
+        input.defenderAttack === "cross" &&
+        !events.some((e) => e.type === "cross_counter" && e.sessionId === input.attacker.sessionId)
+    ) {
         defenderHp = 0;
     }
 

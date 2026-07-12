@@ -12,6 +12,10 @@ import {
   resolveCombatStrikes,
   type CombatStrike,
 } from "../lib/combatStrikePlan";
+import {
+  parseSupportEffectsJson,
+  type SupportEffectNotification,
+} from "../lib/supportEffectsNotify";
 import { HEAVY_DAMAGE_THRESHOLD } from "../lib/audio/sfxPresets";
 import type { DigimonCardData, GameState } from "../types";
 
@@ -32,6 +36,9 @@ export type DamagePopup = {
   target: "player" | "opponent";
   amount: number;
   isHeavy: boolean;
+  /** Default damage (-N). Heal shows +N; buff shows label text via amount+kind. */
+  kind?: "damage" | "heal" | "buff";
+  label?: string;
 };
 
 export type FrozenField = {
@@ -71,14 +78,16 @@ export type BattleVfx = {
   activeStrikeSide: ActiveStrikeSide;
   koMessage: string | null;
   koSide: "player" | "opponent" | null;
+  supportEffectsBanner: boolean;
+  supportEffectLabels: string[];
 };
 
-/** Playback at 50% speed — durations doubled from original targets. */
-const RAISE_MS = 700;
-const IMPACT_MS = 600;
-const REST_MS = 500;
-const KO_BEAT_MS = 800;
-const ATTACK_REVEAL_MS = 1800;
+/** Playback slowed so strikes / counters stay readable. */
+const RAISE_MS = 900;
+const IMPACT_MS = 800;
+const REST_MS = 650;
+const KO_BEAT_MS = 1000;
+const ATTACK_REVEAL_MS = 2400;
 
 const WHITE_FLASH = "rgba(255,255,255,0.45)";
 const WHITE_FLASH_HEAVY = "rgba(255,255,255,0.55)";
@@ -113,6 +122,8 @@ const INITIAL: BattleVfx = {
   activeStrikeSide: null,
   koMessage: null,
   koSide: null,
+  supportEffectsBanner: false,
+  supportEffectLabels: [],
 };
 
 function strikeAttackerSide(
@@ -124,6 +135,36 @@ function strikeAttackerSide(
 
 function strikeDefenderSide(side: ActiveStrikeSide): ActiveStrikeSide {
   return side === "player" ? "opponent" : side === "opponent" ? "player" : null;
+}
+
+function effectsToPopups(
+  effects: SupportEffectNotification[],
+  playerSessionId: string
+): DamagePopup[] {
+  return effects
+    .filter((e) => e.kind === "hp_heal" || e.kind === "atk_buff")
+    .map((e, i) => {
+      const target: "player" | "opponent" =
+        e.sessionId === playerSessionId ? "player" : "opponent";
+      if (e.kind === "hp_heal") {
+        return {
+          id: `heal-${e.sessionId}-${i}`,
+          target,
+          amount: e.value ?? 0,
+          isHeavy: false,
+          kind: "heal" as const,
+          label: e.label,
+        };
+      }
+      return {
+        id: `buff-${e.sessionId}-${i}`,
+        target,
+        amount: e.value ?? 0,
+        isHeavy: false,
+        kind: "buff" as const,
+        label: e.label,
+      };
+    });
 }
 
 export function useBattleVfx(
@@ -179,8 +220,7 @@ export function useBattleVfx(
       let runningOpponentHp = prev.opponentHp;
       let elapsed = 0;
 
-      const isCounter =
-        next.playerAttack === "cross" || next.opponentAttack === "cross";
+      const isCounter = strikes.some((s) => s.isCounterEffect === true);
 
       setVfx((s) => ({
         ...s,
@@ -194,6 +234,8 @@ export function useBattleVfx(
         playerKo: damage.playerKo,
         opponentKo: damage.opponentKo,
         reveal: INITIAL_REVEAL,
+        supportEffectsBanner: false,
+        supportEffectLabels: [],
         koMessage: null,
         koSide: null,
         playerRaised: false,
@@ -235,7 +277,7 @@ export function useBattleVfx(
         }, strikeStart);
 
         schedule(() => {
-          if (strike.attack === "cross") {
+          if (strike.isCounterEffect) {
             audio.playSfx("counter", { tag: "tag_sfx_combat", spatial: "center" });
           }
           audio.playCombatHit(
@@ -256,6 +298,7 @@ export function useBattleVfx(
             ...s,
             phase: "impact",
             cameraState: "damage",
+            isCounter: strike.isCounterEffect === true,
             playerRaised: false,
             opponentRaised: false,
             playerHit: defenderSide === "player",
@@ -362,6 +405,24 @@ export function useBattleVfx(
           playerAttack: null,
           opponentAttack: null,
         },
+        supportEffectsBanner: false,
+        supportEffectLabels: [],
+      }));
+      return;
+    }
+
+    if (gameState.phase === "battle_effects") {
+      const effects = parseSupportEffectsJson(gameState.supportEffectsJson);
+      const popups = effectsToPopups(effects, playerSessionId);
+      const labels = effects.map((e) => e.label).filter(Boolean);
+      setVfx((s) => ({
+        ...s,
+        reveal: INITIAL_REVEAL,
+        supportEffectsBanner: effects.length > 0,
+        supportEffectLabels: labels,
+        popups,
+        displayPlayerHp: gameState.player.hp,
+        displayOpponentHp: gameState.opponent.hp,
       }));
       return;
     }
@@ -374,10 +435,12 @@ export function useBattleVfx(
       setVfx((s) =>
         s.reveal.active && s.reveal.stage === "support"
           ? { ...s, reveal: INITIAL_REVEAL }
-          : s
+          : s.supportEffectsBanner
+            ? { ...s, supportEffectsBanner: false, supportEffectLabels: [], popups: [] }
+            : s
       );
     }
-  }, [gameState.phase]);
+  }, [gameState.phase, gameState.player.hp, gameState.opponent.hp, gameState.supportEffectsJson, playerSessionId]);
 
   useEffect(() => {
     const prev = prevRef.current;
@@ -385,6 +448,14 @@ export function useBattleVfx(
     prevRef.current = next;
 
     if (!prev) return;
+
+    // Support heals during battle_effects must not start combat VFX.
+    if (
+      next.phase === "battle_effects" ||
+      (prev.phase === "battle_effects" && next.phase !== "resolution")
+    ) {
+      return;
+    }
 
     const damage = computeCombatDamage(prev, next);
     if (!damage || runningRef.current) return;
@@ -410,11 +481,14 @@ export function useBattleVfx(
       !!next.playerAttack &&
       !!next.opponentAttack &&
       (prev.phase === "battle_reveal" ||
+        prev.phase === "battle_effects" ||
         (!prev.playerAttack && !prev.opponentAttack));
 
     if (showAttackReveal) {
       setVfx((s) => ({
         ...s,
+        supportEffectsBanner: false,
+        supportEffectLabels: [],
         reveal: {
           active: true,
           stage: "attacks",

@@ -277,8 +277,10 @@ export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap, onRoomLe
 
     const suppressMessageOverlay =
         vfx.reveal.active ||
+        vfx.supportEffectsBanner ||
         (vfx.isAnimating && !vfx.koMessage) ||
         gameState.phase === "battle_reveal" ||
+        gameState.phase === "battle_effects" ||
         !shouldShowFlashMessage(gameState.message, gameState.phase);
 
     /** Defender (non-active player) reveals support first during battle_reveal. */
@@ -339,6 +341,7 @@ export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap, onRoomLe
                 phaseEndsAtMs: state.phaseEndsAtMs ?? 0,
                 combatStrikesJson: state.combatStrikesJson ?? "",
                 lastBattleAttackerSessionId: state.lastBattleAttackerSessionId ?? "",
+                supportEffectsJson: state.supportEffectsJson ?? "",
                 hasDiscarded: state.prepSubPhase === "evolve",
                 winnerSessionId: (state as any).winnerSessionId,
                 loserReason: (state as any).loserReason,
@@ -736,6 +739,7 @@ export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap, onRoomLe
     const needsBattleActives =
         gameState.phase === 'battle_support' ||
         gameState.phase === 'battle_reveal' ||
+        gameState.phase === 'battle_effects' ||
         gameState.phase === 'battle_attack' ||
         gameState.phase === 'resolution';
 
@@ -840,6 +844,32 @@ export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap, onRoomLe
                                 COUNTER!
                             </span>
                         </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+                {vfx.supportEffectsBanner && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -12 }}
+                        transition={{ duration: 0.3, ease: "easeOut" }}
+                        className="fixed top-[16%] left-0 w-full z-[88] pointer-events-none flex flex-col items-center gap-2"
+                    >
+                        <motion.div className="bg-surface-strong border-y-4 border-ps-green px-12 py-2 skew-x-[-14deg]">
+                            <span className="block skew-x-[14deg] text-3xl font-black italic text-ps-green tracking-tighter">
+                                SUPPORT EFFECT
+                            </span>
+                        </motion.div>
+                        {vfx.supportEffectLabels.slice(0, 3).map((label) => (
+                            <span
+                                key={label}
+                                className="text-lg font-black italic text-fg tracking-tight drop-shadow"
+                            >
+                                {label}
+                            </span>
+                        ))}
                     </motion.div>
                 )}
             </AnimatePresence>

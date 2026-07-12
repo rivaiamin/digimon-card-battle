@@ -29,8 +29,15 @@ import {
 } from "./optionResolver";
 import { canPlayEvolutionOption, canPlayPrepOption } from "./optionEligibility";
 import { getPrepOptionBadge } from "./prepOptionPresentation";
-import { isPlayerActionLegal, prepSubPhaseAfterDraw, isLegalPhaseTransition } from "./battleTurnFlow";
+import { isPlayerActionLegal, prepSubPhaseAfterDraw, isLegalPhaseTransition, fidelityBattlePhaseChain } from "./battleTurnFlow";
 import type { PlayerActionType } from "./battleTurnFlow";
+import {
+    applyBattleOptionToContext,
+} from "./optionResolver";
+import {
+    buildSupportEffectNotifications,
+    snapshotSupportCtx,
+} from "./supportEffectsNotify";
 import {
     applyScoreDelta,
     isDeckOutOnDraw,
@@ -179,11 +186,20 @@ export const FIDELITY_SCENARIOS: FidelityScenario[] = [
             if (isPlayerActionLegal("LOCK_ATTACK", { ...ctx, phase: "battle_reveal", prepSubPhase: "" })) {
                 throw new Error("LOCK_ATTACK must be rejected during battle_reveal");
             }
+            if (isPlayerActionLegal("LOCK_SUPPORT", { ...ctx, phase: "battle_effects", prepSubPhase: "" })) {
+                throw new Error("LOCK_SUPPORT must be rejected during battle_effects");
+            }
             if (isPlayerActionLegal("DRAW", { ...ctx, phase: "resolution", prepSubPhase: "" })) {
                 throw new Error("DRAW must be rejected during resolution");
             }
             if (!isLegalPhaseTransition("battle_attack", "battle_support", true)) {
                 throw new Error("fidelity battle must allow attack→support");
+            }
+            if (!isLegalPhaseTransition("battle_reveal", "battle_effects", true)) {
+                throw new Error("fidelity battle must allow reveal→effects");
+            }
+            if (!isLegalPhaseTransition("battle_effects", "resolution", true)) {
+                throw new Error("fidelity battle must allow effects→resolution");
             }
             if (isLegalPhaseTransition("draw", "battle_support", true)) {
                 throw new Error("draw must not skip to battle_support");
@@ -603,6 +619,116 @@ export const FIDELITY_SCENARIOS: FidelityScenario[] = [
             const battle = resolveFullBattle(p1, p2, "cross", "circle", "p1", ctx);
             if (battle.p1Hp !== 500) throw new Error(`attacker should take 0 damage, hp=${battle.p1Hp}`);
             if (battle.p2Hp >= 500) throw new Error("defender should take counter damage");
+        },
+    },
+    {
+        id: "cross-counter-vs-x",
+        fidelityIds: ["FC-017"],
+        description: "Counter vs Cross zeros incoming and reflects opponent Cross AP",
+        run() {
+            const ctx = createSupportBattleContext();
+            const p1 = combatant("p1", 800, "cross.counter");
+            p1.active!.cross.effectArgsJson = JSON.stringify({
+                targetAttack: "cross",
+                multiplier: 2,
+            });
+            const p2 = combatant("p2", 800);
+            p2.active!.cross.damage = 200;
+            const battle = resolveFullBattle(p1, p2, "cross", "cross", "p1", ctx);
+            if (battle.p1Hp !== 800) throw new Error(`counter holder should take 0, hp=${battle.p1Hp}`);
+            if (battle.p2Hp !== 400) throw new Error(`expected 400 reflected, hp=${battle.p2Hp}`);
+            if (!battle.events.some((e) => e.type === "cross_counter")) {
+                throw new Error("expected cross_counter event");
+            }
+        },
+    },
+    {
+        id: "eat-up-absorb-actual-hp",
+        fidelityIds: ["FC-017"],
+        description: "Eat-up HP heals actual HP lost, not planned overkill",
+        run() {
+            const ctx = createSupportBattleContext();
+            const attacker: BattleCombatant = {
+                ...combatant("a", 400, "cross.eat_up_hp"),
+                maxHp: 1000,
+            };
+            attacker.active!.cross.damage = 300;
+            const defender = combatant("d", 200);
+            const battle = resolveFullBattle(attacker, defender, "cross", "triangle", "a", ctx);
+            if (battle.p2Hp !== 0) throw new Error("defender should be KO'd");
+            // Return canceled on KO; heal actual 200 lost → 400+200=600 (not planned 300)
+            if (battle.p1Hp !== 600) {
+                throw new Error(`expected attacker hp 600 after eat-up, got ${battle.p1Hp}`);
+            }
+            const eat = battle.events.find((e) => e.type === "cross_eat_up_hp");
+            if (!eat || eat.detail?.healed !== 200) {
+                throw new Error(`expected heal 200 from actual HP lost, got ${JSON.stringify(eat?.detail)}`);
+            }
+        },
+    },
+    {
+        id: "battle-option-heal-reveal",
+        fidelityIds: ["FC-008", "FC-027"],
+        description: "Battle heal option applies HP on support resolve",
+        run() {
+            const ctx = createSupportBattleContext();
+            const hpTarget = { hp: 400, maxHp: 1000 };
+            const ok = applyBattleOptionToContext(
+                {
+                    id: "266",
+                    cardKind: "option",
+                    effectId: "option.battle.hp_heal",
+                    effectArgs: { value: 300 },
+                },
+                "p1",
+                ctx,
+                hpTarget
+            );
+            if (!ok || hpTarget.hp !== 700) {
+                throw new Error(`expected battle heal to 700, got ${hpTarget.hp}`);
+            }
+            const recovery = CATALOG_BY_ID.get("266");
+            if (!recovery || recovery.effectId !== "option.battle.hp_heal") {
+                throw new Error("Recovery Floppy must be cataloged as option.battle.hp_heal");
+            }
+        },
+    },
+    {
+        id: "battle-effects-phase-order",
+        fidelityIds: ["FC-003"],
+        description: "Fidelity chain inserts battle_effects after reveal before resolution",
+        run() {
+            const chain = fidelityBattlePhaseChain(true);
+            if (
+                JSON.stringify(chain) !==
+                JSON.stringify([
+                    "battle_attack",
+                    "battle_support",
+                    "battle_reveal",
+                    "battle_effects",
+                    "resolution",
+                ])
+            ) {
+                throw new Error(`unexpected fidelity chain: ${chain.join("→")}`);
+            }
+            const before = snapshotSupportCtx(createSupportBattleContext());
+            const after = createSupportBattleContext();
+            after.attackBonus.set("a", { circle: 200, triangle: 0, cross: 0 });
+            const notes = buildSupportEffectNotifications({
+                activeSessionId: "a",
+                defenderSessionId: "d",
+                hpBefore: { a: 400, d: 800 },
+                hpAfter: { a: 700, d: 800 },
+                before,
+                after,
+                nullify: { activeVoided: false, defenderVoided: false },
+            });
+            if (!notes.some((n) => n.kind === "hp_heal" && n.value === 300)) {
+                throw new Error("expected hp_heal notification");
+            }
+            if (!notes.some((n) => n.kind === "atk_buff" && n.attackTarget === "circle")) {
+                throw new Error("expected circle atk_buff notification");
+            }
         },
     },
     {
