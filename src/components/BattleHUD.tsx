@@ -108,7 +108,7 @@ function ResourceRow({
   );
 }
 
-/** Opponent seat: score + role + resources */
+/** Opponent seat: score + role + resources on one row when space allows */
 function SeatPlaque({
   score,
   scoreColor,
@@ -125,12 +125,12 @@ function SeatPlaque({
   dp: number;
 }) {
   return (
-    <div className="flex flex-col gap-1 rounded-xl bg-panel/90 p-1.5 ring-1 ring-line backdrop-blur-md battle-hand-island">
-      <div className="flex items-center gap-1.5 px-0.5">
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl bg-panel/90 px-1.5 py-1.5 ring-1 ring-line backdrop-blur-md battle-hand-island">
+      <div className="flex items-center gap-1.5">
         <ScorePips score={score} color={scoreColor} />
         <RoleBadge role={role} />
       </div>
-      <ResourceRow deck={deck} trash={trash} dp={dp} />
+      <ResourceRow deck={deck} trash={trash} dp={dp} compact />
     </div>
   );
 }
@@ -287,25 +287,25 @@ export const BattleHUD: React.FC<HUDProps> = ({
               showAttack ? "battle-player-seat--attack" : ""
             }`}
           >
-            <div className="flex flex-col gap-1.5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-2 px-0.5 pb-1.5">
-              <div className="flex items-center gap-1.5">
-                {showRoles && (
-                  <>
-                    <ScorePips score={state.player.score} color="ps-blue" />
-                    <RoleBadge role={yourRole} />
-                  </>
-                )}
+            {attacks && (
+              <div className="mb-3.5 sm:mb-4">
+                <AttackRow attacks={attacks} onAttack={onAttack} disabled={disabled} />
               </div>
+            )}
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 px-0.5">
+              {showRoles && (
+                <div className="flex items-center gap-1.5">
+                  <ScorePips score={state.player.score} color="ps-blue" />
+                  <RoleBadge role={yourRole} />
+                </div>
+              )}
               <ResourceRow
                 deck={state.player.deck.length}
                 trash={state.player.trash.length}
                 dp={state.player.dp}
-                compact={false}
+                compact
               />
             </div>
-            {attacks && (
-              <AttackRow attacks={attacks} onAttack={onAttack} disabled={disabled} />
-            )}
           </motion.div>
         </AnimatePresence>
       </div>

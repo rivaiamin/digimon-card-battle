@@ -302,16 +302,17 @@ body {
   --field-band-top: calc(50% - var(--play-bottom) * 0.2);
   --player-field-lift: 0px;
   --battle-center-gap: 7.25rem;
+  --field-card-scale: 0.52;
 }
 
 @media (max-width: 767px) {
   .battle-stage--choosing-attack {
-    --field-card-scale: 0.3;
-    --battle-center-gap: 7rem;
-    --player-seat-attack-extra: 3.15rem;
-    --hand-mini-w: 3.25rem;
-    --hand-mini-h: 4.85rem;
-    --battle-hand-clearance: 9.5rem;
+    --field-card-scale: 0.42;
+    --battle-center-gap: 7.5rem;
+    --player-seat-attack-extra: 3.5rem;
+    --hand-mini-w: 4.15rem;
+    --hand-mini-h: 6.2rem;
+    --battle-hand-clearance: 11.25rem;
     --play-mid: calc((100dvh - var(--play-bottom)) * 0.56);
     --field-band-top: calc(50% - var(--play-bottom) * 0.16);
   }
@@ -319,24 +320,24 @@ body {
 
 @media (max-width: 767px) and (max-height: 700px) {
   .battle-stage--choosing-attack {
-    --field-card-scale: 0.26;
-    --battle-center-gap: 5.25rem;
-    --player-seat-attack-extra: 2.85rem;
-    --hand-mini-w: 2.9rem;
-    --hand-mini-h: 4.35rem;
-    --battle-hand-clearance: 8.75rem;
+    --field-card-scale: 0.34;
+    --battle-center-gap: 6rem;
+    --player-seat-attack-extra: 3.15rem;
+    --hand-mini-w: 3.6rem;
+    --hand-mini-h: 5.4rem;
+    --battle-hand-clearance: 10rem;
   }
 }
 
 @media (min-width: 768px) and (max-height: 820px) {
   .battle-stage--choosing-attack {
-    --field-card-scale: 0.28;
-    --battle-center-gap: 5.75rem;
-    --battle-hand-clearance: 9rem;
-    --hand-mini-w: 3.75rem;
-    --hand-mini-h: 5.6rem;
-    --player-seat-attack-extra: 3.15rem;
-    --play-mid: calc((100dvh - var(--play-bottom)) * 0.6);
+    --field-card-scale: 0.34;
+    --battle-center-gap: 6.25rem;
+    --battle-hand-clearance: 9.75rem;
+    --hand-mini-w: 4.25rem;
+    --hand-mini-h: 6.4rem;
+    --player-seat-attack-extra: 3.35rem;
+    --play-mid: calc((100dvh - var(--play-bottom)) * 0.58);
     --field-band-top: calc(50% - var(--play-bottom) * 0.2);
   }
 }
