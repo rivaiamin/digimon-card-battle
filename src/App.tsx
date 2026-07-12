@@ -118,7 +118,11 @@ export default function App() {
 
   return (
     <div className="w-full h-screen bg-app text-fg">
-      <div className="fixed top-4 right-4 z-[500]">
+      <div
+        className={`fixed right-4 z-[500] ${
+          screen === "game" ? "top-16 sm:top-20" : "top-4"
+        }`}
+      >
         <SystemMenu />
       </div>
       {screen === "home" && <HomeScreen onJoinMatch={handleJoin} joinError={joinError} />}

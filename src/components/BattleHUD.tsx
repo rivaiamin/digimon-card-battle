@@ -108,7 +108,7 @@ function ResourceRow({
   );
 }
 
-/** Opponent seat: score + role + resources on one row when space allows */
+/** Seat plaque: player = identity left / resources right; opponent = flipped */
 function SeatPlaque({
   score,
   scoreColor,
@@ -116,6 +116,7 @@ function SeatPlaque({
   deck,
   trash,
   dp,
+  mirror = false,
 }: {
   score: number;
   scoreColor: "ps-blue" | "ps-red";
@@ -123,14 +124,30 @@ function SeatPlaque({
   deck: number;
   trash: number;
   dp: number;
+  /** Opponent: resources left, wins + role right */
+  mirror?: boolean;
 }) {
+  const identity = (
+    <div className="flex items-center gap-1.5">
+      <ScorePips score={score} color={scoreColor} />
+      <RoleBadge role={role} />
+    </div>
+  );
+  const resources = <ResourceRow deck={deck} trash={trash} dp={dp} compact />;
+
   return (
-    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl bg-panel/90 px-1.5 py-1.5 ring-1 ring-line backdrop-blur-md battle-hand-island">
-      <div className="flex items-center gap-1.5">
-        <ScorePips score={score} color={scoreColor} />
-        <RoleBadge role={role} />
-      </div>
-      <ResourceRow deck={deck} trash={trash} dp={dp} compact />
+    <div className="flex w-full min-w-0 flex-wrap items-center justify-between gap-x-2 gap-y-1 rounded-xl bg-panel/90 px-1.5 py-1.5 ring-1 ring-line backdrop-blur-md battle-hand-island">
+      {mirror ? (
+        <>
+          {resources}
+          {identity}
+        </>
+      ) : (
+        <>
+          {identity}
+          {resources}
+        </>
+      )}
     </div>
   );
 }
@@ -251,8 +268,8 @@ export const BattleHUD: React.FC<HUDProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 pointer-events-none overflow-hidden px-2 sm:px-3">
-      {/* Opponent seat — top left */}
-      <div className="absolute top-3 left-2 sm:top-4 sm:left-3 z-[1090]">
+      {/* Opponent seat — top left; flipped vs player (resources left, identity right) */}
+      <div className="absolute top-3 left-2 right-2 z-[1090] sm:top-4 sm:left-3 sm:right-auto sm:w-full sm:max-w-lg">
         {showRoles ? (
           <SeatPlaque
             score={state.opponent.score}
@@ -261,6 +278,7 @@ export const BattleHUD: React.FC<HUDProps> = ({
             deck={state.opponent.deck.length}
             trash={state.opponent.trash.length}
             dp={state.opponent.dp}
+            mirror
           />
         ) : (
           <ResourceRow
@@ -292,19 +310,21 @@ export const BattleHUD: React.FC<HUDProps> = ({
                 <AttackRow attacks={attacks} onAttack={onAttack} disabled={disabled} />
               </div>
             )}
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 px-0.5">
+            <div className="flex w-full flex-wrap items-center justify-between gap-x-2 gap-y-1 px-0.5">
               {showRoles && (
                 <div className="flex items-center gap-1.5">
                   <ScorePips score={state.player.score} color="ps-blue" />
                   <RoleBadge role={yourRole} />
                 </div>
               )}
-              <ResourceRow
-                deck={state.player.deck.length}
-                trash={state.player.trash.length}
-                dp={state.player.dp}
-                compact
-              />
+              <div className={showRoles ? "ml-auto" : undefined}>
+                <ResourceRow
+                  deck={state.player.deck.length}
+                  trash={state.player.trash.length}
+                  dp={state.player.dp}
+                  compact
+                />
+              </div>
             </div>
           </motion.div>
         </AnimatePresence>
