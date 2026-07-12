@@ -150,6 +150,24 @@ describe("getHandCardInteraction", () => {
         expect(legacyBattleOption.enabled).toBe(true);
 
         expect(getHandCardInteraction(prepOption("o1"), ctx).mode).toBe("view");
+
+        const battleHeal = getHandCardInteraction(
+            {
+                ...digimon("o-heal"),
+                cardKind: "option",
+                effectId: "option.battle.hp_heal",
+                effectArgs: { value: 300 },
+                supportEffect: {
+                    type: "hp_heal",
+                    value: 300,
+                    description: "Recover own HP by +300.",
+                },
+            },
+            ctx
+        );
+        expect(battleHeal.mode).toBe("support");
+        expect(battleHeal.badge).toBe("OPTION");
+        expect(battleHeal.enabled).toBe(true);
     });
 
     it("shows full hand as view-only during battle_attack", () => {

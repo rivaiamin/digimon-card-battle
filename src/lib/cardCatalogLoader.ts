@@ -60,6 +60,7 @@ export const KNOWN_EFFECT_IDS = new Set<string>([
     "option.prep.heal_active",
     "option.prep.fetch_trash_digimon",
     "option.battle.atk_buff",
+    "option.battle.hp_heal",
     "evolution_option.warp_evolve",
     "evolution_option.dp_adjust",
     "evolution_option.restore_full_stats",

@@ -83,7 +83,13 @@ import {
     resolveTimedPhaseKey,
     type TimedPhaseKey,
 } from "../lib/phaseTimer";
-import { SUPPORT_REVEAL_MS } from "../lib/battleTurnFlow";
+import { SUPPORT_EFFECTS_MS, SUPPORT_REVEAL_MS } from "../lib/battleTurnFlow";
+import {
+    buildSupportEffectNotifications,
+    hasSupportEffectNotifications,
+    serializeSupportEffects,
+    snapshotSupportCtx,
+} from "../lib/supportEffectsNotify";
 import {
     isDeckOutOnDraw,
     loserSessionIdIfPointVictory,
@@ -99,6 +105,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
     private attackChoices = new Map<string, AttackType | null>();
     private supportCtx: SupportBattleContext = createSupportBattleContext();
     private revealTimer: ReturnType<typeof this.clock.setTimeout> | null = null;
+    private effectsTimer: ReturnType<typeof this.clock.setTimeout> | null = null;
     private phaseTimerHandle: ReturnType<typeof this.clock.setTimeout> | null = null;
     private ruleProfile: RuleProfile = resolveRuleProfile("fidelity_ps1");
     private arenaVariant: ArenaVariant = resolveArenaVariant("standard");
@@ -113,6 +120,8 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
 
     /** Pause on reveal so clients can play flip / hologram FX before effects resolve. */
     private static readonly REVEAL_MS = SUPPORT_REVEAL_MS;
+    /** Pause after support resolve for heal / buff notification VFX. */
+    private static readonly EFFECTS_MS = SUPPORT_EFFECTS_MS;
 
     onCreate(options: any) {
         console.log("[SERVER] BattleRoom created", options);
@@ -661,7 +670,14 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             circle: card.circle,
             triangle: card.triangle,
             cross: card.cross,
-            supportEffect: card.supportEffect ? { type: card.supportEffect.type } : null,
+            supportEffect: card.supportEffect
+                ? {
+                      type: card.supportEffect.type,
+                      description: card.supportEffect.description,
+                      value: card.supportEffect.value,
+                      targetAttack: card.supportEffect.targetAttack,
+                  }
+                : null,
         };
     }
 
@@ -902,6 +918,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
     private beginBattlePhaseAfterPrep() {
         this.state.combatStrikesJson = "";
         this.state.lastBattleAttackerSessionId = "";
+        this.state.supportEffectsJson = "";
         this.battleTurnOwnerSessionId = this.state.activePlayerSessionId;
         if (this.ruleProfile.battle.attackLockBeforeSupport) {
             this.beginAttackSelection();
@@ -920,9 +937,14 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             this.revealTimer.clear();
             this.revealTimer = null;
         }
+        if (this.effectsTimer) {
+            this.effectsTimer.clear();
+            this.effectsTimer = null;
+        }
         this.supportChoices.clear();
         this.attackChoices.clear();
         this.supportCtx = createSupportBattleContext();
+        this.state.supportEffectsJson = "";
         this.state.players.forEach(p => {
             p.supportCard = null;
             p.supportLocked = false;
@@ -987,6 +1009,10 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         if (this.revealTimer) {
             this.revealTimer.clear();
             this.revealTimer = null;
+        }
+        if (this.effectsTimer) {
+            this.effectsTimer.clear();
+            this.effectsTimer = null;
         }
         this.supportChoices.clear();
         if (!attackFirst) {
@@ -1133,7 +1159,13 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         let activeSupport = active.supportCard;
         let defenderSupport = defender.supportCard;
 
-        resolveSupportPhase(
+        const hpBefore: Record<string, number> = {
+            [active.sessionId]: active.hp,
+            [defender.sessionId]: defender.hp,
+        };
+        const ctxBefore = snapshotSupportCtx(this.supportCtx);
+
+        const nullify = resolveSupportPhase(
             active,
             defender,
             activeSupport,
@@ -1145,7 +1177,17 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             },
             {
                 applyBattleOption: (source, card, ctx) => {
-                    applyBattleOptionToContext(this.toOptionCardView(card), source.sessionId, ctx);
+                    const hpTarget = {
+                        hp: source.hp,
+                        maxHp: source.active?.maxHp ?? source.hp,
+                    };
+                    applyBattleOptionToContext(
+                        this.toOptionCardView(card),
+                        source.sessionId,
+                        ctx,
+                        hpTarget
+                    );
+                    source.hp = hpTarget.hp;
                     source.trash.push(card);
                 },
                 drawCards: (source, count) => {
@@ -1168,6 +1210,38 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         this.discardResolvedSupport(active, activeSupport);
         this.discardResolvedSupport(defender, defenderSupport);
 
+        const effects = buildSupportEffectNotifications({
+            activeSessionId: active.sessionId,
+            defenderSessionId: defender.sessionId,
+            hpBefore,
+            hpAfter: {
+                [active.sessionId]: active.hp,
+                [defender.sessionId]: defender.hp,
+            },
+            before: ctxBefore,
+            after: this.supportCtx,
+            nullify,
+        });
+        this.state.supportEffectsJson = serializeSupportEffects(effects);
+
+        if (hasSupportEffectNotifications(effects)) {
+            this.state.phase = "battle_effects";
+            this.state.message = "Support Effect";
+            if (this.effectsTimer) this.effectsTimer.clear();
+            this.effectsTimer = this.clock.setTimeout(() => {
+                this.effectsTimer = null;
+                this.finishBattleEffectsAndAdvance();
+            }, BattleRoom.EFFECTS_MS);
+        } else {
+            this.finishBattleEffectsAndAdvance();
+        }
+    }
+
+    private finishBattleEffectsAndAdvance() {
+        if (this.effectsTimer) {
+            this.effectsTimer.clear();
+            this.effectsTimer = null;
+        }
         if (this.ruleProfile.battle.attackLockBeforeSupport) {
             this.state.phase = "resolution";
             this.state.message = "Resolving Battle...";
@@ -1453,6 +1527,10 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         if (this.revealTimer) {
             this.revealTimer.clear();
             this.revealTimer = null;
+        }
+        if (this.effectsTimer) {
+            this.effectsTimer.clear();
+            this.effectsTimer = null;
         }
         this.state.phaseEndsAtMs = 0;
         if (reason === "deck_out" && DEBUG_BATTLE_ROOM) {

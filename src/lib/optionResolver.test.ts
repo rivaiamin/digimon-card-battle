@@ -221,4 +221,46 @@ describe("battle options", () => {
         expect(applied).toBe(true);
         expect(ctx.attackBonus.get("p1")?.circle).toBe(150);
     });
+
+    it("applies battle hp heal to target", () => {
+        const ctx = { attackBonus: new Map<string, { circle: number; triangle: number; cross: number }>() };
+        const hpTarget = { hp: 400, maxHp: 1000 };
+        const applied = applyBattleOptionToContext(
+            {
+                id: "266",
+                cardKind: "option",
+                effectId: "option.battle.hp_heal",
+                effectArgs: { value: 300 },
+            },
+            "p1",
+            ctx,
+            hpTarget
+        );
+        expect(applied).toBe(true);
+        expect(hpTarget.hp).toBe(700);
+    });
+
+    it("applies compose grant_eat_up and atk buff from support text", () => {
+        const ctx = {
+            attackBonus: new Map<string, { circle: number; triangle: number; cross: number }>(),
+            firstStrikePlayers: new Set<string>(),
+            eatUpHpPlayers: new Set<string>(),
+        };
+        const applied = applyBattleOptionToContext(
+            {
+                id: "compose",
+                cardKind: "option",
+                effectId: "",
+                supportEffect: {
+                    type: "catalog_text",
+                    description: "Own Attack becomes Eat-up HP. Boost own Attack Power +100.",
+                },
+            },
+            "p1",
+            ctx
+        );
+        expect(applied).toBe(true);
+        expect(ctx.eatUpHpPlayers.has("p1")).toBe(true);
+        expect(ctx.attackBonus.get("p1")?.circle).toBe(100);
+    });
 });

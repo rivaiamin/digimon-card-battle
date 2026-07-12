@@ -28,6 +28,12 @@ describe("canUseAsBattleSupport", () => {
                 effectId: "option.battle.atk_buff",
             })
         ).toBe(true);
+        expect(
+            canUseAsBattleSupport({
+                cardKind: "option",
+                effectId: "option.battle.hp_heal",
+            })
+        ).toBe(true);
     });
 
     it("allows legacy battle option floppies with support text", () => {

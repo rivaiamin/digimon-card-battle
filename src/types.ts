@@ -88,6 +88,7 @@ export interface GameState {
     | 'preparation'
     | 'battle_support'
     | 'battle_reveal'
+    | 'battle_effects'
     | 'battle_attack'
     | 'resolution'
     | 'victory';
@@ -107,6 +108,8 @@ export interface GameState {
   supportPickSessionId?: string;
   /** Server timestamp (ms) when the interactive phase ends. */
   phaseEndsAtMs?: number;
+  /** JSON SupportEffectsPayload for battle_effects VFX. */
+  supportEffectsJson?: string;
   /** JSON-encoded strike sequence for sequential combat animation. */
   combatStrikesJson?: string;
   /** Attacker session id for the last resolved battle (before turn handoff). */

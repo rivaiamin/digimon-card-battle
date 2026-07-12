@@ -22,11 +22,12 @@ describe("post-battle turn handoff (FC-003 / FC-004)", () => {
 });
 
 describe("canonical phase chain (FC-003)", () => {
-    it("orders fidelity battle as attack → support → reveal → resolution", () => {
+    it("orders fidelity battle as attack → support → reveal → effects → resolution", () => {
         expect(fidelityBattlePhaseChain(true)).toEqual([
             "battle_attack",
             "battle_support",
             "battle_reveal",
+            "battle_effects",
             "resolution",
         ]);
     });
@@ -52,7 +53,9 @@ describe("canonical phase chain (FC-003)", () => {
         expect(isLegalPhaseTransition("preparation", "battle_attack", true)).toBe(true);
         expect(isLegalPhaseTransition("battle_attack", "battle_support", true)).toBe(true);
         expect(isLegalPhaseTransition("battle_support", "battle_reveal", true)).toBe(true);
-        expect(isLegalPhaseTransition("battle_reveal", "resolution", true)).toBe(true);
+        expect(isLegalPhaseTransition("battle_reveal", "battle_effects", true)).toBe(true);
+        expect(isLegalPhaseTransition("battle_effects", "resolution", true)).toBe(true);
+        expect(isLegalPhaseTransition("battle_reveal", "resolution", true)).toBe(false);
         expect(isLegalPhaseTransition("resolution", "draw", true)).toBe(true);
         expect(isLegalPhaseTransition("battle_attack", "battle_reveal", true)).toBe(false);
         expect(isLegalPhaseTransition("draw", "battle_attack", true)).toBe(false);
@@ -101,8 +104,8 @@ describe("player action legality (FC-003)", () => {
         ).toBe(true);
     });
 
-    it("rejects all actions during reveal / resolution / victory", () => {
-        for (const phase of ["battle_reveal", "resolution", "victory"] as const) {
+    it("rejects all actions during reveal / effects / resolution / victory", () => {
+        for (const phase of ["battle_reveal", "battle_effects", "resolution", "victory"] as const) {
             expect(
                 isPlayerActionLegal("LOCK_ATTACK", { ...base, phase, prepSubPhase: "" })
             ).toBe(false);
@@ -135,7 +138,7 @@ describe("player action legality (FC-003)", () => {
     });
 
     it("exposes support reveal timing that fits staggered flips (P3-6)", () => {
-        expect(SUPPORT_REVEAL_MS).toBe(1_600);
+        expect(SUPPORT_REVEAL_MS).toBeGreaterThanOrEqual(2_000);
         expect(SUPPORT_REVEAL_STAGGER_S * 1000 + 650).toBeLessThanOrEqual(SUPPORT_REVEAL_MS);
     });
 });

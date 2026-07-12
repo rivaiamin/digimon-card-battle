@@ -26,6 +26,7 @@ export type TurnStatusPhase =
     | "preparation"
     | "battle_support"
     | "battle_reveal"
+    | "battle_effects"
     | "battle_attack"
     | "resolution"
     | "victory"
@@ -65,6 +66,9 @@ export function getTurnStatusTitle(ctx: TurnStatusContext): string {
     }
     if (ctx.phase === "battle_reveal") {
         return "Battle · Reveal";
+    }
+    if (ctx.phase === "battle_effects") {
+        return "Battle · Support Effect";
     }
     if (ctx.phase === "battle_attack") {
         return "Battle · Choose attack";
@@ -117,6 +121,10 @@ export function getTurnStatusHint(ctx: TurnStatusContext): string {
 
     if (ctx.phase === "battle_reveal") {
         return "Support reveal — defender flips first.";
+    }
+
+    if (ctx.phase === "battle_effects") {
+        return "Support effects resolving.";
     }
 
     if (ctx.phase === "resolution") {

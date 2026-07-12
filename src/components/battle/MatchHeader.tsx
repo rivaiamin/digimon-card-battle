@@ -32,6 +32,7 @@ function toPhase(phase: string): TurnStatusPhase {
         phase === "preparation" ||
         phase === "battle_support" ||
         phase === "battle_reveal" ||
+        phase === "battle_effects" ||
         phase === "battle_attack" ||
         phase === "resolution" ||
         phase === "victory"
