@@ -16,6 +16,7 @@ import { EvolutionBeat } from "./battle/EvolutionBeat";
 import { DamagePopups } from "./battle/DamagePopups";
 import { SupportZone } from "./battle/SupportZone";
 import { MatchHeader } from "./battle/MatchHeader";
+import { CardPreviewPanel } from "./battle/CardPreviewPanel";
 import { AttackRevealOverlay } from "./battle/AttackRevealOverlay";
 import { AttackStrikePanel } from "./battle/AttackStrikePanel";
 import { BattleRevealVignette } from "./battle/BattleRevealVignette";
@@ -174,6 +175,7 @@ export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap, onRoomLe
     });
 
     const [hoveredCard, setHoveredCard] = useState<DigimonCardData | null>(null);
+    const [previewCard, setPreviewCard] = useState<DigimonCardData | null>(null);
     /** Face-down preview of own support until server reveal syncs. */
     const [committedSupport, setCommittedSupport] = useState<DigimonCardData | null>(null);
     const [committedEmptySupport, setCommittedEmptySupport] = useState(false);
@@ -187,7 +189,10 @@ export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap, onRoomLe
 
     // Attack picker is the focus — drop the card inspector so it doesn't steal the column.
     useEffect(() => {
-        if (gameState.phase === "battle_attack") setHoveredCard(null);
+        if (gameState.phase === "battle_attack") {
+            setHoveredCard(null);
+            setPreviewCard(null);
+        }
     }, [gameState.phase]);
 
     const commitDrawPhase = useCallback(() => {
@@ -627,13 +632,6 @@ export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap, onRoomLe
             gameState.prepSubPhase === "discard" &&
             gameState.player.active
         ) {
-            if (gameState.isPlayerTurn) {
-                handPhaseActionsFooter = (
-                    <span className="text-[10px] text-muted uppercase font-bold tracking-wide">
-                        {getPrepHandFooter("discard")}
-                    </span>
-                );
-            }
             return (
                 gameState.isPlayerTurn && (
                     <button
@@ -689,11 +687,7 @@ export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap, onRoomLe
                 ruleProfile.battle.allowOnlineDeckGamble &&
                 canPickSupport &&
                 gameState.player.deck.length > 0;
-            handPhaseActionsFooter = (
-                <span className="text-[10px] text-muted uppercase font-bold tracking-wide">
-                    Hand, NO SUPPORT, or gamble the Online Deck
-                </span>
-            );
+            handPhaseActionsFooter = null;
             return (
                 <>
                     <button
@@ -748,6 +742,13 @@ export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap, onRoomLe
         !gameState.player.attackLocked &&
         !!gameState.player.active;
 
+    /** Digimon on field — larger cards + equal margins to phase strip (all phases). */
+    const fieldActiveLayout =
+        !choosingAttack &&
+        !!(gameState.player.active || gameState.opponent.active) &&
+        gameState.phase !== "waiting" &&
+        gameState.phase !== "victory";
+
     if (
         gameState.phase !== 'victory' &&
         needsBattleActives &&
@@ -774,7 +775,7 @@ export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap, onRoomLe
     }
 
     return (
-        <div className={`relative w-screen h-[100dvh] overflow-hidden bg-app text-fg flex items-center justify-center perspective-stage battle-stage ${choosingAttack ? "battle-stage--choosing-attack" : ""} ${timerCritical ? "timer-critical-shake" : ""}`}>
+        <div className={`relative w-screen h-[100dvh] overflow-hidden bg-app text-fg flex items-center justify-center perspective-stage battle-stage ${choosingAttack ? "battle-stage--choosing-attack" : ""} ${fieldActiveLayout ? "battle-stage--field-active" : ""} ${timerCritical ? "timer-critical-shake" : ""}`}>
             <div className="scanlines" />
 
             <BattleRevealVignette
@@ -867,6 +868,7 @@ export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap, onRoomLe
                                 isHit={vfx.opponentHit}
                                 isKo={vfx.phase === "ko_beat" && vfx.koSide === "opponent"}
                                 onHover={setHoveredCard}
+                                onInspect={setPreviewCard}
                             />
                         ) : (
                             <div className="battle-field-placeholder battle-field-placeholder--opponent" aria-hidden>
@@ -904,6 +906,7 @@ export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap, onRoomLe
                                 isHit={vfx.playerHit}
                                 isKo={vfx.phase === "ko_beat" && vfx.koSide === "player"}
                                 onHover={setHoveredCard}
+                                onInspect={setPreviewCard}
                             />
                         ) : (
                             <div className="battle-field-placeholder battle-field-placeholder--player" aria-hidden>
@@ -965,7 +968,8 @@ export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap, onRoomLe
                     context={handInteractionContext}
                     onCardAction={handleHandCardAction}
                     onHover={setHoveredCard}
-                    compact={choosingAttack}
+                    onPreview={setPreviewCard}
+                    compact={choosingAttack || fieldActiveLayout}
                     phaseActions={handPhaseActions}
                     phaseActionsFooter={handPhaseActionsFooter}
                     drawStatus={
@@ -1042,75 +1046,15 @@ export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap, onRoomLe
                 fieldAnchored={!!(playerActive || opponentActive)}
             />
 
-            {/* CARD DETAIL OVERLAY */}
-            <AnimatePresence>
-                {hoveredCard && (
-                    <motion.div 
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -20 }}
-                        className="fixed top-20 left-2 sm:left-10 z-[150] w-[min(100%-1rem,20rem)] sm:w-80 bg-surface-strong border-2 border-ps-blue p-3 sm:p-5 shadow-[0_0_50px_rgba(60,155,255,0.3)] pointer-events-none hidden sm:block"
-                    >
-                        <div className="flex justify-between items-start mb-4 border-b border-ps-blue/30 pb-2">
-                            <div>
-                                <h2 className="text-2xl font-black italic text-fg uppercase leading-none">{hoveredCard.name}</h2>
-                                <span className="text-xs font-bold text-ps-blue">{hoveredCard.level.toUpperCase()} / {hoveredCard.type.toUpperCase()}</span>
-                            </div>
-                            <div className="bg-ps-blue/20 p-2 border border-ps-blue/50">
-                                <span className="text-xl font-black text-ps-blue leading-none">{hoveredCard.hp}</span>
-                                <span className="text-xs block text-muted">HP</span>
-                            </div>
-                        </div>
-
-                        {/* SUPPORT EFFECT (HIGH PRIORITY) */}
-                        {hoveredCard.supportEffect && (
-                            <div className="mb-6 bg-ps-blue/10 border border-ps-blue/40 p-3">
-                                <div className="text-xs font-black text-ps-blue uppercase mb-1 tracking-widest flex items-center gap-2">
-                                    <div className="w-1.5 h-1.5 bg-ps-blue animate-pulse" />
-                                    Support Effect
-                                </div>
-                                <p className="text-sm font-bold text-fg leading-relaxed">
-                                    {hoveredCard.supportEffect.description}
-                                </p>
-                            </div>
-                        )}
-
-                        {/* ATTACK DETAILS */}
-                        <div className="flex flex-col gap-3">
-                            {(() => {
-                                const h = hoveredCard.attacks ?? DEFAULT_CARD_ATTACKS;
-                                return [
-                                    { type: 'circle' as const, color: 'ps-red', data: h.circle },
-                                    { type: 'triangle' as const, color: 'ps-blue', data: h.triangle },
-                                    { type: 'cross' as const, color: 'ps-yellow', data: h.cross }
-                                ].map((atk) => (
-                                <div key={atk.type} className={`border-l-2 border-${atk.color} pl-3 py-1 bg-${atk.color}/5`}>
-                                    <div className="flex justify-between items-center mb-1">
-                                        <span className={`text-xs font-black text-${atk.color} uppercase`}>{atk.data.name}</span>
-                                        <span className={`text-sm font-black text-${atk.color} italic`}>{atk.data.damage}</span>
-                                    </div>
-                                    <p className="text-xs text-muted leading-tight">
-                                        {atk.data.description || "Standard damage attack."}
-                                    </p>
-                                </div>
-                            ));
-                            })()}
-                        </div>
-
-                        {/* EVO INFO */}
-                        <div className="mt-6 flex justify-between pt-2 border-t border-line text-xs font-bold">
-                            <div className="flex flex-col">
-                                <span className="text-muted uppercase">Evo Cost</span>
-                                <span className="text-ps-blue">{hoveredCard.evoCost} DP</span>
-                            </div>
-                            <div className="flex flex-col items-end">
-                                <span className="text-muted uppercase">Plus DP</span>
-                                <span className="text-ps-yellow">+{hoveredCard.plusDp}</span>
-                            </div>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+            <CardPreviewPanel
+                card={hoveredCard}
+                mode="hover"
+            />
+            <CardPreviewPanel
+                card={previewCard}
+                mode="sheet"
+                onClose={() => setPreviewCard(null)}
+            />
             
             {gameState.phase === "battle_support" && gameState.player.supportLocked && (
                 <div

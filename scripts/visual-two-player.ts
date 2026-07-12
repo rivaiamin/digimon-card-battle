@@ -142,6 +142,12 @@ async function isChoosingAttack(page: Page): Promise<boolean> {
   return /Choose attack/i.test(text);
 }
 
+async function isDiscardPhase(page: Page): Promise<boolean> {
+  const text = await bodyText(page);
+  if (!/Discard for DP/i.test(text)) return false;
+  return page.getByRole("button", { name: /^CONTINUE$/i }).first().isVisible().catch(() => false);
+}
+
 /**
  * Push one player's UI forward one step when actions are available.
  * Safe to call every tick for both players.
@@ -157,6 +163,35 @@ async function advanceOnce(page: Page, label: string): Promise<boolean> {
   if (await clickFirstVisible(page, /^END PREP$/i, label, "END PREP")) return true;
   if (await clickFirstVisible(page, /^NO SUPPORT$/i, label, "NO SUPPORT")) return true;
   return false;
+}
+
+/** Drive until discard-for-DP with CONTINUE visible (prep field layout). */
+async function driveToDiscardPhase(
+  p1: Page,
+  p2: Page,
+  timeoutMs = 90_000
+): Promise<"discard" | "attack" | "timeout" | "over"> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const [t1, t2] = await Promise.all([bodyText(p1), bodyText(p2)]);
+    if (isMatchOver(t1) || isMatchOver(t2)) return "over";
+    if ((await hasAttackDock(p1)) || (await hasAttackDock(p2))) return "attack";
+    if ((await isDiscardPhase(p1)) || (await isDiscardPhase(p2))) return "discard";
+
+    // Advance only until discard — don't click CONTINUE yet.
+    for (const [page, label] of [
+      [p1, "P1"] as const,
+      [p2, "P2"] as const,
+    ]) {
+      if (await isDiscardPhase(page)) continue;
+      const text = await bodyText(page);
+      if (isMatchOver(text)) continue;
+      if (await clickFirstVisible(page, /^KEEP HAND$/i, label, "KEEP HAND")) continue;
+      if (/Deploy Digimon|deploy/i.test(text)) await clickDeployBadge(page, label);
+    }
+    await p1.waitForTimeout(400);
+  }
+  return "timeout";
 }
 
 /** Drive both clients until at least one seat shows the attack dock. */
@@ -185,6 +220,50 @@ async function driveToAttackSelect(
     }
 
     await p1.waitForTimeout(450);
+  }
+  return "timeout";
+}
+
+async function pickCircleAttack(page: Page, label: string): Promise<boolean> {
+  const circle = page.getByRole("button", { name: /CIRCLE/i });
+  if (!(await circle.first().isVisible().catch(() => false))) return false;
+  await circle.first().click({ timeout: 5_000 });
+  console.log(`[${label}] picked CIRCLE`);
+  return true;
+}
+
+/** After first battle, wait for a clean turn 2+ Discard (no reveal overlays). */
+async function driveToMidgameDiscard(
+  p1: Page,
+  p2: Page,
+  timeoutMs = 120_000
+): Promise<"discard" | "timeout" | "over"> {
+  const deadline = Date.now() + timeoutMs;
+
+  while (Date.now() < deadline) {
+    const [t1, t2] = await Promise.all([bodyText(p1), bodyText(p2)]);
+    if (isMatchOver(t1) || isMatchOver(t2)) return "over";
+
+    const turnOk = /Turn\s+[2-9]/i.test(t1) || /Turn\s+[2-9]/i.test(t2);
+    const revealBusy =
+      /ATTACK LOCK|SUPPORT REVEAL|COUNTER!/i.test(t1) ||
+      /ATTACK LOCK|SUPPORT REVEAL|COUNTER!/i.test(t2);
+    const discardReady =
+      turnOk &&
+      !revealBusy &&
+      ((await isDiscardPhase(p1)) || (await isDiscardPhase(p2)));
+
+    if (discardReady) return "discard";
+
+    // Don't click CONTINUE/END PREP — that exits the discard we want to capture.
+    for (const [page, label] of [
+      [p1, "P1"] as const,
+      [p2, "P2"] as const,
+    ]) {
+      await pickCircleAttack(page, label);
+      await clickFirstVisible(page, /^NO SUPPORT$/i, label, "NO SUPPORT");
+    }
+    await p1.waitForTimeout(500);
   }
   return "timeout";
 }
@@ -230,6 +309,15 @@ async function main() {
     await shot(a.page, "p1-enter");
     await shot(b.page, "p2-enter");
 
+    console.log("Driving both players through prep → discard…");
+    const discardOutcome = await driveToDiscardPhase(a.page, b.page);
+    if (discardOutcome === "discard") {
+      await shot(a.page, "p1-discard");
+      await shot(b.page, "p2-discard");
+    } else {
+      console.warn(`discard capture skipped (${discardOutcome})`);
+    }
+
     console.log("Driving both players through prep → attack select…");
     const outcome = await driveToAttackSelect(a.page, b.page);
 
@@ -258,6 +346,15 @@ async function main() {
         await shot(page, `${label}-attack-dock`);
         console.log(`[${label}] attack dock visible`);
       }
+    }
+
+    console.log("Driving through battle → mid-game discard…");
+    const midDiscard = await driveToMidgameDiscard(a.page, b.page);
+    if (midDiscard === "discard") {
+      await shot(a.page, "p1-discard-mid");
+      await shot(b.page, "p2-discard-mid");
+    } else {
+      console.warn(`mid-game discard capture skipped (${midDiscard})`);
     }
 
     console.log(`\nScreenshots in ${OUT}`);

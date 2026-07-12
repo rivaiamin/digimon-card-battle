@@ -107,12 +107,15 @@ export const MatchHeader: React.FC<Props> = ({
     const timerCritical = remainingSec !== null && remainingSec <= 5;
     const transitionSec = PREP_SUBPHASE_TRANSITION_MS / 1000;
 
-    // Mulligan/deploy/attack hints are covered elsewhere or by seat role.
+    // Hand dock / seat carry phase instructions — keep center strip one line.
     const showHint =
         !!hint &&
         prep !== "mulligan" &&
         prep !== "deploy" &&
-        phase !== "battle_attack";
+        prep !== "discard" &&
+        prep !== "evolve" &&
+        phase !== "battle_attack" &&
+        phase !== "battle_support";
 
     return (
         <header

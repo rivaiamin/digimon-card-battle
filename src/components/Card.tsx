@@ -19,6 +19,8 @@ interface CardProps {
   /** Full field cards: `digivolve` flashes in when evolution lands on the battlefield. */
   fieldEnter?: "default" | "digivolve" | "none";
   onHover?: (data: DigimonCardData | null) => void;
+  /** Tap-to-inspect on touch (field Digimon). */
+  onInspect?: (data: DigimonCardData) => void;
 }
 
 const TypeIcon = ({ type }: { type: string }) => {
@@ -42,7 +44,8 @@ export const DigimonCard: React.FC<CardProps & { variant?: 'full' | 'mini' }> = 
   variant = 'full',
   miniEnter = 'default',
   fieldEnter = 'default',
-  onHover
+  onHover,
+  onInspect
 }) => {
   const isMini = variant === 'mini';
   const attacks = data.attacks ?? DEFAULT_CARD_ATTACKS;
@@ -223,6 +226,7 @@ export const DigimonCard: React.FC<CardProps & { variant?: 'full' | 'mini' }> = 
         onHover?.(data);
       }}
       onMouseLeave={() => onHover?.(null)}
+      onClick={() => onInspect?.(data)}
       transition={{ 
         delay: isDigivolving ? 0 : delay, 
         duration: isDigivolving ? 0.55 : isHit ? 0.5 : isRaised ? 0.7 : 1.1, 
