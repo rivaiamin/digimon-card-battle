@@ -26,13 +26,20 @@ export const HandDiscardStatus: React.FC<HandDiscardStatusProps> = ({
                         ? "border-ps-green/45 bg-ps-green/10 text-ps-green"
                         : "border-ps-yellow/40 bg-ps-yellow/10 text-ps-yellow"
                 }`}
+                title={
+                    lastDpGain > 0
+                        ? `Gained ${lastDpGain} DP`
+                        : isYourTurn
+                          ? `Discard Digimon for DP · ${playerDp} DP`
+                          : "Opponent discarding"
+                }
             >
                 {lastDpGain > 0 ? (
                     <>+{lastDpGain} DP</>
                 ) : isYourTurn ? (
-                    <>Discard Digimon · {playerDp} DP</>
+                    <>{playerDp} DP</>
                 ) : (
-                    <>Opponent discarding</>
+                    <>Opp.</>
                 )}
             </motion.span>
         )}

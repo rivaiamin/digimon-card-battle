@@ -161,46 +161,44 @@ export const PlayerHandZone: React.FC<PlayerHandZoneProps> = ({
                         compact ? "px-2 py-1" : "px-2.5 py-1.5"
                     }`}
                 >
-                    <div className="flex min-w-0 items-center gap-2 overflow-x-auto scrollbar-thin">
-                        <span className="shrink-0 text-[10px] font-black uppercase tracking-[0.18em] text-muted">
-                            Hand ({hand.length})
-                        </span>
-                        {drawStatus && (
-                            <HandDrawStatus
-                                visible={drawStatus.visible}
-                                mode={drawStatus.mode}
-                                handTarget={drawStatus.handTarget}
-                                cardsLanded={drawStatus.cardsLanded}
-                            />
-                        )}
-                        {mulliganStatus && (
-                            <HandMulliganStatus
-                                visible={mulliganStatus.visible}
-                                mode={mulliganStatus.mode}
-                                mulligansRemaining={mulliganStatus.mulligansRemaining}
-                                cardsLanded={mulliganStatus.cardsLanded}
-                            />
-                        )}
-                        {discardStatus && (
-                            <HandDiscardStatus
-                                visible={discardStatus.visible}
-                                playerDp={discardStatus.playerDp}
-                                lastDpGain={discardStatus.lastDpGain}
-                                isYourTurn={discardStatus.isYourTurn}
-                            />
-                        )}
-                        {prepOptionStatus && (
-                            <HandPrepOptionStatus
-                                visible={prepOptionStatus.visible}
-                                feedback={prepOptionStatus.feedback}
-                                isYourTurn={prepOptionStatus.isYourTurn}
-                            />
-                        )}
-                        {phaseActions && (
-                            <div className="ml-auto flex shrink-0 items-center gap-1.5 [&_button]:whitespace-nowrap [&_button]:rounded-full [&_button]:px-3 [&_button]:py-1.5 [&_button]:text-[10px] sm:[&_button]:text-[11px] [&_button]:font-black [&_button]:tracking-wide [&_button]:transition [&_button]:duration-500 [&_button]:ease-[cubic-bezier(0.32,0.72,0,1)] [&_button]:active:scale-[0.98]">
-                                {phaseActions}
-                            </div>
-                        )}
+                    <div className="flex min-w-0 items-center gap-2">
+                        <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto scrollbar-thin">
+                            <span className="shrink-0 text-[10px] font-black uppercase tracking-[0.18em] text-muted">
+                                Hand ({hand.length})
+                            </span>
+                            {drawStatus && (
+                                <HandDrawStatus
+                                    visible={drawStatus.visible}
+                                    mode={drawStatus.mode}
+                                    handTarget={drawStatus.handTarget}
+                                    cardsLanded={drawStatus.cardsLanded}
+                                />
+                            )}
+                            {mulliganStatus && (
+                                <HandMulliganStatus
+                                    visible={mulliganStatus.visible}
+                                    mode={mulliganStatus.mode}
+                                    mulligansRemaining={mulliganStatus.mulligansRemaining}
+                                    cardsLanded={mulliganStatus.cardsLanded}
+                                />
+                            )}
+                            {discardStatus && (
+                                <HandDiscardStatus
+                                    visible={discardStatus.visible}
+                                    playerDp={discardStatus.playerDp}
+                                    lastDpGain={discardStatus.lastDpGain}
+                                    isYourTurn={discardStatus.isYourTurn}
+                                />
+                            )}
+                            {prepOptionStatus && (
+                                <HandPrepOptionStatus
+                                    visible={prepOptionStatus.visible}
+                                    feedback={prepOptionStatus.feedback}
+                                    isYourTurn={prepOptionStatus.isYourTurn}
+                                />
+                            )}
+                        </div>
+                        {phaseActions}
                     </div>
 
                     {showFooterHint && (

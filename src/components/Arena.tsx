@@ -21,6 +21,7 @@ import { AttackRevealOverlay } from "./battle/AttackRevealOverlay";
 import { AttackStrikePanel } from "./battle/AttackStrikePanel";
 import { BattleRevealVignette } from "./battle/BattleRevealVignette";
 import { PlayerHandZone, type HandCardAction } from "./battle/PlayerHandZone";
+import { HandIconActions, type HandIconAction } from "./battle/HandIconActions";
 import type { HandInteractionContext } from "../lib/handCardInteraction";
 import { useDrawPhaseBeat } from "../hooks/useDrawPhaseBeat";
 import { useMulliganBeat } from "../hooks/useMulliganBeat";
@@ -40,6 +41,15 @@ import {
     getPrepSecondaryActionLabel,
 } from "../lib/prepPhaseCopy";
 import { VictoryOverlay } from "./battle/VictoryOverlay";
+import {
+    ArrowRight,
+    Ban,
+    Check,
+    Dices,
+    Flag,
+    RefreshCw,
+    Search,
+} from "lucide-react";
 
 const INITIAL_PLAYER_STATE: PlayerState = {
     active: null,
@@ -581,6 +591,9 @@ export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap, onRoomLe
     let handPhaseActionsFooter: React.ReactNode = null;
 
     const handPhaseActions = (() => {
+        const actions: HandIconAction[] = [];
+        let leading: React.ReactNode = null;
+
         if (gameState.phase === "preparation" && gameState.prepSubPhase === "mulligan" && gameState.isPlayerTurn) {
             handPhaseActionsFooter = (
                 <span className="text-[10px] text-muted uppercase font-bold tracking-wide">
@@ -588,26 +601,27 @@ export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap, onRoomLe
                 </span>
             );
             const redrawsLeft = gameState.player.mulligansRemaining ?? 0;
-            return (
-                <>
-                    <button
-                        onClick={handleAcceptHand}
-                        disabled={mulliganBeat.isRedrawing}
-                        className="bg-ps-green text-black hover:bg-surface-strong disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {getPrepPrimaryActionLabel("mulligan")}
-                    </button>
-                    {redrawsLeft > 0 && (
-                        <button
-                            onClick={handleMulligan}
-                            disabled={mulliganBeat.isRedrawing}
-                            className="bg-ps-yellow text-black hover:bg-surface-strong disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            {getPrepSecondaryActionLabel("mulligan")}
-                        </button>
-                    )}
-                </>
-            );
+            actions.push({
+                id: "keep-hand",
+                label: getPrepPrimaryActionLabel("mulligan") ?? "KEEP HAND",
+                description: "Keep your opening hand and continue to deploy.",
+                icon: Check,
+                tone: "green",
+                onClick: handleAcceptHand,
+                disabled: mulliganBeat.isRedrawing,
+            });
+            if (redrawsLeft > 0) {
+                actions.push({
+                    id: "redraw",
+                    label: getPrepSecondaryActionLabel("mulligan") ?? "REDRAW",
+                    description: `Mulligan your hand (${redrawsLeft} redraw${redrawsLeft === 1 ? "" : "s"} left).`,
+                    icon: RefreshCw,
+                    tone: "yellow",
+                    onClick: handleMulligan,
+                    disabled: mulliganBeat.isRedrawing,
+                });
+            }
+            return <HandIconActions actions={actions} />;
         }
 
         if (
@@ -617,14 +631,15 @@ export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap, onRoomLe
             gameState.isPlayerTurn &&
             deployableHandCards.length === 0
         ) {
-            return (
-                <button
-                    onClick={handleDigForDeploy}
-                    className="bg-ps-yellow text-black hover:bg-surface-strong"
-                >
-                    {getPrepSecondaryActionLabel("deploy")}
-                </button>
-            );
+            actions.push({
+                id: "dig-deck",
+                label: getPrepSecondaryActionLabel("deploy") ?? "DIG DECK",
+                description: "Search the deck for a Digimon you can deploy.",
+                icon: Search,
+                tone: "yellow",
+                onClick: handleDigForDeploy,
+            });
+            return <HandIconActions actions={actions} />;
         }
 
         if (
@@ -632,16 +647,16 @@ export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap, onRoomLe
             gameState.prepSubPhase === "discard" &&
             gameState.player.active
         ) {
-            return (
-                gameState.isPlayerTurn && (
-                    <button
-                        onClick={handleEndDiscard}
-                        className="bg-ps-red text-white hover:bg-surface-strong hover:text-ps-red"
-                    >
-                        {getPrepPrimaryActionLabel("discard")}
-                    </button>
-                )
-            );
+            if (!gameState.isPlayerTurn) return null;
+            actions.push({
+                id: "continue-discard",
+                label: getPrepPrimaryActionLabel("discard") ?? "CONTINUE",
+                description: "Finish discarding for DP and continue preparation.",
+                icon: ArrowRight,
+                tone: "red",
+                onClick: handleEndDiscard,
+            });
+            return <HandIconActions actions={actions} />;
         }
 
         if (
@@ -665,21 +680,22 @@ export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap, onRoomLe
                     </span>
                 );
             }
-            return (
-                <>
-                    <span className="text-xs font-semibold text-muted tabular-nums px-1">
-                        {gameState.player.dp} DP
-                    </span>
-                    {gameState.isPlayerTurn && (
-                        <button
-                            onClick={handleEndPrep}
-                            className="bg-ps-yellow text-black hover:bg-surface-strong"
-                        >
-                            {getPrepPrimaryActionLabel("evolve")}
-                        </button>
-                    )}
-                </>
+            leading = (
+                <span className="shrink-0 rounded-full bg-panel px-2 py-1 text-[10px] font-black tabular-nums text-muted ring-1 ring-line">
+                    {gameState.player.dp} DP
+                </span>
             );
+            if (gameState.isPlayerTurn) {
+                actions.push({
+                    id: "end-prep",
+                    label: getPrepPrimaryActionLabel("evolve") ?? "END PREP",
+                    description: "End preparation and move into battle.",
+                    icon: Flag,
+                    tone: "yellow",
+                    onClick: handleEndPrep,
+                });
+            }
+            return <HandIconActions actions={actions} leading={leading} />;
         }
 
         if (gameState.phase === "battle_support" && !gameState.player.supportLocked) {
@@ -688,24 +704,25 @@ export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap, onRoomLe
                 canPickSupport &&
                 gameState.player.deck.length > 0;
             handPhaseActionsFooter = null;
-            return (
-                <>
-                    <button
-                        onClick={handleSupportGamble}
-                        disabled={!canGamble}
-                        className="bg-ps-yellow text-black hover:bg-surface-strong disabled:opacity-40"
-                    >
-                        GAMBLE
-                    </button>
-                    <button
-                        onClick={() => handleSupportChoice(null)}
-                        disabled={!canPickSupport}
-                        className="bg-panel text-fg border-line disabled:opacity-40"
-                    >
-                        NO SUPPORT
-                    </button>
-                </>
-            );
+            actions.push({
+                id: "gamble",
+                label: "GAMBLE",
+                description: "Flip the top of your Online Deck as a support gamble.",
+                icon: Dices,
+                tone: "yellow",
+                onClick: handleSupportGamble,
+                disabled: !canGamble,
+            });
+            actions.push({
+                id: "no-support",
+                label: "NO SUPPORT",
+                description: "Lock with no support card (bluff / pass).",
+                icon: Ban,
+                tone: "neutral",
+                onClick: () => handleSupportChoice(null),
+                disabled: !canPickSupport,
+            });
+            return <HandIconActions actions={actions} />;
         }
 
         return null;
