@@ -75,6 +75,8 @@ export interface PlayerState {
   /** Negative status ailments on the active digimon (cleared on evolve). */
   statusAilments?: string[];
   afkStrikes?: number;
+  /** False while seat is in reconnect grace (FC-024). */
+  connected?: boolean;
 }
 
 export interface GameState {

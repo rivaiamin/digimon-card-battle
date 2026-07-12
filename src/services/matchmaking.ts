@@ -36,4 +36,14 @@ export async function joinRandomBattle(
   return room as unknown as Room<BattleStateSchema>;
 }
 
+/** Rejoin a seat reserved by allowReconnection (FC-024). */
+export async function reconnectBattle(
+  reconnectionToken: string
+): Promise<Room<BattleStateSchema>> {
+  await ensureSignedIn();
+  const client = new ColyseusClient017(getWsUrl());
+  const room = await client.reconnect(reconnectionToken, BattleStateSchema);
+  return room as unknown as Room<BattleStateSchema>;
+}
+
 export type { MatchJoinOptions };

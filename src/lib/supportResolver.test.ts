@@ -79,6 +79,19 @@ describe("support nullification / jamming (FC-015 / P3-5)", () => {
         expect(result.defenderVoided).toBe(true);
     });
 
+    it("voids enemy support when locked attack has attack.jamming (FC-027)", () => {
+        const active = makePlayer("a", "Dark");
+        const defender = makePlayer("d", "Fire");
+        active.active!.cross.effectId = "attack.jamming";
+        const buff = digimonSupport("buff", "atk_buff", { value: 200, targetAttack: "circle" });
+        const result = evaluateSupportNullification(active, defender, null, buff, {
+            activeAttack: "cross",
+            defenderAttack: "circle",
+        });
+        expect(result.defenderVoided).toBe(true);
+        expect(result.activeVoided).toBe(false);
+    });
+
     it("voids battle options before ATK buff applies (cancellation-first)", () => {
         const active = makePlayer("a", "Fire");
         const defender = makePlayer("d", "Nature");

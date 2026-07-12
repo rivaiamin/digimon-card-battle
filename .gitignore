@@ -9,3 +9,4 @@ coverage/
 *.json
 !src/data/*.json
 fidelity-report.md
+tmp/

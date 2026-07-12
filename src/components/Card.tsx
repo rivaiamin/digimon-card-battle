@@ -19,6 +19,8 @@ interface CardProps {
   /** Full field cards: `digivolve` flashes in when evolution lands on the battlefield. */
   fieldEnter?: "default" | "digivolve" | "none";
   onHover?: (data: DigimonCardData | null) => void;
+  /** Tap-to-inspect on touch (field Digimon). */
+  onInspect?: (data: DigimonCardData) => void;
 }
 
 const TypeIcon = ({ type }: { type: string }) => {
@@ -42,7 +44,8 @@ export const DigimonCard: React.FC<CardProps & { variant?: 'full' | 'mini' }> = 
   variant = 'full',
   miniEnter = 'default',
   fieldEnter = 'default',
-  onHover
+  onHover,
+  onInspect
 }) => {
   const isMini = variant === 'mini';
   const attacks = data.attacks ?? DEFAULT_CARD_ATTACKS;
@@ -156,8 +159,9 @@ export const DigimonCard: React.FC<CardProps & { variant?: 'full' | 'mini' }> = 
           onHover?.(data);
         }}
         onMouseLeave={() => onHover?.(null)}
-        className={`w-24 h-36 bg-slate-950 border-2 rounded-sm shadow-xl relative overflow-hidden flex flex-col cursor-pointer pointer-events-auto
+        className={`relative overflow-hidden flex flex-col cursor-pointer pointer-events-auto border-2 rounded-sm shadow-xl bg-slate-950
             ${isOpponent ? 'border-ps-red/40' : 'border-ps-blue/40'}`}
+        style={{ width: "var(--hand-mini-w)", height: "var(--hand-mini-h)" }}
       >
         {/* Compact version of the main card UI for hand cards */}
         <div className="bg-black p-1 flex justify-between items-center border-b border-white/5">
@@ -222,6 +226,7 @@ export const DigimonCard: React.FC<CardProps & { variant?: 'full' | 'mini' }> = 
         onHover?.(data);
       }}
       onMouseLeave={() => onHover?.(null)}
+      onClick={() => onInspect?.(data)}
       transition={{ 
         delay: isDigivolving ? 0 : delay, 
         duration: isDigivolving ? 0.55 : isHit ? 0.5 : isRaised ? 0.7 : 1.1, 
@@ -249,7 +254,7 @@ export const DigimonCard: React.FC<CardProps & { variant?: 'full' | 'mini' }> = 
       {/* Evolution Info Overlay - Only for Full Cards in certain contexts or hand? 
           Actually user just wanted the UI replicated. I will keep this overlay for full cards only. */}
       {!isMini && (
-        <div className="absolute top-1/2 left-0 -translate-x-full bg-surface-strong border border-line p-2.5 text-xs flex flex-col gap-1.5">
+        <div className="absolute top-1/2 left-0 -translate-x-full bg-surface-strong border border-line p-2.5 text-xs flex-col gap-1.5 hidden md:flex">
             <div className="text-muted uppercase">Evo Cost</div>
             <div className="text-ps-blue font-bold tabular-nums">{data.evoCost} DP</div>
             <div className="h-px bg-line" />

@@ -1,4 +1,4 @@
-import { Room, type Client } from "@colyseus/core";
+import { Room, CloseCode, type Client } from "@colyseus/core";
 import { BattleStateSchema, PlayerSchema, CardSchema, SupportEffectSchema } from "../schema/BattleState";
 import cardsData from "../data/cards.json";
 import { getFirebaseAdminAuth } from "../server/firebaseAdmin";
@@ -12,7 +12,6 @@ import {
     isRookieLevel,
     mulliganHand,
     resolveInitialPrepSubPhase,
-    shouldDeckOutOnDraw,
     validateDeployDigimon,
 } from "../lib/openingFlow";
 import { applyDiscardForDp } from "../lib/discardForDp";
@@ -73,12 +72,22 @@ import {
     strikesAfterVoluntaryAction,
 } from "../lib/afkPolicy";
 import {
+    RECONNECT_GRACE_SECONDS,
+    isConsentedLeave,
+    shouldForfeitOnPermanentLeave,
+    shouldOfferReconnectGrace,
+} from "../lib/reconnectPolicy";
+import {
     phaseTimerDurationMs,
     pickRandomAttack,
     resolveTimedPhaseKey,
     type TimedPhaseKey,
 } from "../lib/phaseTimer";
 import { SUPPORT_REVEAL_MS } from "../lib/battleTurnFlow";
+import {
+    isDeckOutOnDraw,
+    loserSessionIdIfPointVictory,
+} from "../lib/matchOutcome";
 
 /** Set `DEBUG_BATTLE_ROOM=0` when starting the server to silence draw/deck-out traces. */
 const DEBUG_BATTLE_ROOM = process.env.DEBUG_BATTLE_ROOM !== "0";
@@ -357,6 +366,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         const authName = (client as any).auth?.name;
         player.name = typeof authName === "string" && authName.trim().length > 0 ? authName : `Player ${this.state.players.size + 1}`;
         player.hp = 0; // Will be set when active Digimon is chosen
+        player.connected = true;
         
         // Deck is assigned when the match starts (needs both players).
 
@@ -367,16 +377,78 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         }
     }
 
+    /**
+     * Unexpected disconnect (FC-024): keep seat + player state for a fixed grace window.
+     * Phase timers keep running (momentum continuity).
+     */
+    async onDrop(client: Client, code?: number) {
+        console.log(`[SERVER] Client dropped: ${client.sessionId}, code: ${code}`);
+        const player = this.state.players.get(client.sessionId);
+        if (player) {
+            player.connected = false;
+        }
+
+        const consented = isConsentedLeave(code);
+        if (!shouldOfferReconnectGrace(this.state.phase, consented)) {
+            return;
+        }
+
+        this.state.message = `${player?.name ?? "Player"} reconnecting...`;
+        this.auditLog.emit({
+            turn: this.state.turn,
+            phase: this.state.phase,
+            prepSubPhase: this.state.prepSubPhase,
+            playerSessionId: client.sessionId,
+            action: "DISCONNECT_GRACE",
+            validation: "ok",
+            fidelityIds: ["FC-024"],
+            detail: { graceSeconds: RECONNECT_GRACE_SECONDS, code: code ?? null },
+        });
+
+        try {
+            await this.allowReconnection(client, RECONNECT_GRACE_SECONDS);
+        } catch {
+            // Grace expired or reconnect denied — onLeave handles forfeit.
+        }
+    }
+
+    onReconnect(client: Client) {
+        console.log(`[SERVER] Client reconnected: ${client.sessionId}`);
+        const player = this.state.players.get(client.sessionId);
+        if (player) {
+            player.connected = true;
+        }
+        if (this.state.phase !== "victory") {
+            this.state.message = `${player?.name ?? "Player"} reconnected.`;
+        }
+        this.auditLog.emit({
+            turn: this.state.turn,
+            phase: this.state.phase,
+            prepSubPhase: this.state.prepSubPhase,
+            playerSessionId: client.sessionId,
+            action: "RECONNECT",
+            validation: "ok",
+            fidelityIds: ["FC-024"],
+        });
+    }
+
     onLeave(client: Client, code?: number) {
         console.log(`[SERVER] Client left: ${client.sessionId}, code: ${code}`);
-        this.clearPhaseTimer();
         this.pendingDecks.delete(client.sessionId);
+
+        const phase = this.state.phase;
+        const playerCount = this.state.players.size;
+
+        if (shouldForfeitOnPermanentLeave(phase, playerCount)) {
+            this.endGame(client.sessionId, "disconnect");
+        } else if (phase === "waiting") {
+            this.state.message = "Waiting for players...";
+        }
+
         this.state.players.delete(client.sessionId);
-        if (this.state.phase !== "victory") {
-            this.state.phase = "victory";
-            this.state.winnerSessionId = Array.from(this.state.players.keys())[0] ?? "";
-            this.state.loserReason = "disconnect";
-            this.state.message = "A player disconnected.";
+
+        if (code === CloseCode.CONSENTED && phase === "waiting") {
+            this.clearPhaseTimer();
         }
     }
 
@@ -405,6 +477,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             p.openingPenaltyActive = false;
             p.statusAilmentsJson = "[]";
             p.afkStrikes = 0;
+            p.connected = true;
 
             const deckIds =
                 this.pendingDecks.get(sessionId) ??
@@ -1075,7 +1148,19 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
                     applyBattleOptionToContext(this.toOptionCardView(card), source.sessionId, ctx);
                     source.trash.push(card);
                 },
-            }
+                drawCards: (source, count) => {
+                    for (let i = 0; i < count; i++) {
+                        if (source.deck.length <= 0) break;
+                        source.hand.push(source.deck.shift()!);
+                    }
+                },
+            },
+            this.ruleProfile.battle.attackLockBeforeSupport
+                ? {
+                      activeAttack: this.attackChoices.get(active.sessionId) ?? null,
+                      defenderAttack: this.attackChoices.get(defender.sessionId) ?? null,
+                  }
+                : undefined
         );
 
         // Digimon supports (and voided options) must reach trash; surviving options
@@ -1307,8 +1392,13 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
                 },
             });
 
-            if (winner.score >= 3) {
-                this.endGame(loser.sessionId, "points");
+            const pointLoser = loserSessionIdIfPointVictory(
+                { p1: pA.score, p2: pB.score },
+                pA.sessionId,
+                pB.sessionId
+            );
+            if (pointLoser) {
+                this.endGame(pointLoser, "points");
                 return;
             }
 
@@ -1384,6 +1474,8 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             this.state.message = "Deck Out!";
         } else if (reason === "afk") {
             this.state.message = "Match forfeited (AFK)";
+        } else if (reason === "disconnect") {
+            this.state.message = "A player disconnected.";
         } else {
             this.state.message = "Match Over";
         }
@@ -1555,7 +1647,12 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         });
 
         if (hasActive) {
-            if (shouldDeckOutOnDraw(true, player.hand.length, player.deck.length, target)) {
+            if (isDeckOutOnDraw({
+                hasActive: true,
+                handSize: player.hand.length,
+                deckSize: player.deck.length,
+                handTarget: target,
+            })) {
                 this.audit("DRAW", player, "rejected", "deck_out_active", {
                     handSize: player.hand.length,
                     deckSize: player.deck.length,

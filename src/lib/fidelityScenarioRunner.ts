@@ -3,6 +3,12 @@
  */
 
 import { shouldForfeitAfk, strikesAfterTimeout, strikesAfterVoluntaryAction } from "./afkPolicy";
+import {
+    isConsentedLeave,
+    RECONNECT_GRACE_SECONDS,
+    shouldForfeitOnPermanentLeave,
+    shouldOfferReconnectGrace,
+} from "./reconnectPolicy";
 import { resolveArenaVariant } from "./arenaVariant";
 import { resolveFullBattle, resolveKoScoring, type BattleCombatant } from "./battleEffectEngine";
 import type { BattleAuditEntry } from "./battleAuditLog";
@@ -23,8 +29,15 @@ import {
 } from "./optionResolver";
 import { canPlayEvolutionOption, canPlayPrepOption } from "./optionEligibility";
 import { getPrepOptionBadge } from "./prepOptionPresentation";
-import { isPlayerActionLegal, prepSubPhaseAfterDraw } from "./battleTurnFlow";
+import { isPlayerActionLegal, prepSubPhaseAfterDraw, isLegalPhaseTransition } from "./battleTurnFlow";
 import type { PlayerActionType } from "./battleTurnFlow";
+import {
+    applyScoreDelta,
+    isDeckOutOnDraw,
+    isDeckOutOnRequiredDeploy,
+    loserSessionIdIfPointVictory,
+    MATCH_POINTS_TO_WIN,
+} from "./matchOutcome";
 import { PHASE_TIMER_MS, phaseTimerDurationMs } from "./phaseTimer";
 import { getRuleProfile } from "./ruleProfile";
 import { createSeededRng, shuffleInPlace } from "./seededRng";
@@ -140,6 +153,40 @@ export const FIDELITY_SCENARIOS: FidelityScenario[] = [
             }
             if (!isPlayerActionLegal("DISCARD_FOR_DP", { ...ctx, phase: "preparation", prepSubPhase: "discard" })) {
                 throw new Error("discard should be legal in discard sub-phase");
+            }
+        },
+    },
+    {
+        id: "battle-phase-action-guards",
+        fidelityIds: ["FC-003"],
+        description: "Battle lock actions only in their phases; reveal/resolution reject inputs",
+        run() {
+            const ctx = {
+                isYourTurn: true,
+                hasActive: true,
+                supportLocked: false,
+                attackLocked: false,
+            };
+            if (!isPlayerActionLegal("LOCK_ATTACK", { ...ctx, phase: "battle_attack", prepSubPhase: "" })) {
+                throw new Error("LOCK_ATTACK should be legal in battle_attack");
+            }
+            if (isPlayerActionLegal("LOCK_SUPPORT", { ...ctx, phase: "battle_attack", prepSubPhase: "" })) {
+                throw new Error("LOCK_SUPPORT must be rejected during battle_attack");
+            }
+            if (!isPlayerActionLegal("LOCK_SUPPORT", { ...ctx, phase: "battle_support", prepSubPhase: "" })) {
+                throw new Error("LOCK_SUPPORT should be legal in battle_support");
+            }
+            if (isPlayerActionLegal("LOCK_ATTACK", { ...ctx, phase: "battle_reveal", prepSubPhase: "" })) {
+                throw new Error("LOCK_ATTACK must be rejected during battle_reveal");
+            }
+            if (isPlayerActionLegal("DRAW", { ...ctx, phase: "resolution", prepSubPhase: "" })) {
+                throw new Error("DRAW must be rejected during resolution");
+            }
+            if (!isLegalPhaseTransition("battle_attack", "battle_support", true)) {
+                throw new Error("fidelity battle must allow attack→support");
+            }
+            if (isLegalPhaseTransition("draw", "battle_support", true)) {
+                throw new Error("draw must not skip to battle_support");
             }
         },
     },
@@ -503,6 +550,48 @@ export const FIDELITY_SCENARIOS: FidelityScenario[] = [
         },
     },
     {
+        id: "match-win-loss-triggers",
+        fidelityIds: ["FC-005"],
+        description: "3-point win, deck-out on draw, deploy deck-out, double-KO tie continues",
+        run() {
+            if (MATCH_POINTS_TO_WIN !== 3) throw new Error("match is first-to-3");
+
+            const afterTwo = applyScoreDelta({ p1: 2, p2: 1 }, resolveKoScoring(0, 400).scoreDelta);
+            if (loserSessionIdIfPointVictory(afterTwo, "a", "b") !== null) {
+                throw new Error("2-2 should not end the match");
+            }
+            const afterThree = applyScoreDelta(afterTwo, resolveKoScoring(0, 100).scoreDelta);
+            if (loserSessionIdIfPointVictory(afterThree, "a", "b") !== "a") {
+                throw new Error("p2 at 3 points should make a the loser");
+            }
+
+            const tied = applyScoreDelta({ p1: 2, p2: 2 }, resolveKoScoring(0, 0).scoreDelta);
+            if (tied.p1 !== 2 || tied.p2 !== 2) throw new Error("double KO must not change score");
+            if (loserSessionIdIfPointVictory(tied, "a", "b") !== null) {
+                throw new Error("double KO tie must continue the match");
+            }
+
+            if (
+                !isDeckOutOnDraw({
+                    hasActive: true,
+                    handSize: 1,
+                    deckSize: 0,
+                    handTarget: 4,
+                })
+            ) {
+                throw new Error("deck-out on draw when below hand target");
+            }
+            if (
+                !isDeckOutOnRequiredDeploy({
+                    hasLegalDeployInHand: false,
+                    recoveredFromDeck: false,
+                })
+            ) {
+                throw new Error("deck-out when required deploy impossible");
+            }
+        },
+    },
+    {
         id: "cross-counter-ko",
         fidelityIds: ["FC-017", "FC-018"],
         description: "Cross counter cancels return hit and deals reflected damage",
@@ -696,6 +785,73 @@ export const FIDELITY_SCENARIOS: FidelityScenario[] = [
             if (shouldForfeitAfk(strikes)) throw new Error("should not forfeit at 2 strikes");
             strikes = strikesAfterTimeout(strikes);
             if (!shouldForfeitAfk(strikes)) throw new Error("should forfeit at 3 strikes");
+        },
+    },
+    {
+        id: "reconnect-disconnect-fairness",
+        fidelityIds: ["FC-024"],
+        description: "Grace on drop; consented/expired leave forfeits mid-match only",
+        run() {
+            if (RECONNECT_GRACE_SECONDS <= 0) throw new Error("grace must be positive");
+            if (!shouldOfferReconnectGrace("battle_support", false)) {
+                throw new Error("unexpected drop mid-match must offer grace");
+            }
+            if (shouldOfferReconnectGrace("battle_support", true)) {
+                throw new Error("consented leave must not offer grace");
+            }
+            if (shouldOfferReconnectGrace("victory", false)) {
+                throw new Error("victory drop must not offer grace");
+            }
+            if (!isConsentedLeave(4000)) throw new Error("4000 is consented leave");
+            if (!shouldForfeitOnPermanentLeave("preparation", 2)) {
+                throw new Error("permanent leave mid-match must forfeit");
+            }
+            if (shouldForfeitOnPermanentLeave("waiting", 2)) {
+                throw new Error("waiting leave must not forfeit");
+            }
+            if (shouldForfeitOnPermanentLeave("victory", 2)) {
+                throw new Error("victory leave must not re-forfeit");
+            }
+        },
+    },
+    {
+        id: "catalog-taxonomy-effect-normalize",
+        fidelityIds: ["FC-026", "FC-027"],
+        description: "All cardKinds present; attack + compound support text normalize",
+        run() {
+            const kinds = new Set(CATALOG.map(c => c.cardKind));
+            if (!kinds.has("digimon") || !kinds.has("option") || !kinds.has("evolution_option")) {
+                throw new Error("missing cardKind in taxonomy");
+            }
+            const first = CATALOG.find(c => c.attacks.cross.description === "1st Attack");
+            if (!first || first.attacks.cross.effectId !== "attack.first_strike") {
+                throw new Error("1st Attack must normalize to attack.first_strike");
+            }
+            const jam = CATALOG.find(c => c.attacks.cross.description === "Jamming");
+            if (!jam || jam.attacks.cross.effectId !== "attack.jamming") {
+                throw new Error("Jamming must normalize to attack.jamming");
+            }
+            const foe = CATALOG.find(c => /Foe x\d/i.test(c.attacks.cross.description));
+            if (!foe || foe.attacks.cross.effectId !== "attack.specialty_mult") {
+                throw new Error("Specialty Foe must normalize to attack.specialty_mult");
+            }
+            const compose = CATALOG.find(
+                c =>
+                    c.supportEffect?.type === "compose" ||
+                    /Attack first\.\s*Boost own Attack Power/i.test(
+                        String(c.supportEffect?.description ?? "")
+                    )
+            );
+            if (compose && compose.supportEffect?.type !== "compose" && compose.supportEffect?.type !== "first_strike") {
+                // Prefer compose when multi-clause text was promoted.
+                if (
+                    /Attack first/i.test(String(compose.supportEffect?.description ?? "")) &&
+                    /Boost/i.test(String(compose.supportEffect?.description ?? "")) &&
+                    compose.supportEffect?.type === "catalog_text"
+                ) {
+                    throw new Error("multi-clause Attack first+Boost should promote off catalog_text");
+                }
+            }
         },
     },
     {

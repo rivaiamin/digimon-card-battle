@@ -16,10 +16,12 @@ import { EvolutionBeat } from "./battle/EvolutionBeat";
 import { DamagePopups } from "./battle/DamagePopups";
 import { SupportZone } from "./battle/SupportZone";
 import { MatchHeader } from "./battle/MatchHeader";
+import { CardPreviewPanel } from "./battle/CardPreviewPanel";
 import { AttackRevealOverlay } from "./battle/AttackRevealOverlay";
 import { AttackStrikePanel } from "./battle/AttackStrikePanel";
 import { BattleRevealVignette } from "./battle/BattleRevealVignette";
 import { PlayerHandZone, type HandCardAction } from "./battle/PlayerHandZone";
+import { HandIconActions, type HandIconAction } from "./battle/HandIconActions";
 import type { HandInteractionContext } from "../lib/handCardInteraction";
 import { useDrawPhaseBeat } from "../hooks/useDrawPhaseBeat";
 import { useMulliganBeat } from "../hooks/useMulliganBeat";
@@ -38,6 +40,16 @@ import {
     getPrepPrimaryActionLabel,
     getPrepSecondaryActionLabel,
 } from "../lib/prepPhaseCopy";
+import { VictoryOverlay } from "./battle/VictoryOverlay";
+import {
+    ArrowRight,
+    Ban,
+    Check,
+    Dices,
+    Flag,
+    RefreshCw,
+    Search,
+} from "lucide-react";
 
 const INITIAL_PLAYER_STATE: PlayerState = {
     active: null,
@@ -144,14 +156,18 @@ const mapSchemaToPlayerState = (schema: any): PlayerState => {
         openingPenaltyActive: !!schema.openingPenaltyActive,
         statusAilments: parseStatusAilmentsJson(schema.statusAilmentsJson),
         afkStrikes: schema.afkStrikes ?? 0,
+        connected: schema.connected !== false,
     };
 };
 
 type ArenaProps = {
     room: Room<BattleStateSchema>;
+    onReturnToWorldMap: () => void;
+    /** Unexpected leave — App may attempt FC-024 reconnect. */
+    onRoomLeft?: (code: number, reconnectionToken: string) => void;
 };
 
-export const Arena: React.FC<ArenaProps> = ({ room }) => {
+export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap, onRoomLeft }) => {
     const audio = useAudio();
     const [clickDebug, setClickDebug] = useState<string>("");
     const [gameState, setGameState] = useState<GameState>({
@@ -169,6 +185,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
     });
 
     const [hoveredCard, setHoveredCard] = useState<DigimonCardData | null>(null);
+    const [previewCard, setPreviewCard] = useState<DigimonCardData | null>(null);
     /** Face-down preview of own support until server reveal syncs. */
     const [committedSupport, setCommittedSupport] = useState<DigimonCardData | null>(null);
     const [committedEmptySupport, setCommittedEmptySupport] = useState(false);
@@ -179,6 +196,14 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
     const [prepOptionPlayRequest, setPrepOptionPlayRequest] = useState<PrepOptionPlayRequest | null>(null);
 
     const [opponentSessionId, setOpponentSessionId] = useState("");
+
+    // Attack picker is the focus — drop the card inspector so it doesn't steal the column.
+    useEffect(() => {
+        if (gameState.phase === "battle_attack") {
+            setHoveredCard(null);
+            setPreviewCard(null);
+        }
+    }, [gameState.phase]);
 
     const commitDrawPhase = useCallback(() => {
         audio.playSfx("chime");
@@ -327,7 +352,12 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
 
         const onLeave = (code: number) => {
             console.log(`[Colyseus] Left room: ${code}`);
-            setGameState(prev => ({ ...prev, phase: 'waiting', message: "DISCONNECTED FROM SERVER" }));
+            const token = room.reconnectionToken ?? "";
+            setGameState(prev => ({
+                ...prev,
+                message: "DISCONNECTED FROM SERVER",
+            }));
+            onRoomLeft?.(code, token);
         };
 
         // Apply current server snapshot immediately. The first client can receive all
@@ -344,7 +374,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
             room.onError.remove(onError);
             room.onLeave.remove(onLeave);
         };
-    }, [room]);
+    }, [room, onRoomLeft]);
 
     useEffect(() => {
         async function loadCards() {
@@ -561,6 +591,9 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
     let handPhaseActionsFooter: React.ReactNode = null;
 
     const handPhaseActions = (() => {
+        const actions: HandIconAction[] = [];
+        let leading: React.ReactNode = null;
+
         if (gameState.phase === "preparation" && gameState.prepSubPhase === "mulligan" && gameState.isPlayerTurn) {
             handPhaseActionsFooter = (
                 <span className="text-[10px] text-muted uppercase font-bold tracking-wide">
@@ -568,26 +601,27 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                 </span>
             );
             const redrawsLeft = gameState.player.mulligansRemaining ?? 0;
-            return (
-                <>
-                    <button
-                        onClick={handleAcceptHand}
-                        disabled={mulliganBeat.isRedrawing}
-                        className="bg-ps-green text-black hover:bg-surface-strong disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {getPrepPrimaryActionLabel("mulligan")}
-                    </button>
-                    {redrawsLeft > 0 && (
-                        <button
-                            onClick={handleMulligan}
-                            disabled={mulliganBeat.isRedrawing}
-                            className="bg-ps-yellow text-black hover:bg-surface-strong disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            {getPrepSecondaryActionLabel("mulligan")}
-                        </button>
-                    )}
-                </>
-            );
+            actions.push({
+                id: "keep-hand",
+                label: getPrepPrimaryActionLabel("mulligan") ?? "KEEP HAND",
+                description: "Keep your opening hand and continue to deploy.",
+                icon: Check,
+                tone: "green",
+                onClick: handleAcceptHand,
+                disabled: mulliganBeat.isRedrawing,
+            });
+            if (redrawsLeft > 0) {
+                actions.push({
+                    id: "redraw",
+                    label: getPrepSecondaryActionLabel("mulligan") ?? "REDRAW",
+                    description: `Mulligan your hand (${redrawsLeft} redraw${redrawsLeft === 1 ? "" : "s"} left).`,
+                    icon: RefreshCw,
+                    tone: "yellow",
+                    onClick: handleMulligan,
+                    disabled: mulliganBeat.isRedrawing,
+                });
+            }
+            return <HandIconActions actions={actions} />;
         }
 
         if (
@@ -597,14 +631,15 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
             gameState.isPlayerTurn &&
             deployableHandCards.length === 0
         ) {
-            return (
-                <button
-                    onClick={handleDigForDeploy}
-                    className="bg-ps-yellow text-black hover:bg-surface-strong"
-                >
-                    {getPrepSecondaryActionLabel("deploy")}
-                </button>
-            );
+            actions.push({
+                id: "dig-deck",
+                label: getPrepSecondaryActionLabel("deploy") ?? "DIG DECK",
+                description: "Search the deck for a Digimon you can deploy.",
+                icon: Search,
+                tone: "yellow",
+                onClick: handleDigForDeploy,
+            });
+            return <HandIconActions actions={actions} />;
         }
 
         if (
@@ -612,23 +647,16 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
             gameState.prepSubPhase === "discard" &&
             gameState.player.active
         ) {
-            if (gameState.isPlayerTurn) {
-                handPhaseActionsFooter = (
-                    <span className="text-[10px] text-muted uppercase font-bold tracking-wide">
-                        {getPrepHandFooter("discard")}
-                    </span>
-                );
-            }
-            return (
-                gameState.isPlayerTurn && (
-                    <button
-                        onClick={handleEndDiscard}
-                        className="bg-ps-red text-white hover:bg-surface-strong hover:text-ps-red"
-                    >
-                        {getPrepPrimaryActionLabel("discard")}
-                    </button>
-                )
-            );
+            if (!gameState.isPlayerTurn) return null;
+            actions.push({
+                id: "continue-discard",
+                label: getPrepPrimaryActionLabel("discard") ?? "CONTINUE",
+                description: "Finish discarding for DP and continue preparation.",
+                icon: ArrowRight,
+                tone: "red",
+                onClick: handleEndDiscard,
+            });
+            return <HandIconActions actions={actions} />;
         }
 
         if (
@@ -636,37 +664,23 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
             gameState.prepSubPhase === "evolve" &&
             gameState.player.active
         ) {
-            if (gameState.isPlayerTurn) {
-                handPhaseActionsFooter = (
-                    <span
-                        className={`text-[10px] uppercase tracking-wide ${
-                            evolutionOptionCards.length > 0
-                                ? "text-ps-blue font-black"
-                                : "text-muted font-bold"
-                        }`}
-                    >
-                        {getPrepHandFooter("evolve", {
-                            hasEvolutionOptions: evolutionOptionCards.length > 0,
-                            evoOptionSelected: !!selectedEvoOptionId,
-                        })}
-                    </span>
-                );
-            }
-            return (
-                <>
-                    <span className="text-xs font-semibold text-muted tabular-nums px-1">
-                        {gameState.player.dp} DP
-                    </span>
-                    {gameState.isPlayerTurn && (
-                        <button
-                            onClick={handleEndPrep}
-                            className="bg-ps-yellow text-black hover:bg-surface-strong"
-                        >
-                            {getPrepPrimaryActionLabel("evolve")}
-                        </button>
-                    )}
-                </>
+            leading = (
+                <span className="shrink-0 rounded-full bg-panel px-2 py-1 text-[10px] font-black tabular-nums text-muted ring-1 ring-line">
+                    {gameState.player.dp} DP
+                </span>
             );
+            if (gameState.isPlayerTurn) {
+                actions.push({
+                    id: "end-prep",
+                    label: getPrepPrimaryActionLabel("evolve") ?? "END PREP",
+                    description:
+                        "End preparation and move into battle. Digivolve if you can — yellow badges play prep options.",
+                    icon: Flag,
+                    tone: "yellow",
+                    onClick: handleEndPrep,
+                });
+            }
+            return <HandIconActions actions={actions} leading={leading} />;
         }
 
         if (gameState.phase === "battle_support" && !gameState.player.supportLocked) {
@@ -674,29 +688,26 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                 ruleProfile.battle.allowOnlineDeckGamble &&
                 canPickSupport &&
                 gameState.player.deck.length > 0;
-            handPhaseActionsFooter = (
-                <span className="text-[10px] text-muted uppercase font-bold tracking-wide">
-                    Hand, NO SUPPORT, or gamble the Online Deck
-                </span>
-            );
-            return (
-                <>
-                    <button
-                        onClick={handleSupportGamble}
-                        disabled={!canGamble}
-                        className="bg-ps-yellow text-black hover:bg-surface-strong disabled:opacity-40"
-                    >
-                        GAMBLE
-                    </button>
-                    <button
-                        onClick={() => handleSupportChoice(null)}
-                        disabled={!canPickSupport}
-                        className="bg-panel text-fg border-line disabled:opacity-40"
-                    >
-                        NO SUPPORT
-                    </button>
-                </>
-            );
+            handPhaseActionsFooter = null;
+            actions.push({
+                id: "gamble",
+                label: "GAMBLE",
+                description: `${supportPhaseHint || "Your support pick."} Flip the top of your Online Deck as a support gamble.`,
+                icon: Dices,
+                tone: "yellow",
+                onClick: handleSupportGamble,
+                disabled: !canGamble,
+            });
+            actions.push({
+                id: "no-support",
+                label: "NO SUPPORT",
+                description: `${supportPhaseHint || "Your support pick."} Lock with no support card (bluff / pass).`,
+                icon: Ban,
+                tone: "neutral",
+                onClick: () => handleSupportChoice(null),
+                disabled: !canPickSupport,
+            });
+            return <HandIconActions actions={actions} />;
         }
 
         return null;
@@ -728,6 +739,18 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
         gameState.phase === 'battle_attack' ||
         gameState.phase === 'resolution';
 
+    const choosingAttack =
+        gameState.phase === "battle_attack" &&
+        !gameState.player.attackLocked &&
+        !!gameState.player.active;
+
+    /** Digimon on field — larger cards + equal margins to phase strip (all phases). */
+    const fieldActiveLayout =
+        !choosingAttack &&
+        !!(gameState.player.active || gameState.opponent.active) &&
+        gameState.phase !== "waiting" &&
+        gameState.phase !== "victory";
+
     if (
         gameState.phase !== 'victory' &&
         needsBattleActives &&
@@ -754,7 +777,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
     }
 
     return (
-        <div className={`relative w-screen h-screen overflow-hidden bg-app text-fg flex items-center justify-center perspective-stage pb-36 ${timerCritical ? "timer-critical-shake" : ""}`}>
+        <div className={`relative w-screen h-[100dvh] overflow-hidden bg-app text-fg flex items-center justify-center perspective-stage battle-stage ${choosingAttack ? "battle-stage--choosing-attack" : ""} ${fieldActiveLayout ? "battle-stage--field-active" : ""} ${timerCritical ? "timer-critical-shake" : ""}`}>
             <div className="scanlines" />
 
             <BattleRevealVignette
@@ -768,14 +791,14 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
             />
 
             {!suppressMessageOverlay && gameState.message && (
-            <div className="absolute top-[28%] left-0 w-full flex justify-center z-[70] pointer-events-none px-4">
+            <div className="absolute top-[10%] sm:top-[12%] left-0 w-full flex justify-center z-[70] pointer-events-none px-3 sm:px-4">
                 <motion.div 
                     key={gameState.message}
                     initial={{ scale: 1.05, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    className="bg-ps-blue/95 px-8 py-3 rounded border border-fg/20 shadow-lg max-w-lg"
+                    className="bg-surface-strong px-4 sm:px-8 py-2 sm:py-3 rounded border-2 border-ps-blue shadow-lg max-w-lg"
                 >
-                    <span className="text-xl font-bold text-white text-center block text-balance">
+                    <span className="text-base sm:text-xl font-bold text-fg text-center block text-balance">
                         {gameState.message}
                     </span>
                 </motion.div>
@@ -783,7 +806,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
             )}
 
             {vfx.koMessage && vfx.phase === "ko_beat" && (
-            <div className="absolute top-[28%] left-0 w-full flex justify-center z-[75] pointer-events-none px-4">
+            <div className="absolute top-[10%] sm:top-[12%] left-0 w-full flex justify-center z-[75] pointer-events-none px-3 sm:px-4">
                 <motion.div
                     key={vfx.koMessage}
                     initial={{ scale: 1.1, opacity: 0 }}
@@ -823,9 +846,9 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
 
             <motion.div 
                 animate={{ 
-                    rotateX: vfx.cameraState === 'attack' ? 28 : vfx.cameraState === 'damage' ? 38 : 45,
-                    translateZ: vfx.cameraState === 'attack' ? 140 : vfx.cameraState === 'damage' ? 80 : 0,
-                    scale: vfx.cameraState === 'attack' ? 1.28 : vfx.cameraState === 'damage' ? 1.18 : 1.1,
+                    rotateX: vfx.cameraState === 'attack' ? 22 : vfx.cameraState === 'damage' ? 30 : 28,
+                    translateZ: vfx.cameraState === 'attack' ? 100 : vfx.cameraState === 'damage' ? 60 : 0,
+                    scale: vfx.cameraState === 'attack' ? 1.18 : vfx.cameraState === 'damage' ? 1.12 : 1.05,
                     x: vfx.phase === "impact" ? [0, -6, 6, -4, 4, 0] : 0,
                 }}
                 transition={{
@@ -834,11 +857,68 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                 }}
                 className="relative w-[200vw] h-[200vh] bg-app flex items-center justify-center arena-surface digital-grid"
             >
-                {/* 3D Battle Elements */}
-                <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-center gap-64 h-96 items-center">
-                    {/* Player Area */}
-                    <div className="relative" style={{ transform: "rotateX(-45deg)" }}>
-                        {playerActive && (
+                {/* Opponent top · center gap (for MatchHeader) · player bottom */}
+                <div className="absolute inset-x-0 flex flex-col items-center battle-field-band">
+                    <div className="relative battle-field-slot">
+                        {opponentActive ? (
+                            <DigimonCard 
+                                data={{...opponentActive, hp: displayOpponentHp}} 
+                                isOpponent 
+                                fieldEnter={evolutionVfx.opponentFieldEnter}
+                                isRaised={vfx.opponentRaised}
+                                isAttacking={vfx.opponentAttacking}
+                                isHit={vfx.opponentHit}
+                                isKo={vfx.phase === "ko_beat" && vfx.koSide === "opponent"}
+                                onHover={setHoveredCard}
+                                onInspect={setPreviewCard}
+                            />
+                        ) : (
+                            <div className="battle-field-placeholder battle-field-placeholder--opponent" aria-hidden>
+                                <span>Opponent</span>
+                            </div>
+                        )}
+                        <AttackStrikePanel
+                            strike={vfx.activeStrikeSide === "opponent" ? vfx.activeStrike : null}
+                            side="opponent"
+                            visible={vfx.activeStrikeSide === "opponent" && vfx.phase === "raise"}
+                        />
+                        <SupportZone
+                            side="opponent"
+                            phase={gameState.phase}
+                            supportCard={gameState.opponent.supportCard}
+                            supportLocked={!!gameState.opponent.supportLocked}
+                            revealOrder={opponentRevealOrder}
+                            onHover={setHoveredCard}
+                        />
+                    </div>
+
+                    <div className="battle-field-center-gap relative w-full max-w-sm">
+                        {(playerActive || opponentActive) && (
+                            <MatchHeader
+                                turn={gameState.turn}
+                                phase={gameState.phase}
+                                prepSubPhase={gameState.prepSubPhase}
+                                isYourTurn={gameState.isPlayerTurn}
+                                yourSessionId={room.sessionId}
+                                activePlayerSessionId={gameState.activePlayerSessionId ?? ""}
+                                supportPickDefenderFirst={ruleProfile.battle.supportPickDefenderFirst}
+                                supportPickSessionId={gameState.supportPickSessionId ?? ""}
+                                attackLocked={!!gameState.player.attackLocked}
+                                phaseEndsAtMs={gameState.phaseEndsAtMs ?? 0}
+                                handTarget={ruleProfile.handTarget}
+                                mulligansRemaining={gameState.player.mulligansRemaining ?? 0}
+                                needsOpeningDeploy={!!gameState.player.needsOpeningDeploy}
+                                fieldAnchored
+                            />
+                        )}
+                    </div>
+
+                    <div
+                        className={`relative battle-field-slot ${
+                            choosingAttack ? "battle-field-slot--lifted" : ""
+                        }`}
+                    >
+                        {playerActive ? (
                             <DigimonCard 
                                 data={{...playerActive, hp: displayPlayerHp}} 
                                 fieldEnter={evolutionVfx.playerFieldEnter}
@@ -847,7 +927,12 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                                 isHit={vfx.playerHit}
                                 isKo={vfx.phase === "ko_beat" && vfx.koSide === "player"}
                                 onHover={setHoveredCard}
+                                onInspect={setPreviewCard}
                             />
+                        ) : (
+                            <div className="battle-field-placeholder battle-field-placeholder--player" aria-hidden>
+                                <span>Your Digimon</span>
+                            </div>
                         )}
                         <AttackStrikePanel
                             strike={vfx.activeStrikeSide === "player" ? vfx.activeStrike : null}
@@ -866,50 +951,17 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                             onHover={setHoveredCard}
                         />
                     </div>
-
-                    {/* Opponent Area */}
-                    <div className="relative" style={{ transform: "rotateX(-45deg)" }}>
-                        {opponentActive && (
-                            <DigimonCard 
-                                data={{...opponentActive, hp: displayOpponentHp}} 
-                                isOpponent 
-                                fieldEnter={evolutionVfx.opponentFieldEnter}
-                                isRaised={vfx.opponentRaised}
-                                isAttacking={vfx.opponentAttacking}
-                                isHit={vfx.opponentHit}
-                                isKo={vfx.phase === "ko_beat" && vfx.koSide === "opponent"}
-                                onHover={setHoveredCard}
-                            />
-                        )}
-                        <AttackStrikePanel
-                            strike={vfx.activeStrikeSide === "opponent" ? vfx.activeStrike : null}
-                            side="opponent"
-                            visible={vfx.activeStrikeSide === "opponent" && vfx.phase === "raise"}
-                        />
-                        <SupportZone
-                            side="opponent"
-                            phase={gameState.phase}
-                            supportCard={gameState.opponent.supportCard}
-                            supportLocked={!!gameState.opponent.supportLocked}
-                            revealOrder={opponentRevealOrder}
-                            onHover={setHoveredCard}
-                        />
-                    </div>
                 </div>
             </motion.div>
 
             {/* BATTLE HUD */}
             <BattleHUD 
                 state={gameState}
+                yourSessionId={room.sessionId}
                 player={{
                     active: playerActive,
                     hp: displayPlayerHp,
                     maxHp: playerActive?.maxHp ?? gameState.player.active?.maxHp ?? 0
-                }}
-                opponent={{
-                    active: opponentActive,
-                    hp: displayOpponentHp,
-                    maxHp: opponentActive?.maxHp ?? gameState.opponent.active?.maxHp ?? 0
                 }}
                 onAttack={handleAttack}
                 disabled={
@@ -920,6 +972,16 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                 }
             />
 
+            {gameState.phase !== "victory" &&
+                gameState.phase !== "waiting" &&
+                gameState.opponent.connected === false && (
+                <div className="fixed top-20 inset-x-0 z-[120] flex justify-center pointer-events-none">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-ps-yellow bg-surface-strong/90 border border-ps-yellow/40 px-4 py-2">
+                        Opponent reconnecting…
+                    </span>
+                </div>
+            )}
+
             {/* Persistent hand (PS1-style: always visible, inactive when not playable) */}
             {gameState.phase !== "waiting" && (
                 <PlayerHandZone
@@ -927,6 +989,8 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                     context={handInteractionContext}
                     onCardAction={handleHandCardAction}
                     onHover={setHoveredCard}
+                    onPreview={setPreviewCard}
+                    compact={choosingAttack || fieldActiveLayout}
                     phaseActions={handPhaseActions}
                     phaseActionsFooter={handPhaseActionsFooter}
                     drawStatus={
@@ -971,11 +1035,7 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                               }
                             : undefined
                     }
-                    supportHint={
-                        gameState.phase === "battle_support" && !gameState.player.supportLocked
-                            ? supportPhaseHint
-                            : null
-                    }
+                    supportHint={null}
                     newlyDrawnCardIds={newlyHighlightedCardIds}
                 />
             )}
@@ -986,96 +1046,40 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                 </div>
             )}
 
-            <MatchHeader
-                turn={gameState.turn}
-                phase={gameState.phase}
-                prepSubPhase={gameState.prepSubPhase}
-                isYourTurn={gameState.isPlayerTurn}
-                yourSessionId={room.sessionId}
-                activePlayerSessionId={gameState.activePlayerSessionId ?? ""}
-                supportPickDefenderFirst={ruleProfile.battle.supportPickDefenderFirst}
-                supportPickSessionId={gameState.supportPickSessionId ?? ""}
-                attackLocked={!!gameState.player.attackLocked}
-                phaseEndsAtMs={gameState.phaseEndsAtMs ?? 0}
-                handTarget={ruleProfile.handTarget}
-                mulligansRemaining={gameState.player.mulligansRemaining ?? 0}
-                needsOpeningDeploy={!!gameState.player.needsOpeningDeploy}
-                playerScore={gameState.player.score}
-                opponentScore={gameState.opponent.score}
+            {!(playerActive || opponentActive) && (
+                <MatchHeader
+                    turn={gameState.turn}
+                    phase={gameState.phase}
+                    prepSubPhase={gameState.prepSubPhase}
+                    isYourTurn={gameState.isPlayerTurn}
+                    yourSessionId={room.sessionId}
+                    activePlayerSessionId={gameState.activePlayerSessionId ?? ""}
+                    supportPickDefenderFirst={ruleProfile.battle.supportPickDefenderFirst}
+                    supportPickSessionId={gameState.supportPickSessionId ?? ""}
+                    attackLocked={!!gameState.player.attackLocked}
+                    phaseEndsAtMs={gameState.phaseEndsAtMs ?? 0}
+                    handTarget={ruleProfile.handTarget}
+                    mulligansRemaining={gameState.player.mulligansRemaining ?? 0}
+                    needsOpeningDeploy={!!gameState.player.needsOpeningDeploy}
+                    fieldAnchored={false}
+                />
+            )}
+
+            <CardPreviewPanel
+                card={hoveredCard}
+                mode="hover"
             />
-
-            {/* CARD DETAIL OVERLAY */}
-            <AnimatePresence>
-                {hoveredCard && (
-                    <motion.div 
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -20 }}
-                        className="fixed top-24 left-10 z-[150] w-80 bg-surface-strong border-2 border-ps-blue p-5 shadow-[0_0_50px_rgba(60,155,255,0.3)] pointer-events-none"
-                    >
-                        <div className="flex justify-between items-start mb-4 border-b border-ps-blue/30 pb-2">
-                            <div>
-                                <h2 className="text-2xl font-black italic text-fg uppercase leading-none">{hoveredCard.name}</h2>
-                                <span className="text-xs font-bold text-ps-blue">{hoveredCard.level.toUpperCase()} / {hoveredCard.type.toUpperCase()}</span>
-                            </div>
-                            <div className="bg-ps-blue/20 p-2 border border-ps-blue/50">
-                                <span className="text-xl font-black text-ps-blue leading-none">{hoveredCard.hp}</span>
-                                <span className="text-xs block text-muted">HP</span>
-                            </div>
-                        </div>
-
-                        {/* SUPPORT EFFECT (HIGH PRIORITY) */}
-                        {hoveredCard.supportEffect && (
-                            <div className="mb-6 bg-ps-blue/10 border border-ps-blue/40 p-3">
-                                <div className="text-xs font-black text-ps-blue uppercase mb-1 tracking-widest flex items-center gap-2">
-                                    <div className="w-1.5 h-1.5 bg-ps-blue animate-pulse" />
-                                    Support Effect
-                                </div>
-                                <p className="text-sm font-bold text-fg leading-relaxed">
-                                    {hoveredCard.supportEffect.description}
-                                </p>
-                            </div>
-                        )}
-
-                        {/* ATTACK DETAILS */}
-                        <div className="flex flex-col gap-3">
-                            {(() => {
-                                const h = hoveredCard.attacks ?? DEFAULT_CARD_ATTACKS;
-                                return [
-                                    { type: 'circle' as const, color: 'ps-red', data: h.circle },
-                                    { type: 'triangle' as const, color: 'ps-blue', data: h.triangle },
-                                    { type: 'cross' as const, color: 'ps-yellow', data: h.cross }
-                                ].map((atk) => (
-                                <div key={atk.type} className={`border-l-2 border-${atk.color} pl-3 py-1 bg-${atk.color}/5`}>
-                                    <div className="flex justify-between items-center mb-1">
-                                        <span className={`text-xs font-black text-${atk.color} uppercase`}>{atk.data.name}</span>
-                                        <span className={`text-sm font-black text-${atk.color} italic`}>{atk.data.damage}</span>
-                                    </div>
-                                    <p className="text-xs text-muted leading-tight">
-                                        {atk.data.description || "Standard damage attack."}
-                                    </p>
-                                </div>
-                            ));
-                            })()}
-                        </div>
-
-                        {/* EVO INFO */}
-                        <div className="mt-6 flex justify-between pt-2 border-t border-line text-xs font-bold">
-                            <div className="flex flex-col">
-                                <span className="text-muted uppercase">Evo Cost</span>
-                                <span className="text-ps-blue">{hoveredCard.evoCost} DP</span>
-                            </div>
-                            <div className="flex flex-col items-end">
-                                <span className="text-muted uppercase">Plus DP</span>
-                                <span className="text-ps-yellow">+{hoveredCard.plusDp}</span>
-                            </div>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+            <CardPreviewPanel
+                card={previewCard}
+                mode="sheet"
+                onClose={() => setPreviewCard(null)}
+            />
             
             {gameState.phase === "battle_support" && gameState.player.supportLocked && (
-                <div className="fixed bottom-36 inset-x-0 z-[90] flex justify-center pointer-events-none">
+                <div
+                    className="fixed inset-x-0 z-[90] flex justify-center pointer-events-none px-3"
+                    style={{ bottom: "var(--battle-hand-clearance)" }}
+                >
                     <span className="text-[10px] font-black uppercase tracking-widest text-ps-blue/80 bg-surface-strong/80 border border-ps-blue/30 px-3 py-1 rounded">
                         {committedGambleSupport
                             ? "Deck gamble set — waiting for opponent"
@@ -1086,38 +1090,16 @@ export const Arena: React.FC<ArenaProps> = ({ room }) => {
                 </div>
             )}
 
-            {gameState.phase === 'victory' && !vfx.isAnimating && (
-                <motion.div
-                    className="fixed inset-0 bg-overlay z-[200] flex items-center justify-center"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.35 }}
-                >
-                    <motion.div
-                        className="text-center"
-                        initial={{ opacity: 0, y: 16, scale: 0.96 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-                    >
-                        <h1 className="text-8xl font-black text-ps-yellow italic mb-4">
-                            {gameState.winnerSessionId === room.sessionId ? "BATTLE WON" : "BATTLE LOST"}
-                        </h1>
-                        <div className="text-muted text-sm font-mono mb-2 uppercase tracking-wide">
-                            {gameState.player.score} — {gameState.opponent.score}
-                        </div>
-                        {gameState.loserReason && (
-                            <div className="text-muted text-sm font-mono mb-6 uppercase">
-                                {String(gameState.loserReason).replace("_", " ")}
-                            </div>
-                        )}
-                        <button 
-                            onClick={() => window.location.reload()}
-                            className="bg-ps-yellow px-12 py-4 font-black"
-                        >
-                            RETURN TO WORLD MAP
-                        </button>
-                    </motion.div>
-                </motion.div>
+            {gameState.phase === "victory" && !vfx.isAnimating && (
+                <VictoryOverlay
+                    outcome={
+                        gameState.winnerSessionId === room.sessionId ? "won" : "lost"
+                    }
+                    playerScore={gameState.player.score}
+                    opponentScore={gameState.opponent.score}
+                    loserReason={gameState.loserReason}
+                    onReturnToWorldMap={onReturnToWorldMap}
+                />
             )}
         </div>
     );

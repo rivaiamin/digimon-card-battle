@@ -4,26 +4,29 @@
  */
 
 import { Arena } from "./components/Arena";
-import { AudioSettings } from "./components/AudioSettings";
-import { ThemeToggle } from "./components/ThemeToggle";
+import { SystemMenu } from "./components/SystemMenu";
 import { HomeScreen } from "./components/HomeScreen";
 import { useAudio } from "./context/AudioProvider";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { joinRandomBattle, type MatchJoinOptions } from "./services/matchmaking";
+import { joinRandomBattle, reconnectBattle, type MatchJoinOptions } from "./services/matchmaking";
 import { formatJoinError } from "./services/deckService";
 import type { Room } from "colyseus.js";
 import type { BattleStateSchema } from "./schema/BattleState";
+import { CONSENTED_LEAVE_CODE } from "./lib/reconnectPolicy";
 
 export default function App() {
   const audio = useAudio();
-  const [screen, setScreen] = useState<"home" | "queueing" | "game">("home");
+  const [screen, setScreen] = useState<"home" | "queueing" | "reconnecting" | "game">("home");
   const [room, setRoom] = useState<Room<BattleStateSchema> | null>(null);
   const [joinError, setJoinError] = useState<string | null>(null);
   const joinAttemptIdRef = useRef(0);
+  /** Skip auto-reconnect after intentional leave (cancel / return to map). */
+  const intentionalLeaveRef = useRef(false);
 
   const handleJoin = useCallback(async (config: MatchJoinOptions) => {
     joinAttemptIdRef.current += 1;
     const attemptId = joinAttemptIdRef.current;
+    intentionalLeaveRef.current = false;
     setJoinError(null);
     setScreen("queueing");
     try {
@@ -67,16 +70,60 @@ export default function App() {
 
   const handleCancel = useCallback(() => {
     joinAttemptIdRef.current += 1;
+    intentionalLeaveRef.current = true;
     if (room) room.leave();
     setRoom(null);
     setScreen("home");
   }, [room]);
 
+  const handleRoomLeft = useCallback(
+    async (code: number, reconnectionToken: string) => {
+      if (intentionalLeaveRef.current || code === CONSENTED_LEAVE_CODE) {
+        intentionalLeaveRef.current = false;
+        setRoom(null);
+        setScreen("home");
+        return;
+      }
+
+      if (!reconnectionToken) {
+        setRoom(null);
+        setJoinError("Disconnected from match.");
+        setScreen("home");
+        return;
+      }
+
+      joinAttemptIdRef.current += 1;
+      const attemptId = joinAttemptIdRef.current;
+      setScreen("reconnecting");
+      try {
+        const r = await reconnectBattle(reconnectionToken);
+        if (attemptId !== joinAttemptIdRef.current) {
+          r.leave();
+          return;
+        }
+        intentionalLeaveRef.current = false;
+        setRoom(r);
+        setScreen("game");
+        audio.playSfx("chime");
+      } catch (e) {
+        console.error(e);
+        if (attemptId !== joinAttemptIdRef.current) return;
+        setRoom(null);
+        setJoinError("Could not reconnect — match may have ended.");
+        setScreen("home");
+      }
+    },
+    [audio]
+  );
+
   return (
     <div className="w-full h-screen bg-app text-fg">
-      <div className="fixed top-4 right-4 z-[500] flex items-center gap-2">
-        <ThemeToggle />
-        <AudioSettings />
+      <div
+        className={`fixed right-4 z-[500] ${
+          screen === "game" ? "top-16 sm:top-20" : "top-4"
+        }`}
+      >
+        <SystemMenu />
       </div>
       {screen === "home" && <HomeScreen onJoinMatch={handleJoin} joinError={joinError} />}
 
@@ -100,7 +147,27 @@ export default function App() {
         </div>
       )}
 
-      {screen === "game" && room && <Arena room={room} />}
+      {screen === "reconnecting" && (
+        <div className="relative w-screen h-screen jrpg-map-bg overflow-hidden flex items-center justify-center">
+          <div className="scanlines" />
+          <div className="digital-grid rounded-2xl border border-line bg-surface p-10 text-center shadow-[0_0_60px_rgba(60,155,255,0.12)]">
+            <div className="text-4xl font-black italic text-ps-yellow tracking-tighter">
+              RECONNECTING...
+            </div>
+            <div className="mt-4 text-muted text-sm font-mono uppercase tracking-widest animate-pulse">
+              Restoring match seat
+            </div>
+          </div>
+        </div>
+      )}
+
+      {screen === "game" && room && (
+        <Arena
+          room={room}
+          onReturnToWorldMap={handleCancel}
+          onRoomLeft={handleRoomLeft}
+        />
+      )}
     </div>
   );
 }

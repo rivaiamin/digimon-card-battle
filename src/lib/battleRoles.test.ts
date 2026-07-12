@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-    formatBattleRoleLabel,
     getBattleRole,
     getBattleRoleHeadline,
     getBattleRoleSubline,
@@ -94,7 +93,7 @@ describe("battleRoles (FC-003 UI)", () => {
             isYourSupportPickTurn: false,
             attackLocked: false,
         });
-        expect(headline).toContain(formatBattleRoleLabel("attacker"));
+        expect(headline).toContain("Choose attack");
     });
 
     it("legacy subline helper still works", () => {
