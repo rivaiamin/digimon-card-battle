@@ -267,7 +267,7 @@ export const BattleHUD: React.FC<HUDProps> = ({
       : null;
 
   return (
-    <div className="fixed inset-0 z-50 pointer-events-none overflow-hidden px-2 sm:px-3">
+    <div className="fixed inset-0 z-[1050] pointer-events-none overflow-hidden px-2 sm:px-3">
       {/* Opponent seat — top left; flipped vs player (resources left, identity right) */}
       <div className="absolute top-3 left-2 right-2 z-[1090] sm:top-4 sm:left-3 sm:right-auto sm:w-full sm:max-w-lg">
         {showRoles ? (
@@ -291,8 +291,8 @@ export const BattleHUD: React.FC<HUDProps> = ({
 
       {/* Player seat — above hand; attacks nest inside during choose-attack */}
       <div
-        className="absolute inset-x-2 z-[1100] flex justify-center sm:inset-x-3"
-        style={{ bottom: "var(--battle-hand-clearance)" }}
+        className="absolute inset-x-2 z-[1200] flex justify-center sm:inset-x-3"
+        style={{ bottom: "calc(var(--battle-hand-clearance) + 0.85rem)" }}
       >
         <AnimatePresence mode="wait">
           <motion.div

@@ -22,7 +22,7 @@ type Props = {
     handTarget: number;
     mulligansRemaining: number;
     needsOpeningDeploy?: boolean;
-    /** When true, sit on the play-field midpoint (hand-aware) */
+    /** When true, sit in the field center gap (equal margins). Else fixed fallback. */
     fieldAnchored?: boolean;
 };
 
@@ -119,13 +119,13 @@ export const MatchHeader: React.FC<Props> = ({
 
     return (
         <header
-            className={`fixed inset-x-0 z-[100] -translate-y-1/2 pointer-events-none px-3 transition-[top] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+            className={
                 fieldAnchored
-                    ? "match-header--field top-[var(--play-mid)]"
-                    : "top-[28%] sm:top-[30%]"
-            }`}
+                    ? "absolute inset-0 z-[100] flex items-center justify-center pointer-events-none px-3"
+                    : "fixed inset-x-0 z-[100] -translate-y-1/2 pointer-events-none px-3 top-[28%] sm:top-[30%]"
+            }
         >
-            <div className="mx-auto flex max-w-sm flex-col items-center">
+            <div className="mx-auto flex w-full max-w-sm flex-col items-center">
                 <div
                     className={`w-full rounded-xl px-2.5 sm:px-3 py-1 sm:py-1.5 text-center bg-surface-strong/95 ring-1 backdrop-blur-md ${
                         timerCritical ? "ring-ps-red/50" : "ring-line"

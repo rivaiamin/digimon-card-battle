@@ -664,22 +664,6 @@ export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap, onRoomLe
             gameState.prepSubPhase === "evolve" &&
             gameState.player.active
         ) {
-            if (gameState.isPlayerTurn) {
-                handPhaseActionsFooter = (
-                    <span
-                        className={`text-[10px] uppercase tracking-wide ${
-                            evolutionOptionCards.length > 0
-                                ? "text-ps-blue font-black"
-                                : "text-muted font-bold"
-                        }`}
-                    >
-                        {getPrepHandFooter("evolve", {
-                            hasEvolutionOptions: evolutionOptionCards.length > 0,
-                            evoOptionSelected: !!selectedEvoOptionId,
-                        })}
-                    </span>
-                );
-            }
             leading = (
                 <span className="shrink-0 rounded-full bg-panel px-2 py-1 text-[10px] font-black tabular-nums text-muted ring-1 ring-line">
                     {gameState.player.dp} DP
@@ -689,7 +673,8 @@ export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap, onRoomLe
                 actions.push({
                     id: "end-prep",
                     label: getPrepPrimaryActionLabel("evolve") ?? "END PREP",
-                    description: "End preparation and move into battle.",
+                    description:
+                        "End preparation and move into battle. Digivolve if you can — yellow badges play prep options.",
                     icon: Flag,
                     tone: "yellow",
                     onClick: handleEndPrep,
@@ -707,7 +692,7 @@ export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap, onRoomLe
             actions.push({
                 id: "gamble",
                 label: "GAMBLE",
-                description: "Flip the top of your Online Deck as a support gamble.",
+                description: `${supportPhaseHint || "Your support pick."} Flip the top of your Online Deck as a support gamble.`,
                 icon: Dices,
                 tone: "yellow",
                 onClick: handleSupportGamble,
@@ -716,7 +701,7 @@ export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap, onRoomLe
             actions.push({
                 id: "no-support",
                 label: "NO SUPPORT",
-                description: "Lock with no support card (bluff / pass).",
+                description: `${supportPhaseHint || "Your support pick."} Lock with no support card (bluff / pass).`,
                 icon: Ban,
                 tone: "neutral",
                 onClick: () => handleSupportChoice(null),
@@ -811,9 +796,9 @@ export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap, onRoomLe
                     key={gameState.message}
                     initial={{ scale: 1.05, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    className="bg-ps-blue/95 px-4 sm:px-8 py-2 sm:py-3 rounded border border-fg/20 shadow-lg max-w-lg"
+                    className="bg-surface-strong px-4 sm:px-8 py-2 sm:py-3 rounded border-2 border-ps-blue shadow-lg max-w-lg"
                 >
-                    <span className="text-base sm:text-xl font-bold text-white text-center block text-balance">
+                    <span className="text-base sm:text-xl font-bold text-fg text-center block text-balance">
                         {gameState.message}
                     </span>
                 </motion.div>
@@ -907,7 +892,26 @@ export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap, onRoomLe
                         />
                     </div>
 
-                    <div className="battle-field-center-gap" aria-hidden />
+                    <div className="battle-field-center-gap relative w-full max-w-sm">
+                        {(playerActive || opponentActive) && (
+                            <MatchHeader
+                                turn={gameState.turn}
+                                phase={gameState.phase}
+                                prepSubPhase={gameState.prepSubPhase}
+                                isYourTurn={gameState.isPlayerTurn}
+                                yourSessionId={room.sessionId}
+                                activePlayerSessionId={gameState.activePlayerSessionId ?? ""}
+                                supportPickDefenderFirst={ruleProfile.battle.supportPickDefenderFirst}
+                                supportPickSessionId={gameState.supportPickSessionId ?? ""}
+                                attackLocked={!!gameState.player.attackLocked}
+                                phaseEndsAtMs={gameState.phaseEndsAtMs ?? 0}
+                                handTarget={ruleProfile.handTarget}
+                                mulligansRemaining={gameState.player.mulligansRemaining ?? 0}
+                                needsOpeningDeploy={!!gameState.player.needsOpeningDeploy}
+                                fieldAnchored
+                            />
+                        )}
+                    </div>
 
                     <div
                         className={`relative battle-field-slot ${
@@ -1031,11 +1035,7 @@ export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap, onRoomLe
                               }
                             : undefined
                     }
-                    supportHint={
-                        gameState.phase === "battle_support" && !gameState.player.supportLocked
-                            ? supportPhaseHint
-                            : null
-                    }
+                    supportHint={null}
                     newlyDrawnCardIds={newlyHighlightedCardIds}
                 />
             )}
@@ -1046,22 +1046,24 @@ export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap, onRoomLe
                 </div>
             )}
 
-            <MatchHeader
-                turn={gameState.turn}
-                phase={gameState.phase}
-                prepSubPhase={gameState.prepSubPhase}
-                isYourTurn={gameState.isPlayerTurn}
-                yourSessionId={room.sessionId}
-                activePlayerSessionId={gameState.activePlayerSessionId ?? ""}
-                supportPickDefenderFirst={ruleProfile.battle.supportPickDefenderFirst}
-                supportPickSessionId={gameState.supportPickSessionId ?? ""}
-                attackLocked={!!gameState.player.attackLocked}
-                phaseEndsAtMs={gameState.phaseEndsAtMs ?? 0}
-                handTarget={ruleProfile.handTarget}
-                mulligansRemaining={gameState.player.mulligansRemaining ?? 0}
-                needsOpeningDeploy={!!gameState.player.needsOpeningDeploy}
-                fieldAnchored={!!(playerActive || opponentActive)}
-            />
+            {!(playerActive || opponentActive) && (
+                <MatchHeader
+                    turn={gameState.turn}
+                    phase={gameState.phase}
+                    prepSubPhase={gameState.prepSubPhase}
+                    isYourTurn={gameState.isPlayerTurn}
+                    yourSessionId={room.sessionId}
+                    activePlayerSessionId={gameState.activePlayerSessionId ?? ""}
+                    supportPickDefenderFirst={ruleProfile.battle.supportPickDefenderFirst}
+                    supportPickSessionId={gameState.supportPickSessionId ?? ""}
+                    attackLocked={!!gameState.player.attackLocked}
+                    phaseEndsAtMs={gameState.phaseEndsAtMs ?? 0}
+                    handTarget={ruleProfile.handTarget}
+                    mulligansRemaining={gameState.player.mulligansRemaining ?? 0}
+                    needsOpeningDeploy={!!gameState.player.needsOpeningDeploy}
+                    fieldAnchored={false}
+                />
+            )}
 
             <CardPreviewPanel
                 card={hoveredCard}

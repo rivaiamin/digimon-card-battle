@@ -93,11 +93,11 @@ async function clickFirstVisible(
   const n = await btn.count();
   for (let i = 0; i < n; i++) {
     const candidate = btn.nth(i);
-    if (await candidate.isVisible().catch(() => false)) {
-      await candidate.click({ timeout: 5_000 });
-      console.log(`[${label}] ${what}`);
-      return true;
-    }
+    if (!(await candidate.isVisible().catch(() => false))) continue;
+    if (!(await candidate.isEnabled().catch(() => false))) continue;
+    await candidate.click({ timeout: 5_000 });
+    console.log(`[${label}] ${what}`);
+    return true;
   }
   return false;
 }

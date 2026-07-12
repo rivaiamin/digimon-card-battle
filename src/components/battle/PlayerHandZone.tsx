@@ -147,7 +147,7 @@ export const PlayerHandZone: React.FC<PlayerHandZoneProps> = ({
 
     return (
         <div
-            className={`fixed bottom-0 inset-x-0 z-[1000] pointer-events-none flex flex-col items-center px-2 pb-[max(0.35rem,env(safe-area-inset-bottom))] sm:px-3 ${
+            className={`fixed bottom-0 inset-x-0 z-[900] pointer-events-none flex flex-col items-center px-2 pb-[max(0.35rem,env(safe-area-inset-bottom))] sm:px-3 ${
                 compact ? "battle-hand--compact" : ""
             }`}
         >
