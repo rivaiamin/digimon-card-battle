@@ -1371,15 +1371,15 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             });
         }
 
-        this.resolveKOsAndMaybeEndGame();
-        if (this.state.phase === "victory") return;
-        if (this.koRedeployQueue.length > 0) return;
-
-        // Hold on resolution so clients play attack VS + strikes before draw (serial).
+        // Keep actives on the field (even at 0 HP) through the presentation hold so
+        // clients can play attack VS + strikes before trash / draw / KO redeploy.
         if (this.resolutionTimer) this.resolutionTimer.clear();
         this.resolutionTimer = this.clock.setTimeout(() => {
             this.resolutionTimer = null;
-            if (this.state.phase === "victory") return;
+            if (this.state.phase !== "resolution") return;
+            this.resolveKOsAndMaybeEndGame();
+            const phaseAfterKo: string = this.state.phase;
+            if (phaseAfterKo === "victory") return;
             if (this.koRedeployQueue.length > 0) return;
             this.finishBattleTurn();
         }, BattleRoom.RESOLUTION_MS);
