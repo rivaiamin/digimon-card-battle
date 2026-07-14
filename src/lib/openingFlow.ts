@@ -187,3 +187,45 @@ export function hasLegalDeployInHand(
 ): boolean {
     return hand.some(c => validateDeployDigimon(c, profile, isOpeningDeploy).ok);
 }
+
+export interface DigForDeployResult {
+    found: boolean;
+    dugCount: number;
+    handSize: number;
+    deckSize: number;
+}
+
+/**
+ * Dig top of deck until a legal deployable Digimon is found (opening / KO /
+ * DIG_FOR_DEPLOY). Existing hand is kept — only rejected dig cards go to trash.
+ * @see GDD.md KO Resolution; FC-002 / FC-005
+ */
+export function digForDeployableFromDeck<T extends MinimalCard>(
+    hand: MutableCardList<T>,
+    deck: MutableCardList<T>,
+    trash: MutableCardList<T>,
+    profile: RuleProfile,
+    isOpeningDeploy: boolean
+): DigForDeployResult {
+    let dugCount = 0;
+    while (deck.length > 0) {
+        const card = deck.shift()!;
+        dugCount++;
+        if (validateDeployDigimon(card, profile, isOpeningDeploy).ok) {
+            hand.push(card);
+            return {
+                found: true,
+                dugCount,
+                handSize: hand.length,
+                deckSize: deck.length,
+            };
+        }
+        trash.push(card);
+    }
+    return {
+        found: false,
+        dugCount,
+        handSize: hand.length,
+        deckSize: deck.length,
+    };
+}

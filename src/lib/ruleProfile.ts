@@ -55,8 +55,8 @@ export interface RuleProfile {
     /** After a KO, redeploy is Rookie-only in both profiles. */
     postKoDeployRookieOnly: boolean;
     /**
-     * When no deployable card is in hand after draw, dig through deck.
-     * fidelity_ps1: any Digimon; legacy_online: Rookie only.
+     * @deprecated Dig targets now follow `validateDeployDigimon` (opening
+     * penalties / `postKoDeployRookieOnly`). Kept for profile shape compat.
      */
     digForRookieOnly: boolean;
 }

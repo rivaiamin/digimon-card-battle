@@ -6,10 +6,10 @@ import { loadCardCatalog, type NormalizedCardCatalogEntry } from "../lib/cardCat
 import { BattleAuditLog, snapshotPlayer, type StateDelta } from "../lib/battleAuditLog";
 import {
     applyOpeningPenalty,
+    digForDeployableFromDeck,
     drawToTarget,
     hasDigimonInHand,
     hasLegalDeployInHand,
-    isRookieLevel,
     mulliganHand,
     resolveInitialPrepSubPhase,
     validateDeployDigimon,
@@ -968,46 +968,36 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
     }
 
     /**
-     * No active Digimon and no legal card in hand: trash hand, dig deck until a
-     * deployable Digimon is found (Rookie-only in legacy profile).
+     * No active Digimon and no legal card in hand: dig deck until a deployable
+     * Digimon is found. Existing hand is kept (GDD KO / DIG_FOR_DEPLOY).
      */
     private tryRecoverDigimonFromDeck(player: PlayerSchema): boolean {
-        const handToTrash = player.hand.length;
+        const handBefore = player.hand.length;
         const deckStart = player.deck.length;
-        while (player.hand.length > 0) {
-            const card = player.hand[0];
-            player.hand.splice(0, 1);
-            player.trash.push(card);
-        }
-        const revealedLevels: string[] = [];
-        let found: string | null = null;
-        while (player.deck.length > 0) {
-            const card = player.deck.shift()!;
-            const lvl = String(card.level);
-            revealedLevels.push(lvl);
-            const isTarget = this.ruleProfile.digForRookieOnly
-                ? isRookieLevel(card.level)
-                : card.cardKind === "digimon" || !card.cardKind;
-            if (isTarget) {
-                player.hand.push(card);
-                found = `${card.name} (${card.id})`;
-                this.debugDraw("tryRecoverDigimonFromDeck: success", {
-                    sessionId: player.sessionId.slice(0, 8),
-                    handTrashed: handToTrash,
-                    deckStart,
-                    dugCount: revealedLevels.length,
-                    found,
-                    firstLevels: revealedLevels.slice(0, 12),
-                });
-                return true;
-            }
-            player.trash.push(card);
+        const result = digForDeployableFromDeck(
+            player.hand,
+            player.deck,
+            player.trash,
+            this.ruleProfile,
+            player.needsOpeningDeploy
+        );
+        if (result.found) {
+            const found = player.hand[player.hand.length - 1];
+            this.debugDraw("tryRecoverDigimonFromDeck: success", {
+                sessionId: player.sessionId.slice(0, 8),
+                handBefore,
+                handAfter: result.handSize,
+                deckStart,
+                dugCount: result.dugCount,
+                found: found ? `${found.name} (${found.id})` : null,
+            });
+            return true;
         }
         this.debugDraw("tryRecoverDigimonFromDeck: failed (deck empty)", {
             sessionId: player.sessionId.slice(0, 8),
-            handTrashed: handToTrash,
+            handBefore,
             deckStart,
-            levelsSeen: revealedLevels,
+            dugCount: result.dugCount,
         });
         return false;
     }

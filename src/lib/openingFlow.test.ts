@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
     applyOpeningPenalty,
+    digForDeployableFromDeck,
     drawToTarget,
     hasLegalDeployInHand,
     isDigimonCard,
@@ -44,6 +45,59 @@ describe("drawToTarget (FC-001)", () => {
         const result = drawToTarget(hand, deck, 4);
         expect(result.drawn).toBe(0);
         expect(hand).toHaveLength(4);
+    });
+
+    it("only draws the missing cards toward hand target", () => {
+        const keep = makeCard("Champion", { id: "keep" });
+        const hand = [keep, makeCard("Rookie", { id: "h2" })];
+        const deck = [
+            makeCard("Rookie", { id: "d1" }),
+            makeCard("Rookie", { id: "d2" }),
+            makeCard("Ultimate", { id: "d3" }),
+        ];
+        const result = drawToTarget(hand, deck, 4);
+        expect(result.drawn).toBe(2);
+        expect(hand).toHaveLength(4);
+        expect(hand[0]).toBe(keep);
+        expect(hand.map(c => c.id)).toEqual(["keep", "h2", "d1", "d2"]);
+        expect(deck.map(c => c.id)).toEqual(["d3"]);
+    });
+});
+
+describe("digForDeployableFromDeck (KO / DIG_FOR_DEPLOY)", () => {
+    const fidelity = getRuleProfile("fidelity_ps1");
+
+    it("keeps existing hand cards while digging for a post-KO Rookie", () => {
+        const keepOpt = makeCard("Rookie", { id: "opt", cardKind: "option", level: "" });
+        const keepChamp = makeCard("Champion", { id: "champ" });
+        const hand = [keepOpt, keepChamp];
+        const deck = [
+            makeCard("Ultimate", { id: "u1" }),
+            makeCard("Rookie", { id: "r1" }),
+            makeCard("Rookie", { id: "r2" }),
+        ];
+        const trash: ReturnType<typeof makeCard>[] = [];
+
+        const result = digForDeployableFromDeck(hand, deck, trash, fidelity, false);
+
+        expect(result.found).toBe(true);
+        expect(result.dugCount).toBe(2);
+        expect(hand.map(c => c.id)).toEqual(["opt", "champ", "r1"]);
+        expect(trash.map(c => c.id)).toEqual(["u1"]);
+        expect(deck.map(c => c.id)).toEqual(["r2"]);
+    });
+
+    it("returns false without mutating hand when deck has no legal deploy", () => {
+        const hand = [makeCard("Champion", { id: "keep" })];
+        const deck = [makeCard("Ultimate", { id: "u1" }), makeCard("Champion", { id: "c1" })];
+        const trash: ReturnType<typeof makeCard>[] = [];
+
+        const result = digForDeployableFromDeck(hand, deck, trash, fidelity, false);
+
+        expect(result.found).toBe(false);
+        expect(hand.map(c => c.id)).toEqual(["keep"]);
+        expect(trash.map(c => c.id)).toEqual(["u1", "c1"]);
+        expect(deck).toHaveLength(0);
     });
 });
 
