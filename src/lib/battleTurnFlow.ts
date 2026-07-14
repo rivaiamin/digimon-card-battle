@@ -33,6 +33,13 @@ export const SUPPORT_REVEAL_MS = 2_200;
 /** Post-support effect notification beat (heal / ATK buff VFX). */
 export const SUPPORT_EFFECTS_MS = 3_000;
 
+/**
+ * Hold on `resolution` after damage lands so clients can play attack VS + strikes
+ * before the turn advances to draw (serial: effects → resolve VFX → draw).
+ * Sized for attack-reveal (~2.4s) + a typical two-strike exchange.
+ */
+export const RESOLUTION_PRESENTATION_MS = 5_500;
+
 /** Second support card flip delay within the reveal window (seconds). */
 export const SUPPORT_REVEAL_STAGGER_S = 0.55;
 

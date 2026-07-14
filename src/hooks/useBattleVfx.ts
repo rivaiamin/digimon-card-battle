@@ -4,6 +4,7 @@ import {
   combatSnapshot,
   computeCombatDamage,
   isCombatResolutionTransition,
+  shouldDeferCombatVfx,
   type CombatSnapshot,
   type CombatDamageResult,
 } from "../lib/combatResolution";
@@ -80,6 +81,14 @@ export type BattleVfx = {
   koSide: "player" | "opponent" | null;
   supportEffectsBanner: boolean;
   supportEffectLabels: string[];
+};
+
+/** Serial presentation beats — only one runs at a time. */
+type PendingCombat = {
+  prev: CombatSnapshot;
+  next: CombatSnapshot;
+  damage: CombatDamageResult;
+  strikes: CombatStrike[];
 };
 
 /** Playback slowed so strikes / counters stay readable. */
@@ -179,6 +188,8 @@ export function useBattleVfx(
   const lastTriggerKeyRef = useRef<string | null>(null);
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const pendingStrikesRef = useRef<CombatStrike[]>([]);
+  /** Queued exchange waiting for attack-reveal beat (serial with support effects). */
+  const pendingCombatRef = useRef<PendingCombat | null>(null);
 
   const clearTimers = useCallback(() => {
     timersRef.current.forEach(clearTimeout);
@@ -195,6 +206,7 @@ export function useBattleVfx(
     runningRef.current = false;
     lastTriggerKeyRef.current = null;
     pendingStrikesRef.current = [];
+    pendingCombatRef.current = null;
     setVfx(INITIAL);
   }, [clearTimers]);
 
@@ -395,6 +407,7 @@ export function useBattleVfx(
     }
   }, [gameState.combatStrikesJson]);
 
+  // Beat 1–2: support reveal / support effects (server-driven phases).
   useEffect(() => {
     if (gameState.phase === "battle_reveal") {
       setVfx((s) => ({
@@ -407,6 +420,7 @@ export function useBattleVfx(
         },
         supportEffectsBanner: false,
         supportEffectLabels: [],
+        popups: [],
       }));
       return;
     }
@@ -417,6 +431,7 @@ export function useBattleVfx(
       const labels = effects.map((e) => e.label).filter(Boolean);
       setVfx((s) => ({
         ...s,
+        // End support-flip before effect notifications (serial).
         reveal: INITIAL_REVEAL,
         supportEffectsBanner: effects.length > 0,
         supportEffectLabels: labels,
@@ -427,21 +442,34 @@ export function useBattleVfx(
       return;
     }
 
-    if (
-      gameState.phase !== "resolution" &&
-      !runningRef.current &&
-      gameState.phase !== "battle_attack"
-    ) {
-      setVfx((s) =>
-        s.reveal.active && s.reveal.stage === "support"
-          ? { ...s, reveal: INITIAL_REVEAL }
-          : s.supportEffectsBanner
-            ? { ...s, supportEffectsBanner: false, supportEffectLabels: [], popups: [] }
-            : s
-      );
-    }
-  }, [gameState.phase, gameState.player.hp, gameState.opponent.hp, gameState.supportEffectsJson, playerSessionId]);
+    // Do not tear down queued/running combat presentation.
+    if (runningRef.current || pendingCombatRef.current) return;
 
+    if (gameState.phase !== "resolution" && gameState.phase !== "battle_attack") {
+      setVfx((s) => {
+        if (s.reveal.active && s.reveal.stage === "support") {
+          return { ...s, reveal: INITIAL_REVEAL };
+        }
+        if (s.supportEffectsBanner) {
+          return {
+            ...s,
+            supportEffectsBanner: false,
+            supportEffectLabels: [],
+            popups: [],
+          };
+        }
+        return s;
+      });
+    }
+  }, [
+    gameState.phase,
+    gameState.player.hp,
+    gameState.opponent.hp,
+    gameState.supportEffectsJson,
+    playerSessionId,
+  ]);
+
+  // Beat 3–4: detect exchange → attack reveal → strike sequence (one at a time).
   useEffect(() => {
     const prev = prevRef.current;
     const next = combatSnapshot(gameState);
@@ -449,16 +477,18 @@ export function useBattleVfx(
 
     if (!prev) return;
 
-    // Support heals during battle_effects must not start combat VFX.
-    if (
-      next.phase === "battle_effects" ||
-      (prev.phase === "battle_effects" && next.phase !== "resolution")
-    ) {
+    // Still in support-effects beat — wait; heal HP diffs must not start combat.
+    if (shouldDeferCombatVfx(prev, next)) {
+      return;
+    }
+
+    // Serial: ignore further snapshots while revealing or animating combat.
+    if (runningRef.current || pendingCombatRef.current) {
       return;
     }
 
     const damage = computeCombatDamage(prev, next);
-    if (!damage || runningRef.current) return;
+    if (!damage) return;
 
     const attackerSessionId = gameState.lastBattleAttackerSessionId ?? "";
     const strikes = resolveCombatStrikes(
@@ -482,13 +512,16 @@ export function useBattleVfx(
       !!next.opponentAttack &&
       (prev.phase === "battle_reveal" ||
         prev.phase === "battle_effects" ||
+        prev.phase === "battle_attack" ||
         (!prev.playerAttack && !prev.opponentAttack));
 
     if (showAttackReveal) {
+      pendingCombatRef.current = { prev, next, damage, strikes };
       setVfx((s) => ({
         ...s,
         supportEffectsBanner: false,
         supportEffectLabels: [],
+        popups: [],
         reveal: {
           active: true,
           stage: "attacks",
@@ -497,7 +530,12 @@ export function useBattleVfx(
         },
       }));
       schedule(() => {
-        runCombatAnimation(prev, next, damage, pendingStrikesRef.current);
+        const pending = pendingCombatRef.current;
+        pendingCombatRef.current = null;
+        if (!pending) return;
+        const useStrikes =
+          pending.strikes.length > 0 ? pending.strikes : pendingStrikesRef.current;
+        runCombatAnimation(pending.prev, pending.next, pending.damage, useStrikes);
       }, ATTACK_REVEAL_MS);
       return;
     }

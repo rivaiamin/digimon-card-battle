@@ -60,6 +60,18 @@ export function isCombatResolutionTransition(
   return false;
 }
 
+/**
+ * Defer combat VFX only while still inside `battle_effects`.
+ * Leaving effects (→ resolution / draw / preparation / victory) must NOT defer —
+ * the server often collapses resolution into the same tick as draw.
+ */
+export function shouldDeferCombatVfx(
+  _prev: CombatSnapshot,
+  next: CombatSnapshot
+): boolean {
+  return next.phase === "battle_effects";
+}
+
 export function computeCombatDamage(
   prev: CombatSnapshot,
   next: CombatSnapshot
@@ -85,11 +97,15 @@ export function computeCombatDamage(
     // Active removed after battle while phase already advanced (single combined patch).
     const koAfterBattle =
       (playerKo || opponentKo) &&
-      (prev.phase === "battle_attack" || prev.phase === "resolution");
+      (prev.phase === "battle_attack" ||
+        prev.phase === "resolution" ||
+        prev.phase === "battle_effects");
     const bothLockedIn =
       prev.playerAttack != null &&
       prev.opponentAttack != null &&
-      (prev.phase === "battle_attack" || prev.phase === "resolution");
+      (prev.phase === "battle_attack" ||
+        prev.phase === "resolution" ||
+        prev.phase === "battle_effects");
 
     if (!koAfterBattle && !bothLockedIn) return null;
     if (!koAfterBattle && !toOpponent && !toPlayer) return null;

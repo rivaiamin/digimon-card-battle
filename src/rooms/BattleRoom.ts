@@ -83,7 +83,11 @@ import {
     resolveTimedPhaseKey,
     type TimedPhaseKey,
 } from "../lib/phaseTimer";
-import { SUPPORT_EFFECTS_MS, SUPPORT_REVEAL_MS } from "../lib/battleTurnFlow";
+import {
+    RESOLUTION_PRESENTATION_MS,
+    SUPPORT_EFFECTS_MS,
+    SUPPORT_REVEAL_MS,
+} from "../lib/battleTurnFlow";
 import {
     buildSupportEffectNotifications,
     hasSupportEffectNotifications,
@@ -106,6 +110,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
     private supportCtx: SupportBattleContext = createSupportBattleContext();
     private revealTimer: ReturnType<typeof this.clock.setTimeout> | null = null;
     private effectsTimer: ReturnType<typeof this.clock.setTimeout> | null = null;
+    private resolutionTimer: ReturnType<typeof this.clock.setTimeout> | null = null;
     private phaseTimerHandle: ReturnType<typeof this.clock.setTimeout> | null = null;
     private ruleProfile: RuleProfile = resolveRuleProfile("fidelity_ps1");
     private arenaVariant: ArenaVariant = resolveArenaVariant("standard");
@@ -122,6 +127,8 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
     private static readonly REVEAL_MS = SUPPORT_REVEAL_MS;
     /** Pause after support resolve for heal / buff notification VFX. */
     private static readonly EFFECTS_MS = SUPPORT_EFFECTS_MS;
+    /** Pause after damage lands for attack reveal + strike VFX before draw/KO deploy. */
+    private static readonly RESOLUTION_MS = RESOLUTION_PRESENTATION_MS;
 
     onCreate(options: any) {
         console.log("[SERVER] BattleRoom created", options);
@@ -941,6 +948,10 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             this.effectsTimer.clear();
             this.effectsTimer = null;
         }
+        if (this.resolutionTimer) {
+            this.resolutionTimer.clear();
+            this.resolutionTimer = null;
+        }
         this.supportChoices.clear();
         this.attackChoices.clear();
         this.supportCtx = createSupportBattleContext();
@@ -1013,6 +1024,10 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         if (this.effectsTimer) {
             this.effectsTimer.clear();
             this.effectsTimer = null;
+        }
+        if (this.resolutionTimer) {
+            this.resolutionTimer.clear();
+            this.resolutionTimer = null;
         }
         this.supportChoices.clear();
         if (!attackFirst) {
@@ -1360,7 +1375,14 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         if (this.state.phase === "victory") return;
         if (this.koRedeployQueue.length > 0) return;
 
-        this.finishBattleTurn();
+        // Hold on resolution so clients play attack VS + strikes before draw (serial).
+        if (this.resolutionTimer) this.resolutionTimer.clear();
+        this.resolutionTimer = this.clock.setTimeout(() => {
+            this.resolutionTimer = null;
+            if (this.state.phase === "victory") return;
+            if (this.koRedeployQueue.length > 0) return;
+            this.finishBattleTurn();
+        }, BattleRoom.RESOLUTION_MS);
     }
 
     private isKoRedeployFor(sessionId: string): boolean {
@@ -1531,6 +1553,10 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         if (this.effectsTimer) {
             this.effectsTimer.clear();
             this.effectsTimer = null;
+        }
+        if (this.resolutionTimer) {
+            this.resolutionTimer.clear();
+            this.resolutionTimer = null;
         }
         this.state.phaseEndsAtMs = 0;
         if (reason === "deck_out" && DEBUG_BATTLE_ROOM) {
