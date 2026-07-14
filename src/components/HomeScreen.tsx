@@ -30,7 +30,7 @@ export function HomeScreen({ onJoinMatch, joinError }: Props) {
   useEffect(() => {
     let cancelled = false;
     setLoadingDeck(true);
-    fetchDefaultDeck(0)
+    fetchDefaultDeck({ random: true })
       .then(ids => {
         if (!cancelled) setDeckSize(ids.length);
       })

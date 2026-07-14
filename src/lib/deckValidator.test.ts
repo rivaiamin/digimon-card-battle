@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
+import cardsData from "../data/cards.json";
 import { resolveArenaVariant } from "./arenaVariant";
+import { loadCardCatalog } from "./cardCatalogLoader";
 import { buildDefaultDeckCardIds } from "./defaultDeckBuilder";
 import { validateDeck } from "./deckValidator";
 import type { NormalizedCardCatalogEntry } from "./cardCatalogLoader";
@@ -130,5 +132,25 @@ describe("buildDefaultDeckCardIds", () => {
         expect(ids).toHaveLength(30);
         const result = validateDeck(ids, catalogMap(...catalog), resolveArenaVariant("standard"));
         expect(result.ok).toBe(true);
+    });
+
+    it("picks different decks when random rng advances", () => {
+        const catalog = loadCardCatalog(cardsData);
+        let calls = 0;
+        const rngA = () => {
+            calls += 1;
+            return 0.01;
+        };
+        const rngB = () => {
+            calls += 1;
+            return 0.99;
+        };
+        const a = buildDefaultDeckCardIds(catalog, { random: true, rng: rngA });
+        const b = buildDefaultDeckCardIds(catalog, { random: true, rng: rngB });
+        expect(a).toHaveLength(30);
+        expect(b).toHaveLength(30);
+        expect(calls).toBeGreaterThanOrEqual(2);
+        // With many playable base decks, extreme rolls should not collide.
+        expect(a.join(",")).not.toBe(b.join(","));
     });
 });

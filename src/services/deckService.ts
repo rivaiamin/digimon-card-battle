@@ -8,8 +8,22 @@ export type MatchJoinOptions = {
     deckCardIds?: string[];
 };
 
-export async function fetchDefaultDeck(playerIndex = 0): Promise<string[]> {
-    const res = await fetch(`/api/decks/default?playerIndex=${playerIndex}`);
+export async function fetchDefaultDeck(options?: {
+    playerIndex?: number;
+    random?: boolean;
+}): Promise<string[]> {
+    const params = new URLSearchParams();
+    if (options?.random !== false && options?.playerIndex == null) {
+        params.set("random", "1");
+    } else if (options?.playerIndex != null) {
+        params.set("playerIndex", String(options.playerIndex));
+        params.set("random", "0");
+    } else if (options?.random === false) {
+        params.set("playerIndex", "0");
+        params.set("random", "0");
+    }
+    const qs = params.toString();
+    const res = await fetch(`/api/decks/default${qs ? `?${qs}` : ""}`);
     if (!res.ok) {
         throw new Error("failed_to_load_default_deck");
     }

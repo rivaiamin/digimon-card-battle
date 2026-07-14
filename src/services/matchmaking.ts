@@ -25,7 +25,7 @@ export async function joinRandomBattle(
 
   const ruleProfile = options.ruleProfile ?? "fidelity_ps1";
   const arenaVariant = options.arenaVariant ?? "standard";
-  const deckCardIds = options.deckCardIds ?? (await fetchDefaultDeck(0));
+  const deckCardIds = options.deckCardIds ?? (await fetchDefaultDeck({ random: true }));
 
   const client = new ColyseusClient017(getWsUrl());
   const room = await client.joinOrCreate(

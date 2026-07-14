@@ -18,9 +18,16 @@ function parseRuleProfileId(raw: unknown): RuleProfileId {
 
 export function registerDeckRoutes(app: Express) {
     app.get("/api/decks/default", (req: Request, res: Response) => {
+        const random =
+            req.query.random === "1" ||
+            req.query.random === "true" ||
+            (req.query.playerIndex == null && req.query.random !== "0");
         const playerIndex = Math.max(0, Number(req.query.playerIndex ?? 0) || 0);
-        const cardIds = buildDefaultDeckCardIds(CATALOG, playerIndex);
-        res.json({ cardIds, size: cardIds.length });
+        const cardIds = buildDefaultDeckCardIds(
+            CATALOG,
+            random ? { random: true } : { playerIndex }
+        );
+        res.json({ cardIds, size: cardIds.length, random });
     });
 
     app.get("/api/decks", (req: Request, res: Response) => {
