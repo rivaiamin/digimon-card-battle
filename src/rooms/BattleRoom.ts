@@ -1203,6 +1203,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
                         source.hand.push(source.deck.shift()!);
                     }
                 },
+                rng: this.rng,
             },
             this.ruleProfile.battle.attackLockBeforeSupport
                 ? {

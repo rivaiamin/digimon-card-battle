@@ -1,20 +1,20 @@
 {
   "source": "https://github.com/AsyrafKZ/digital-card-battle-clone-data-collection",
   "sourceFile": "scripts/data/asyrafkz/effectList2.txt",
-  "generatedAt": "2026-07-15T15:46:54.293Z",
+  "generatedAt": "2026-07-15T15:54:27.163Z",
   "counts": {
     "total": 257,
     "byStatus": {
-      "implemented": 212,
-      "catalog_only": 44,
+      "implemented": 239,
+      "catalog_only": 17,
       "partial": 1
     },
     "byKind": {
       "cross": 17,
-      "support": 135,
+      "support": 150,
       "mixed": 78,
-      "unknown": 20,
-      "evolution": 7
+      "evolution": 7,
+      "unknown": 5
     }
   },
   "effects": [
@@ -213,8 +213,10 @@
       "id": "fx_both_players_discard_all_cards_in_hands",
       "text": "Both players discard all Cards in Hands.",
       "sourceText": "Both players discard all Cards in Hands.",
-      "kind": "unknown",
-      "status": "catalog_only"
+      "kind": "support",
+      "implementedEffectId": "support.discard_both_hands",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_both_players_use_circle",
@@ -437,7 +439,9 @@
       "text": "Change own Specialty to Rare. Opponent discards 1 Card at random.",
       "sourceText": "Change own Specialty to Rare. Opponent discards 1 Card at random.",
       "kind": "mixed",
-      "status": "catalog_only"
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_changes_both_players_specialties_to_rare",
@@ -662,21 +666,29 @@
       "text": "Discard 1 Card at random from own Hand. HP of both Players are 200.",
       "sourceText": "Discard 1 Card at random from own Hand. HP of both Players are 200.",
       "kind": "mixed",
-      "status": "catalog_only"
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_discard_1_card_from_opponent_s_hand_at_random",
       "text": "Discard 1 Card from opponent's Hand at random.",
       "sourceText": "Discard 1 Card from opponent's Hand at random.",
-      "kind": "unknown",
-      "status": "catalog_only"
+      "kind": "support",
+      "implementedEffectId": "support.discard_enemy_hand_random",
+      "implementedArgs": {
+        "value": 1
+      },
+      "status": "implemented"
     },
     {
       "id": "fx_discard_1_card_from_own_hand_boost_both_players_attack_power_600",
       "text": "Discard 1 Card from own Hand. Boost both players' Attack Power +600.",
       "sourceText": "Discard 1 Card from own Hand. Boost both players' Attack Power +600.",
       "kind": "mixed",
-      "status": "catalog_only"
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_discard_1_card_in_dp_slot_change_opponent_s_specialty_to_darkness",
@@ -719,28 +731,40 @@
       "text": "Discard 2 Cards from opponent's Online Deck. Draw 1 Card.",
       "sourceText": "Discard 2 Cards from opponent's Online Deck. Draw 1 Card.",
       "kind": "mixed",
-      "status": "catalog_only"
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_discard_3_cards_from_opponent_s_online_deck",
       "text": "Discard 3 Cards from opponent's Online Deck.",
       "sourceText": "Discard 3 Cards from opponent's Online Deck.",
-      "kind": "unknown",
-      "status": "catalog_only"
+      "kind": "support",
+      "implementedEffectId": "support.discard_enemy_deck",
+      "implementedArgs": {
+        "value": 3
+      },
+      "status": "implemented"
     },
     {
       "id": "fx_discard_5_cards_from_own_online_deck_boost_own_attack_power_400",
       "text": "Discard 5 Cards from own Online Deck. Boost own Attack Power +400.",
       "sourceText": "Discard 5 Cards from own Online Deck. Boost own Attack Power +400.",
       "kind": "mixed",
-      "status": "catalog_only"
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_discard_7_cards_from_both_players_online_decks",
       "text": "Discard 7 Cards from both players' Online Decks.",
       "sourceText": "Discard 7 Cards from both players' Online Decks.",
-      "kind": "unknown",
-      "status": "catalog_only"
+      "kind": "support",
+      "implementedEffectId": "support.discard_both_deck",
+      "implementedArgs": {
+        "value": 7
+      },
+      "status": "implemented"
     },
     {
       "id": "fx_discard_7_cards_from_online_deck_own_attack_power_is_same_as_own_hp",
@@ -761,21 +785,27 @@
       "text": "Discard 7 Cards from own Online Deck. Boost own Attack Power +500.",
       "sourceText": "Discard 7 Cards from own Online Deck. Boost own Attack Power +500.",
       "kind": "mixed",
-      "status": "catalog_only"
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_discard_7_cards_from_own_online_deck_opponent_s_hp_are_halved",
       "text": "Discard 7 Cards from own Online Deck. Opponent's HP are halved.",
       "sourceText": "Discard 7 Cards from own Online Deck. Opponent's HP are halved.",
       "kind": "mixed",
-      "status": "catalog_only"
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_discard_7_cards_from_own_online_deck_recover_own_hp_by_1000",
       "text": "Discard 7 Cards from own Online Deck. Recover own HP by +1000.",
       "sourceText": "Discard 7 Cards from own Online Deck. Recover own HP by +1000.",
       "kind": "mixed",
-      "status": "catalog_only"
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_discard_all_cards_in_dp_slot_foe_discards_same_number_of_dp_cards",
@@ -801,15 +831,19 @@
       "id": "fx_discard_all_cards_in_own_hand_then_draw_2_cards",
       "text": "Discard all Cards in own Hand, then draw 2 Cards.",
       "sourceText": "Discard all Cards in own Hand, then draw 2 Cards.",
-      "kind": "unknown",
-      "status": "catalog_only"
+      "kind": "support",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_discard_all_cards_in_own_hand_own_attack_power_is_doubled",
       "text": "Discard all Cards in own Hand. Own Attack Power is doubled.",
       "sourceText": "Discard all Cards in own Hand. Own Attack Power is doubled.",
       "kind": "mixed",
-      "status": "catalog_only"
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_discard_all_own_dp_cards_in_dp_slot_boost_own_attack_power_300",
@@ -869,7 +903,11 @@
       "text": "Discard own Hand. Multiply own Attack Power by number of discarded Cards.",
       "sourceText": "Discard own Hand. Multiply own Attack Power by number of discarded Cards.",
       "kind": "mixed",
-      "status": "catalog_only"
+      "implementedEffectId": "support.mult_by_hand_discards",
+      "implementedArgs": {
+        "targetAttack": "all"
+      },
+      "status": "implemented"
     },
     {
       "id": "fx_downgrade_a_level_a_digimon_to_level_r",
@@ -912,7 +950,9 @@
       "text": "Draw until there are 4 Cards in own Hand. Recover own HP by +100.",
       "sourceText": "Draw until there are 4 Cards in own Hand. Recover own HP by +100.",
       "kind": "mixed",
-      "status": "catalog_only"
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_eat_up_hp",
@@ -990,8 +1030,10 @@
       "id": "fx_if_both_attacks_are_same_discard_7_cards_from_foe_s_online_deck",
       "text": "If both Attacks are same, discard 7 Cards from foe's Online Deck.",
       "sourceText": "If both Attacks are same, discard 7 Cards from foe's Online Deck.",
-      "kind": "unknown",
-      "status": "catalog_only"
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_if_both_attacks_are_same_own_attack_power_is_tripled",
@@ -1015,8 +1057,10 @@
       "id": "fx_if_both_players_use_same_attack_discard_all_cards_in_foe_s_hand",
       "text": "If both players use same Attack, discard all Cards in foe's Hand.",
       "sourceText": "If both players use same Attack, discard all Cards in foe's Hand.",
-      "kind": "unknown",
-      "status": "catalog_only"
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_if_both_players_use_same_attack_opponent_s_attack_power_becomes_0",
@@ -1112,8 +1156,10 @@
       "id": "fx_if_opponent_used_cross_discard_all_cards_in_opponent_s_hand",
       "text": "If opponent used Cross, discard all Cards in opponent's Hand.",
       "sourceText": "If opponent used {{button|x}}, discard all Cards in opponent's Hand.",
-      "kind": "unknown",
-      "status": "catalog_only"
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_if_opponent_uses_circle_attack_first_and_boost_own_attack_power_500",
@@ -1308,8 +1354,10 @@
       "id": "fx_if_opponent_s_specialty_is_nature_opponent_discards_all_cards",
       "text": "If opponent's Specialty is Nature, opponent discards all Cards.",
       "sourceText": "If opponent's Specialty is Nature, opponent discards all Cards.",
-      "kind": "unknown",
-      "status": "catalog_only"
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_if_opponent_s_specialty_is_nature_own_attack_power_is_doubled",
@@ -1716,22 +1764,30 @@
       "id": "fx_move_the_top_card_from_offline_pile_to_online_deck",
       "text": "Move the top Card from Offline Pile to Online Deck.",
       "sourceText": "Move the top Card from Offline Pile to Online Deck.",
-      "kind": "unknown",
-      "status": "catalog_only"
+      "kind": "support",
+      "implementedEffectId": "support.offline_to_online",
+      "implementedArgs": {
+        "value": 1
+      },
+      "status": "implemented"
     },
     {
       "id": "fx_move_top_10_cards_from_offline_pile_to_online_deck_then_shuffle",
       "text": "Move top 10 Cards from Offline Pile to Online Deck, then shuffle.",
       "sourceText": "Move top 10 Cards from Offline Pile to Online Deck, then shuffle.",
-      "kind": "unknown",
-      "status": "catalog_only"
+      "kind": "support",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_move_top_3_cards_from_offline_pile_to_online_deck_and_shuffle",
       "text": "Move top 3 Cards from Offline Pile to Online Deck and shuffle.",
       "sourceText": "Move top 3 Cards from Offline Pile to Online Deck and shuffle.",
-      "kind": "unknown",
-      "status": "catalog_only"
+      "kind": "support",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_nature_foe_x3",
@@ -1749,8 +1805,12 @@
       "id": "fx_opponent_discards_2_cards_at_random_from_his_hand",
       "text": "Opponent discards 2 Cards at random from his Hand.",
       "sourceText": "Opponent discards 2 Cards at random from his Hand.",
-      "kind": "unknown",
-      "status": "catalog_only"
+      "kind": "support",
+      "implementedEffectId": "support.discard_enemy_hand_random",
+      "implementedArgs": {
+        "value": 2
+      },
+      "status": "implemented"
     },
     {
       "id": "fx_opponent_discards_2_cards_from_his_online_deck_and_1_card_from_hand",
@@ -1763,8 +1823,12 @@
       "id": "fx_opponent_discards_4_top_cards_from_online_deck",
       "text": "Opponent discards 4 top Cards from Online Deck.",
       "sourceText": "Opponent discards 4 top Cards from Online Deck.",
-      "kind": "unknown",
-      "status": "catalog_only"
+      "kind": "support",
+      "implementedEffectId": "support.discard_enemy_deck",
+      "implementedArgs": {
+        "value": 4
+      },
+      "status": "implemented"
     },
     {
       "id": "fx_opponent_discards_his_hand_and_all_cards_in_his_dp_slot",
@@ -2231,7 +2295,9 @@
       "text": "Randomly discard 1 Card from own Hand. Opponent's Attack Power is 0.",
       "sourceText": "Randomly discard 1 Card from own Hand. Opponent's Attack Power is 0.",
       "kind": "mixed",
-      "status": "catalog_only"
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_rare_foe_x3",
@@ -2360,8 +2426,10 @@
       "id": "fx_return_all_cards_in_own_hand_to_online_deck_and_shuffle",
       "text": "Return all Cards in own Hand to Online Deck and Shuffle.",
       "sourceText": "Return all Cards in own Hand to Online Deck and Shuffle.",
-      "kind": "unknown",
-      "status": "catalog_only"
+      "kind": "support",
+      "implementedEffectId": "support.return_hand_to_deck_shuffle",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_swap_own_specialty_with_opponent_s_specialty",

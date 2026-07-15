@@ -118,6 +118,20 @@ export const KNOWN_EFFECT_IDS = new Set<string>([
     "support.atk_mult_by_dp_discards",
     "support.hp_add_dp_discards",
     "support.discard_both_dp_equal",
+    "support.discard_own_hand",
+    "support.discard_own_hand_random",
+    "support.discard_enemy_hand",
+    "support.discard_enemy_hand_random",
+    "support.discard_own_deck",
+    "support.discard_enemy_deck",
+    "support.discard_both_deck",
+    "support.discard_both_hands",
+    "support.return_hand_to_deck_shuffle",
+    "support.offline_to_online",
+    "support.mult_by_hand_discards",
+    "support.draw_until",
+    "support.both_hp_set",
+    "support.shuffle_deck",
 ]);
 
 function toCardKind(rawKind: unknown): CardKind {

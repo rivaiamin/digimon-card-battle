@@ -495,6 +495,71 @@ export function inferSupportEffectFromDescription(
         };
     }
 
+    // --- Hand / Online Deck manipulation (FC-027) ---
+    // Atomic: discard whole hand, multiply attack by the number discarded.
+    if (/^discard (?:all cards? in )?own hand\.? multiply (?:own )?attack power by number of discarded cards$/i.test(text)) {
+        return { type: "mult_by_hand_discards", targetAttack: "all", description: text };
+    }
+    if (/^return all cards? in own hand to online deck and shuffle$/i.test(text)) {
+        return { type: "return_hand_to_deck_shuffle", description: text };
+    }
+    if (/^both players discard all cards? in hands?$/i.test(text)) {
+        return { type: "discard_both_hands", description: text };
+    }
+    const drawUntil = text.match(/^draw until there are (\d+) cards? in own hand$/i);
+    if (drawUntil) return { type: "draw_until", value: Number(drawUntil[1]), description: text };
+    const bothHpSet = text.match(/^hp of both players are (\d+)$/i);
+    if (bothHpSet) return { type: "both_hp_set", value: Number(bothHpSet[1]), description: text };
+
+    // Own hand discards.
+    const ownHandRandom = text.match(/^(?:randomly discard|discard) (\d+) cards? (?:at random )?from own hand(?: at random)?$/i);
+    if (ownHandRandom && /random/i.test(text)) {
+        return { type: "discard_own_hand_random", value: Number(ownHandRandom[1]), description: text };
+    }
+    const ownHandN = text.match(/^discard (\d+) cards? from own hand$/i);
+    if (ownHandN) return { type: "discard_own_hand", value: Number(ownHandN[1]), description: text };
+    if (/^discard (?:all cards? in own hand|own hand)$/i.test(text)) {
+        return { type: "discard_own_hand", value: 0, description: text };
+    }
+
+    // Opponent hand discards.
+    const enemyHandRandom = text.match(
+        /^(?:opponent discards|discard) (\d+) cards? (?:at random )?from (?:opponent'?s )?hand(?: at random)?$/i
+    );
+    if (enemyHandRandom && /random/i.test(text)) {
+        return { type: "discard_enemy_hand_random", value: Number(enemyHandRandom[1]), description: text };
+    }
+    const enemyDiscAtRandom = text.match(/^opponent discards (\d+) cards? at random$/i);
+    if (enemyDiscAtRandom) {
+        return { type: "discard_enemy_hand_random", value: Number(enemyDiscAtRandom[1]), description: text };
+    }
+    if (/^discard all cards? in opponent'?s hand$/i.test(text) || /^opponent discards all cards?$/i.test(text)) {
+        return { type: "discard_enemy_hand", value: 0, description: text };
+    }
+
+    // Online-deck discards.
+    const ownDeck = text.match(/^discard (\d+) cards? from(?: own)? online deck$/i);
+    if (ownDeck && /own online deck/i.test(text)) {
+        return { type: "discard_own_deck", value: Number(ownDeck[1]), description: text };
+    }
+    const bothDeck = text.match(/^discard (\d+) cards? from both players'? online decks?$/i);
+    if (bothDeck) return { type: "discard_both_deck", value: Number(bothDeck[1]), description: text };
+    const enemyDeck = text.match(
+        /^(?:discard (\d+) cards? from opponent'?s online deck|opponent discards (\d+) (?:top )?cards? from(?: opponent'?s)? online deck)$/i
+    );
+    if (enemyDeck) {
+        return { type: "discard_enemy_deck", value: Number(enemyDeck[1] ?? enemyDeck[2]), description: text };
+    }
+
+    // Offline Pile → Online Deck moves.
+    const offlineMove = text.match(/^move (?:the )?top (\d+ )?cards? from offline pile to online deck$/i);
+    if (offlineMove) {
+        return { type: "offline_to_online", value: offlineMove[1] ? Number(offlineMove[1]) : 1, description: text };
+    }
+    if (/^shuffle$/i.test(text)) {
+        return { type: "shuffle_deck", description: text };
+    }
+
     // --- Support-granted counterattack (reflect + nullify a matching attack) ---
     const counterSlot = text.match(/^(circle|triangle|cross) counterattack$/i);
     if (counterSlot) {

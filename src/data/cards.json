@@ -4595,7 +4595,7 @@
       "description": "Discard 7 Cards from own Online Deck. Opponent's HP are halved.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "compose"
     }
   },
   {
@@ -4723,7 +4723,7 @@
       "description": "Both players discard all Cards in Hands.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "discard_both_hands"
     }
   },
   {
@@ -4805,7 +4805,7 @@
       "description": "Discard 5 Cards from own Online Deck. Boost own Attack Power +400.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "compose"
     }
   },
   {
@@ -4984,7 +4984,7 @@
       "description": "If opponent's Specialty is Nature, opponent discards all Cards.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "conditional"
     }
   },
   {
@@ -5200,7 +5200,7 @@
       "description": "Discard all Cards in own Hand, then draw 2 Cards.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "compose"
     }
   },
   {
@@ -6751,7 +6751,7 @@
       "description": "If opponent used Cross, discard all Cards in opponent's Hand.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "conditional"
     }
   },
   {
@@ -6794,9 +6794,9 @@
     },
     "supportEffect": {
       "description": "Move the top Card from Offline Pile to Online Deck.",
-      "value": 0,
+      "value": 1,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "offline_to_online"
     }
   },
   {
@@ -6887,7 +6887,7 @@
       "description": "Return all Cards in own Hand to Online Deck and Shuffle.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "return_hand_to_deck_shuffle"
     }
   },
   {
@@ -6974,9 +6974,9 @@
     },
     "supportEffect": {
       "description": "Discard 1 Card from opponent's Hand at random.",
-      "value": 0,
+      "value": 1,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "discard_enemy_hand_random"
     }
   },
   {
@@ -7020,9 +7020,9 @@
     },
     "supportEffect": {
       "description": "Discard 3 Cards from opponent's Online Deck.",
-      "value": 0,
+      "value": 3,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "discard_enemy_deck"
     }
   },
   {
@@ -7357,7 +7357,7 @@
       "description": "Discard 1 Card at random from own Hand. HP of both Players are 200.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "compose"
     }
   },
   {
@@ -7753,7 +7753,7 @@
       "description": "Discard 2 Cards from opponent's Online Deck. Draw 1 Card.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "compose"
     }
   },
   {
@@ -8340,7 +8340,7 @@
       "description": "Discard 2 Cards from opponent's Online Deck. Draw 1 Card.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "compose"
     }
   },
   {
@@ -8385,7 +8385,7 @@
       "description": "Discard 2 Cards from opponent's Online Deck. Draw 1 Card.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "compose"
     },
     "isPartner": true
   },

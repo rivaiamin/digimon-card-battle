@@ -7,6 +7,7 @@ import {
     type AttackType,
 } from "./supportResolver";
 import { resolveFullBattle, type BattleCombatant } from "./battleEffectEngine";
+import { createSeededRng } from "./seededRng";
 
 function makePlayer(sessionId: string, specialty = "Fire", hp = 1000): PlayerSchema {
     const p = new PlayerSchema();
@@ -317,6 +318,100 @@ describe("DP-slot primitives (FC-027)", () => {
             defenderAttack: "circle",
         });
         expect(getEffectiveAttackDamage(d, "circle", ctx)).toBe(0);
+    });
+});
+
+function fillPile(pile: { push: (c: CardSchema) => void }, n: number, prefix: string) {
+    for (let i = 0; i < n; i++) {
+        const c = new CardSchema();
+        c.id = `${prefix}-${i}`;
+        c.cardKind = "digimon";
+        pile.push(c);
+    }
+}
+
+describe("hand / deck manipulation (FC-027)", () => {
+    it("discard_own_hand removes N cards to trash", () => {
+        const a = makePlayer("a");
+        fillPile(a.hand, 4, "h");
+        resolveActive(a, makePlayer("d", "Ice"), sup("discard_own_hand", { value: 2 }));
+        expect(a.hand.length).toBe(2);
+        expect(a.trash.length).toBe(2);
+    });
+
+    it("discard_own_hand_random removes one card deterministically under a seeded RNG", () => {
+        const a = makePlayer("a");
+        fillPile(a.hand, 3, "h");
+        const ctx = createSupportBattleContext();
+        resolveSupportPhase(a, makePlayer("d", "Ice"), sup("discard_own_hand_random", { value: 1 }), null, ctx, undefined, {
+            rng: createSeededRng(7),
+        });
+        expect(a.hand.length).toBe(2);
+        expect(a.trash.length).toBe(1);
+    });
+
+    it("discard_enemy_hand (all) empties the opponent's hand", () => {
+        const a = makePlayer("a");
+        const d = makePlayer("d", "Ice");
+        fillPile(d.hand, 3, "dh");
+        resolveActive(a, d, sup("discard_enemy_hand", { value: 0 }));
+        expect(d.hand.length).toBe(0);
+    });
+
+    it("discard_enemy_deck discards N from the top of the opponent's deck", () => {
+        const a = makePlayer("a");
+        const d = makePlayer("d", "Ice");
+        fillPile(d.deck, 5, "dd");
+        resolveActive(a, d, sup("discard_enemy_deck", { value: 3 }));
+        expect(d.deck.length).toBe(2);
+        expect(d.trash.length).toBe(3);
+    });
+
+    it("discard_both_hands empties both hands", () => {
+        const a = makePlayer("a");
+        const d = makePlayer("d", "Ice");
+        fillPile(a.hand, 2, "ah");
+        fillPile(d.hand, 3, "dh");
+        resolveActive(a, d, sup("discard_both_hands"));
+        expect(a.hand.length).toBe(0);
+        expect(d.hand.length).toBe(0);
+    });
+
+    it("return_hand_to_deck_shuffle moves the hand into the deck", () => {
+        const a = makePlayer("a");
+        fillPile(a.hand, 3, "h");
+        fillPile(a.deck, 2, "dk");
+        const ctx = createSupportBattleContext();
+        resolveSupportPhase(a, makePlayer("d", "Ice"), sup("return_hand_to_deck_shuffle"), null, ctx, undefined, {
+            rng: createSeededRng(3),
+        });
+        expect(a.hand.length).toBe(0);
+        expect(a.deck.length).toBe(5);
+    });
+
+    it("mult_by_hand_discards multiplies attack by hand size then empties it", () => {
+        const a = makePlayer("a");
+        fillPile(a.hand, 2, "h");
+        const ctx = resolveActive(a, makePlayer("d", "Ice"), sup("mult_by_hand_discards", { targetAttack: "all" }));
+        expect(a.hand.length).toBe(0);
+        expect(getEffectiveAttackDamage(a, "circle", ctx)).toBe(800); // 400 × 2
+    });
+
+    it("draw_until fills the hand up to N from the deck", () => {
+        const a = makePlayer("a");
+        fillPile(a.hand, 1, "h");
+        fillPile(a.deck, 5, "dk");
+        resolveActive(a, makePlayer("d", "Ice"), sup("draw_until", { value: 4 }));
+        expect(a.hand.length).toBe(4);
+        expect(a.deck.length).toBe(2);
+    });
+
+    it("both_hp_set sets both players' HP", () => {
+        const a = makePlayer("a", "Fire", 1000);
+        const d = makePlayer("d", "Ice", 900);
+        resolveActive(a, d, sup("both_hp_set", { value: 200 }));
+        expect(a.hp).toBe(200);
+        expect(d.hp).toBe(200);
     });
 });
 

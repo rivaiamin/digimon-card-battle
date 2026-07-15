@@ -69,6 +69,20 @@ export type SupportEffectType =
     | "atk_mult_by_dp_discards"
     | "hp_add_dp_discards"
     | "discard_both_dp_equal"
+    | "discard_own_hand"
+    | "discard_own_hand_random"
+    | "discard_enemy_hand"
+    | "discard_enemy_hand_random"
+    | "discard_own_deck"
+    | "discard_enemy_deck"
+    | "discard_both_deck"
+    | "discard_both_hands"
+    | "return_hand_to_deck_shuffle"
+    | "offline_to_online"
+    | "mult_by_hand_discards"
+    | "draw_until"
+    | "both_hp_set"
+    | "shuffle_deck"
     | "grant_eat_up_hp"
     | "zero_attacks"
     | "draw_cards"
@@ -122,12 +136,26 @@ export const SUPPORT_PRIORITY: Record<SupportEffectType, number> = {
     discard_enemy_dp: 3,
     atk_mult_by_dp_discards: 3,
     discard_both_dp_equal: 3,
+    discard_own_hand: 4,
+    discard_own_hand_random: 4,
+    discard_enemy_hand: 4,
+    discard_enemy_hand_random: 4,
+    discard_own_deck: 4,
+    discard_enemy_deck: 4,
+    discard_both_deck: 4,
+    discard_both_hands: 4,
+    return_hand_to_deck_shuffle: 4,
+    offline_to_online: 4,
+    mult_by_hand_discards: 3,
+    both_hp_set: 3,
+    shuffle_deck: 4,
     compose: 4,
     conditional: 4,
     draw_cards: 5,
     hp_heal: 5,
     enemy_hp_heal: 5,
     hp_add_dp_discards: 5,
+    draw_until: 5,
 };
 
 export type SupportEffectInput = {
@@ -476,6 +504,69 @@ function inferredToEffect(step: {
     } as unknown as SupportEffectSchema;
 }
 
+function pickIndex(rng: (() => number) | undefined, len: number): number {
+    if (len <= 0) return -1;
+    const r = rng ? rng() : 0;
+    return Math.min(len - 1, Math.max(0, Math.floor(r * len)));
+}
+
+/** Discard from a player's hand into trash. count<=0 discards the whole hand. */
+function discardFromHand(
+    player: PlayerSchema,
+    count: number,
+    random: boolean,
+    rng?: () => number
+): number {
+    const hand = player.hand;
+    if (!hand) return 0;
+    const n = count <= 0 ? hand.length : Math.min(count, hand.length);
+    let done = 0;
+    for (let i = 0; i < n; i++) {
+        const idx = random ? pickIndex(rng, hand.length) : 0;
+        if (idx < 0) break;
+        const card = hand.splice(idx, 1)[0];
+        if (card) player.trash?.push(card);
+        done++;
+    }
+    return done;
+}
+
+/** Discard top cards from a player's Online Deck into trash. count<=0 = all. */
+function discardFromDeck(player: PlayerSchema, count: number): number {
+    const deck = player.deck;
+    if (!deck) return 0;
+    const n = count <= 0 ? deck.length : Math.min(count, deck.length);
+    for (let i = 0; i < n; i++) {
+        const card = deck.shift();
+        if (card) player.trash?.push(card);
+    }
+    return n;
+}
+
+function shuffleDeck(player: PlayerSchema, rng?: () => number): void {
+    const deck = player.deck;
+    if (!deck || deck.length < 2) return;
+    const cards = deck.splice(0, deck.length);
+    for (let i = cards.length - 1; i > 0; i--) {
+        const j = Math.floor((rng ? rng() : 0) * (i + 1));
+        const tmp = cards[i]!;
+        cards[i] = cards[j]!;
+        cards[j] = tmp;
+    }
+    for (const c of cards) deck.push(c);
+}
+
+/** Move all of a player's hand back into the Online Deck, then shuffle it. */
+function returnHandToDeck(player: PlayerSchema, rng?: () => number): void {
+    const hand = player.hand;
+    if (!hand) return;
+    while (hand.length > 0) {
+        const card = hand.shift();
+        if (card) player.deck?.push(card);
+    }
+    shuffleDeck(player, rng);
+}
+
 /** Move up to `count` cards from a player's DP Slot to trash, reducing their DP gauge. */
 function discardDpCards(player: PlayerSchema, count: number): number {
     const slot = player.dpSlot;
@@ -699,6 +790,70 @@ function applySingleEffect(
             discardDpCards(target, discarded);
             break;
         }
+        case "discard_own_hand":
+            discardFromHand(source, effect.value ?? 0, false, hooks?.rng);
+            break;
+        case "discard_own_hand_random":
+            discardFromHand(source, effect.value > 0 ? effect.value : 1, true, hooks?.rng);
+            break;
+        case "discard_enemy_hand":
+            discardFromHand(target, effect.value ?? 0, false, hooks?.rng);
+            break;
+        case "discard_enemy_hand_random":
+            discardFromHand(target, effect.value > 0 ? effect.value : 1, true, hooks?.rng);
+            break;
+        case "discard_both_hands":
+            discardFromHand(source, 0, false);
+            discardFromHand(target, 0, false);
+            break;
+        case "discard_own_deck":
+            discardFromDeck(source, effect.value > 0 ? effect.value : 0);
+            break;
+        case "discard_enemy_deck":
+            discardFromDeck(target, effect.value > 0 ? effect.value : 0);
+            break;
+        case "discard_both_deck": {
+            const n = effect.value > 0 ? effect.value : 0;
+            discardFromDeck(source, n);
+            discardFromDeck(target, n);
+            break;
+        }
+        case "return_hand_to_deck_shuffle":
+            returnHandToDeck(source, hooks?.rng);
+            break;
+        case "offline_to_online": {
+            const n = effect.value > 0 ? effect.value : 1;
+            for (let i = 0; i < n; i++) {
+                const card = source.trash?.shift();
+                if (!card) break;
+                source.deck?.push(card);
+            }
+            break;
+        }
+        case "shuffle_deck":
+            shuffleDeck(source, hooks?.rng);
+            break;
+        case "mult_by_hand_discards": {
+            const count = source.hand?.length ?? 0;
+            discardFromHand(source, 0, false);
+            multiplyAttack(ctx, source.sessionId, Math.max(0, count), effect.targetAttack || "all");
+            break;
+        }
+        case "draw_until": {
+            const target2 = Math.max(0, effect.value ?? 0);
+            while ((source.hand?.length ?? 0) < target2 && (source.deck?.length ?? 0) > 0) {
+                const card = source.deck!.shift();
+                if (!card) break;
+                source.hand!.push(card);
+            }
+            break;
+        }
+        case "both_hp_set": {
+            const v = Math.max(0, effect.value ?? 0);
+            source.hp = v;
+            target.hp = v;
+            break;
+        }
         case "hp_heal": {
             const max = source.active?.maxHp ?? source.hp;
             source.hp = Math.min(max, source.hp + (effect.value ?? 0));
@@ -776,6 +931,8 @@ export type ResolveSupportHooks = {
     ) => void;
     /** Draw N cards from online deck into hand (FC-027 draw_cards). */
     drawCards?: (source: PlayerSchema, count: number) => void;
+    /** Deterministic RNG for random discards / shuffles (seeded for replay). */
+    rng?: () => number;
 };
 
 /**
