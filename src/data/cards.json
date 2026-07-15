@@ -177,9 +177,9 @@
     },
     "supportEffect": {
       "description": "Digimon KO'd in battle revives with 500 HP. Battle is still lost.",
-      "value": 0,
+      "value": 500,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "revive"
     }
   },
   {
@@ -882,7 +882,7 @@
       "description": "Use Circle and Boost own Circle Attack Power +400.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "compose"
     }
   },
   {
@@ -4892,9 +4892,9 @@
     },
     "supportEffect": {
       "description": "Digimon KO'd in battle revives with 500 HP. Battle is still lost.",
-      "value": 0,
+      "value": 500,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "revive"
     }
   },
   {
@@ -5028,7 +5028,7 @@
       "description": "Discard 7 Cards from own Online Deck, own Attack is \"Eat-up HP.\"",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "compose"
     }
   },
   {
@@ -5952,7 +5952,7 @@
       "description": "Boost own Cross Attack Power +200. Circle & Triangle Attack Power are 0.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "compose"
     }
   },
   {
@@ -10255,6 +10255,7 @@
     "id": "293",
     "name": "Download Digivolve",
     "cardKind": "evolution_option",
+    "effectId": "evolution_option.download",
     "level": "",
     "type": "Rare",
     "hp": 0,
@@ -10314,6 +10315,7 @@
     "id": "296",
     "name": "Mutant Digivolve",
     "cardKind": "evolution_option",
+    "effectId": "evolution_option.mutant",
     "level": "",
     "type": "Rare",
     "hp": 0,

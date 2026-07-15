@@ -66,6 +66,8 @@ export const KNOWN_EFFECT_IDS = new Set<string>([
     "evolution_option.restore_full_stats",
     "evolution_option.armor_crush",
     "evolution_option.de_armor",
+    "evolution_option.mutant",
+    "evolution_option.download",
     "cross.counter",
     "cross.to_zero",
     "cross.crash",
@@ -132,6 +134,7 @@ export const KNOWN_EFFECT_IDS = new Set<string>([
     "support.draw_until",
     "support.both_hp_set",
     "support.shuffle_deck",
+    "support.revive",
 ]);
 
 function toCardKind(rawKind: unknown): CardKind {

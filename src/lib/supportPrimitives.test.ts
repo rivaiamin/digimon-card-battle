@@ -415,6 +415,14 @@ describe("hand / deck manipulation (FC-027)", () => {
     });
 });
 
+describe("revive (FC-027)", () => {
+    it("records an on-KO revive HP for the source player", () => {
+        const a = makePlayer("a");
+        const ctx = resolveActive(a, makePlayer("d", "Ice"), sup("revive", { value: 500 }));
+        expect(ctx.reviveHp.get("a")).toBe(500);
+    });
+});
+
 describe("grant_counter (FC-027)", () => {
     function combatant(sessionId: string, hp: number, damage: number): BattleCombatant {
         return {

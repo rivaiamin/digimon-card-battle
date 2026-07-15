@@ -453,6 +453,14 @@ function mapEvolutionOption(
     effect: string
 ): { effectId?: string; effectArgs?: Record<string, number> } {
     const n = name.toLowerCase();
+    if (n.includes("mutant")) {
+        // "Can digivolve Digimon at same Level. (Ignore Specialty)"
+        return { effectId: "evolution_option.mutant" };
+    }
+    if (n.includes("download")) {
+        // "Can digivolve regardless of own Specialty, Level, or Digivolve Pts."
+        return { effectId: "evolution_option.download" };
+    }
     if (n.includes("armorcrush") || n.includes("armor crush")) {
         // "Digivolve a Level A Digimon to C or U." → Armor → Champion/Ultimate.
         return { effectId: "evolution_option.armor_crush" };

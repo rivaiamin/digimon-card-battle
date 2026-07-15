@@ -137,13 +137,17 @@ export function inferSupportEffectFromDescription(
         return { type: "first_strike", description: text };
     }
 
-    const forceAtk = text.match(/^opponent uses (circle|triangle|cross)$/i);
+    const forceAtk = text.match(/^opponent uses ([otx]|circle|triangle|cross)$/i);
     if (forceAtk) {
         return {
             type: "change_attack",
             targetAttack: letterToAttack(forceAtk[1]) ?? undefined,
             description: text,
         };
+    }
+    const useOwn = text.match(/^use (circle|triangle|cross)$/i);
+    if (useOwn) {
+        return { type: "force_self_attack", targetAttack: letterToAttack(useOwn[1])!, description: text };
     }
 
     const bothForce = text.match(/^both players(?:' attacks)?(?: become| use) (circle|triangle|cross)$/i);
@@ -248,7 +252,7 @@ export function inferSupportEffectFromDescription(
         };
     }
 
-    if (/^own attack becomes\s*eat-up hp$/i.test(text)) {
+    if (/^own attack (?:becomes|is)\s*eat-up hp$/i.test(text)) {
         return { type: "grant_eat_up_hp", description: text };
     }
 
@@ -537,11 +541,7 @@ export function inferSupportEffectFromDescription(
         return { type: "discard_enemy_hand", value: 0, description: text };
     }
 
-    // Online-deck discards.
-    const ownDeck = text.match(/^discard (\d+) cards? from(?: own)? online deck$/i);
-    if (ownDeck && /own online deck/i.test(text)) {
-        return { type: "discard_own_deck", value: Number(ownDeck[1]), description: text };
-    }
+    // Online-deck discards. (Order: both / opponent before bare "own".)
     const bothDeck = text.match(/^discard (\d+) cards? from both players'? online decks?$/i);
     if (bothDeck) return { type: "discard_both_deck", value: Number(bothDeck[1]), description: text };
     const enemyDeck = text.match(
@@ -550,6 +550,8 @@ export function inferSupportEffectFromDescription(
     if (enemyDeck) {
         return { type: "discard_enemy_deck", value: Number(enemyDeck[1] ?? enemyDeck[2]), description: text };
     }
+    const ownDeck = text.match(/^discard (\d+) cards? from(?: own)? online deck$/i);
+    if (ownDeck) return { type: "discard_own_deck", value: Number(ownDeck[1]), description: text };
 
     // Offline Pile → Online Deck moves.
     const offlineMove = text.match(/^move (?:the )?top (\d+ )?cards? from offline pile to online deck$/i);
@@ -559,6 +561,12 @@ export function inferSupportEffectFromDescription(
     if (/^shuffle$/i.test(text)) {
         return { type: "shuffle_deck", description: text };
     }
+
+    // --- On-KO revive ("...revives with N HP. Battle is still lost.") ---
+    const revive = text.match(
+        /^(?:digimon ko'?d in battle revives|ko'?d digimon revives) with (\d+)(?: hp)?\.?\s*(?:battle is still lost)?\.?$/i
+    );
+    if (revive) return { type: "revive", value: Number(revive[1]), description: text };
 
     // --- Support-granted counterattack (reflect + nullify a matching attack) ---
     const counterSlot = text.match(/^(circle|triangle|cross) counterattack$/i);
@@ -599,6 +607,19 @@ function clauseParses(clause: string): boolean {
 }
 
 /**
+ * Split a compound (non-conditional) effect into clauses. Prefer period-only
+ * splitting so conjunctions inside a single primitive ("Circle & Triangle
+ * Attack Power are 0", "Support and Option Effects are voided") stay intact;
+ * only fall back to comma/"and"/"&" splitting when the period split does not
+ * fully parse.
+ */
+export function splitComposeClauses(text: string): string[] {
+    const byPeriod = splitEffectClauses(text);
+    if (byPeriod.length >= 2 && byPeriod.every(clauseParses)) return byPeriod;
+    return splitConsequentClauses(text);
+}
+
+/**
  * If every clause maps to a known support primitive, return a compose effect
  * (or the single primitive when there is only one clause).
  */
@@ -614,7 +635,7 @@ export function inferCompoundSupportEffect(
     const conditional = inferConditionalEffect(text);
     if (conditional) return conditional;
 
-    const clauses = splitConsequentClauses(text);
+    const clauses = splitComposeClauses(text);
     if (clauses.length < 2) return null;
 
     if (clauses.some(c => !clauseParses(c))) return null;

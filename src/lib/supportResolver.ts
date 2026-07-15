@@ -9,8 +9,8 @@ import { sortEffectsByConflictPolicy } from "./effectConflictResolver";
 import {
     inferConditionalEffect,
     inferSupportEffectFromDescription,
+    splitComposeClauses,
     splitConsequentClauses,
-    splitEffectClauses,
 } from "./effectTextNormalize";
 import {
     evaluateCondition,
@@ -83,6 +83,7 @@ export type SupportEffectType =
     | "draw_until"
     | "both_hp_set"
     | "shuffle_deck"
+    | "revive"
     | "grant_eat_up_hp"
     | "zero_attacks"
     | "draw_cards"
@@ -149,6 +150,7 @@ export const SUPPORT_PRIORITY: Record<SupportEffectType, number> = {
     mult_by_hand_discards: 3,
     both_hp_set: 3,
     shuffle_deck: 4,
+    revive: 5,
     compose: 4,
     conditional: 4,
     draw_cards: 5,
@@ -186,6 +188,8 @@ export interface SupportBattleContext {
     eatUpHpPlayers: Set<string>;
     /** Support-granted counterattack: reflect+nullify a matching incoming attack (FC-027). */
     counterGrants: Map<string, { targetAttack: string; multiplier: number }>;
+    /** On-KO revive HP: the active survives at this HP but the battle is still lost (FC-027). */
+    reviveHp: Map<string, number>;
 }
 
 export function createSupportBattleContext(): SupportBattleContext {
@@ -198,6 +202,7 @@ export function createSupportBattleContext(): SupportBattleContext {
         forcedAttack: new Map(),
         eatUpHpPlayers: new Set(),
         counterGrants: new Map(),
+        reviveHp: new Map(),
     };
 }
 
@@ -606,7 +611,7 @@ function applySingleEffect(
     const type = String(effect.type ?? "");
 
     if (type === "compose") {
-        const clauses = splitConsequentClauses(String(effect.description ?? ""));
+        const clauses = splitComposeClauses(String(effect.description ?? ""));
         for (const clause of clauses) {
             const step = inferSupportEffectFromDescription(clause) ?? inferConditionalEffect(clause);
             if (!step) continue;
@@ -910,6 +915,9 @@ function applySingleEffect(
         }
         case "grant_eat_up_hp":
             ctx.eatUpHpPlayers.add(source.sessionId);
+            break;
+        case "revive":
+            if ((effect.value ?? 0) > 0) ctx.reviveHp.set(source.sessionId, effect.value);
             break;
         case "draw_cards":
             hooks?.drawCards?.(source, Math.max(0, effect.value ?? 0));

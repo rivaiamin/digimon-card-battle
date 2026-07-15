@@ -132,4 +132,29 @@ describe("Armor evolution paths (FC-010)", () => {
             reason: "invalid_level_path",
         });
     });
+
+    it("Mutant Digivolve allows same-level onto any specialty (FC-027)", () => {
+        const champIce = { level: "Champion", type: "Ice", evoCost: 20, cardKind: "digimon" };
+        // Normally same-level + wrong specialty is illegal.
+        expect(evaluateEvolution(champion, champIce, 20).ok).toBe(false);
+        // With Mutant it is legal (DP still required).
+        expect(evaluateEvolution(champion, champIce, 20, { sameLevel: true, ignoreSpecialty: true })).toEqual({
+            ok: true,
+        });
+        expect(
+            evaluateEvolution(champion, champIce, 0, { sameLevel: true, ignoreSpecialty: true })
+        ).toEqual({ ok: false, reason: "insufficient_dp" });
+    });
+
+    it("Download Digivolve ignores specialty, level, and DP (FC-027)", () => {
+        const ultIce = { level: "Ultimate", type: "Ice", evoCost: 60, cardKind: "digimon" };
+        expect(evaluateEvolution(rookie, ultIce, 0).ok).toBe(false);
+        expect(
+            evaluateEvolution(rookie, ultIce, 0, {
+                ignoreLevel: true,
+                ignoreSpecialty: true,
+                ignoreDp: true,
+            })
+        ).toEqual({ ok: true });
+    });
 });

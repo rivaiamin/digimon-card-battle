@@ -1,20 +1,20 @@
 {
   "source": "https://github.com/AsyrafKZ/digital-card-battle-clone-data-collection",
   "sourceFile": "scripts/data/asyrafkz/effectList2.txt",
-  "generatedAt": "2026-07-15T15:54:27.163Z",
+  "generatedAt": "2026-07-15T16:06:37.777Z",
   "counts": {
     "total": 257,
     "byStatus": {
-      "implemented": 239,
-      "catalog_only": 17,
-      "partial": 1
+      "implemented": 252,
+      "partial": 1,
+      "catalog_only": 4
     },
     "byKind": {
       "cross": 17,
-      "support": 150,
-      "mixed": 78,
-      "evolution": 7,
-      "unknown": 5
+      "support": 152,
+      "mixed": 77,
+      "evolution": 8,
+      "unknown": 3
     }
   },
   "effects": [
@@ -171,7 +171,9 @@
       "text": "Boost own Cross Attack Power +200. Circle & Triangle Attack Power are 0.",
       "sourceText": "Boost own {{button|x}} Attack Power +200. {{button|c}} & {{button|t}} Attack Power are 0.",
       "kind": "mixed",
-      "status": "catalog_only"
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_boost_own_triangle_attack_power_300",
@@ -283,7 +285,9 @@
       "text": "Can digivolve Digimon at same Level. (Need DP) (Ignore Specialty)",
       "sourceText": "Can digivolve Digimon at same Level. (Need DP) (Ignore Specialty)",
       "kind": "evolution",
-      "status": "catalog_only"
+      "implementedEffectId": "evolution_option.mutant",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_can_digivolve_from_r_to_u_dp_are_needed",
@@ -312,7 +316,9 @@
       "text": "Can digivolve regardless of own Specialty, Level, or Digivolve Pts.",
       "sourceText": "Can digivolve regardless of own Specialty, Level, or Digivolve Pts.",
       "kind": "evolution",
-      "status": "catalog_only"
+      "implementedEffectId": "evolution_option.download",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_can_disregard_dp_in_digivolving_not_possible_in_abnormal_states",
@@ -652,14 +658,20 @@
       "text": "Digimon KO'd in battle revives with 500 HP. Battle is still lost.",
       "sourceText": "Digimon KO'd in battle revives with 500 HP. Battle is still lost.",
       "kind": "mixed",
-      "status": "catalog_only"
+      "implementedEffectId": "support.revive",
+      "implementedArgs": {
+        "value": 500
+      },
+      "status": "implemented"
     },
     {
       "id": "fx_digivolve_a_level_a_digimon_to_c_or_u_dp_are_needed",
       "text": "Digivolve a Level A Digimon to C or U. (DP are needed.)",
       "sourceText": "Digivolve a Level A Digimon to C or U. (DP are needed.)",
-      "kind": "mixed",
-      "status": "catalog_only"
+      "kind": "evolution",
+      "implementedEffectId": "evolution_option.armor_crush",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_discard_1_card_at_random_from_own_hand_hp_of_both_players_are_200",
@@ -771,14 +783,18 @@
       "text": "Discard 7 Cards from Online Deck. Own Attack Power is same as own HP.",
       "sourceText": "Discard 7 Cards from Online Deck. Own Attack Power is same as own HP.",
       "kind": "mixed",
-      "status": "catalog_only"
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_discard_7_cards_from_own_online_deck_own_attack_is_eat_up_hp",
       "text": "Discard 7 Cards from own Online Deck, own Attack is \"Eat-up HP.\"",
       "sourceText": "Discard 7 Cards from own Online Deck, own Attack is \"Eat-up HP.\"",
       "kind": "mixed",
-      "status": "catalog_only"
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_discard_7_cards_from_own_online_deck_boost_own_attack_power_500",
@@ -914,7 +930,9 @@
       "text": "Downgrade a Level A Digimon to Level R.",
       "sourceText": "Downgrade a Level A Digimon to Level R.",
       "kind": "evolution",
-      "status": "catalog_only"
+      "implementedEffectId": "evolution_option.de_armor",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_downgrade_own_digivolution_by_1_level_hp_double_when_successful",
@@ -1679,14 +1697,22 @@
       "text": "KO'd Digimon revives with 100 HP. Battle is still lost.",
       "sourceText": "KO'd Digimon revives with 100 HP. Battle is still lost.",
       "kind": "mixed",
-      "status": "catalog_only"
+      "implementedEffectId": "support.revive",
+      "implementedArgs": {
+        "value": 100
+      },
+      "status": "implemented"
     },
     {
       "id": "fx_ko_d_digimon_revives_with_1000_battle_is_still_lost",
       "text": "KO'd Digimon revives with 1000. Battle is still lost.",
       "sourceText": "KO'd Digimon revives with 1000. Battle is still lost.",
       "kind": "mixed",
-      "status": "catalog_only"
+      "implementedEffectId": "support.revive",
+      "implementedArgs": {
+        "value": 1000
+      },
+      "status": "implemented"
     },
     {
       "id": "fx_lower_both_attack_powers_200",
@@ -1872,8 +1898,12 @@
       "id": "fx_opponent_uses_o",
       "text": "Opponent uses O.",
       "sourceText": "Opponent uses O.",
-      "kind": "unknown",
-      "status": "catalog_only"
+      "kind": "support",
+      "implementedEffectId": "support.change_attack",
+      "implementedArgs": {
+        "targetAttack": "circle"
+      },
+      "status": "implemented"
     },
     {
       "id": "fx_opponent_uses_triangle",
@@ -1996,7 +2026,9 @@
       "text": "Opponent's Support and Option Effects are voided. His Attack Power is 0.",
       "sourceText": "Opponent's Support and Option Effects are voided. His Attack Power is 0.",
       "kind": "mixed",
-      "status": "catalog_only"
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_opponent_s_support_effect_is_voided",
@@ -2476,8 +2508,10 @@
       "id": "fx_use_circle_and_boost_own_circle_attack_power_400",
       "text": "Use Circle and Boost own Circle Attack Power +400.",
       "sourceText": "Use {{button|c}} and Boost own {{button|c}} Attack Power +400.",
-      "kind": "unknown",
-      "status": "catalog_only"
+      "kind": "support",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
     }
   ]
 }

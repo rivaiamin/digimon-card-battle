@@ -1459,7 +1459,6 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
 
             const loser = pA.hp <= 0 ? pA : pB;
             const winner = pA.hp <= 0 ? pB : pA;
-            this.trashEvolutionStack(loser);
 
             this.auditLog.emit({
                 turn: this.state.turn,
@@ -1487,10 +1486,32 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
                 pB.sessionId
             );
             if (pointLoser) {
+                this.trashEvolutionStack(loser);
                 this.endGame(pointLoser, "points");
                 return;
             }
 
+            // FC-027 revive: the KO'd Digimon survives at N HP but the opponent
+            // still scored the KO ("battle is still lost") — no trash, no redeploy.
+            const reviveHp = this.supportCtx.reviveHp?.get(loser.sessionId) ?? 0;
+            if (reviveHp > 0) {
+                this.supportCtx.reviveHp.delete(loser.sessionId);
+                loser.hp = reviveHp;
+                if (loser.active) loser.active.hp = reviveHp;
+                this.auditLog.emit({
+                    turn: this.state.turn,
+                    phase: this.state.phase,
+                    prepSubPhase: "",
+                    playerSessionId: loser.sessionId,
+                    action: "REVIVE",
+                    validation: "ok",
+                    fidelityIds: ["FC-027"],
+                    detail: { reviveHp },
+                });
+                return;
+            }
+
+            this.trashEvolutionStack(loser);
             this.beginKoRedeploy([loser.sessionId]);
         }
     }

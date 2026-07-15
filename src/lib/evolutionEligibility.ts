@@ -41,6 +41,14 @@ export type EvolutionCostModifiers = {
     armorCrush?: boolean;
     /** De-Armor Digivolve: Armor → Rookie. */
     deArmor?: boolean;
+    /** Mutant Digivolve: digivolve onto a same-Level Digimon (FC-027). */
+    sameLevel?: boolean;
+    /** Download Digivolve: any level path allowed (FC-027). */
+    ignoreLevel?: boolean;
+    /** Skip the specialty match gate (Mutant / Download). */
+    ignoreSpecialty?: boolean;
+    /** Skip the DP cost gate (Download). */
+    ignoreDp?: boolean;
 };
 
 /** Digimon targets only; empty/legacy cardKind treated as digimon for catalog compatibility. */
@@ -98,6 +106,16 @@ export function evaluateLevelPath(
     const armorCrush = !!modifiers.armorCrush;
     const deArmor = !!modifiers.deArmor;
 
+    // Download Digivolve: any level path is legal.
+    if (modifiers.ignoreLevel) return null;
+
+    // Mutant Digivolve: onto a same-Level Digimon.
+    if (modifiers.sameLevel) {
+        const fi = EVOLUTION_LEVEL_ORDER.indexOf(from as EvolutionLevel);
+        const ti = EVOLUTION_LEVEL_ORDER.indexOf(to as EvolutionLevel);
+        if (fi !== -1 && ti === fi) return null;
+    }
+
     // Rookie → Armor (online; no Digi-Egg card required).
     if (from === "Rookie" && isArmorLevel(to)) {
         if (armorCrush || deArmor) return "invalid_level_path";
@@ -136,8 +154,8 @@ export function evaluateEvolution(
 
     const dpCostDelta = modifiers.dpCostDelta ?? 0;
     const cost = adjustedEvolutionCost(target.evoCost, dpCostDelta);
-    if (playerDp < cost) return { ok: false, reason: "insufficient_dp" };
-    if (!matchesEvolutionType(active.type, target.type)) {
+    if (!modifiers.ignoreDp && playerDp < cost) return { ok: false, reason: "insufficient_dp" };
+    if (!modifiers.ignoreSpecialty && !matchesEvolutionType(active.type, target.type)) {
         return { ok: false, reason: "wrong_specialty" };
     }
     const pathReject = evaluateLevelPath(active.level, target.level, modifiers);
