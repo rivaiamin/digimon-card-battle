@@ -88,7 +88,7 @@
       "description": "Changes own Specialty to Fire. Boost own Attack Power +100.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "compose"
     }
   },
   {
@@ -122,16 +122,20 @@
         "damage": 380,
         "type": "cross",
         "description": "Ice Foe x3",
+        "effectId": "attack.specialty_mult",
         "effectArgs": {
+          "specialty": "Ice",
+          "multiplier": 3,
           "priority": 1
         }
       }
     },
     "supportEffect": {
       "description": "Add number of Cards in Hand x100 to own Attack Power.",
-      "value": 0,
+      "value": 100,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "hand_x_atk",
+      "targetAttack": "all"
     }
   },
   {
@@ -220,7 +224,7 @@
       "description": "If own Specialty is Fire, boost own Attack Power +300.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "conditional"
     }
   },
   {
@@ -335,6 +339,7 @@
         "damage": 320,
         "type": "cross",
         "description": "1st Attack",
+        "effectId": "attack.first_strike",
         "effectArgs": {
           "priority": 2
         }
@@ -344,7 +349,7 @@
       "description": "If own Attack is Circle, attack first.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "conditional"
     }
   },
   {
@@ -378,7 +383,10 @@
         "damage": 370,
         "type": "cross",
         "description": "Ice Foe x3",
+        "effectId": "attack.specialty_mult",
         "effectArgs": {
+          "specialty": "Ice",
+          "multiplier": 3,
           "priority": 1
         }
       }
@@ -435,7 +443,7 @@
       "description": "If own Level is U, boost own Attack Power +500.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "conditional"
     }
   },
   {
@@ -520,7 +528,8 @@
       "description": "Lower opponent's Circle Attack Power to 0.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "enemy_atk_zero",
+      "targetAttack": "circle"
     }
   },
   {
@@ -566,7 +575,7 @@
       "description": "If own Level is A, boost own Attack Power +300.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "conditional"
     }
   },
   {
@@ -600,6 +609,7 @@
         "damage": 200,
         "type": "cross",
         "description": "1st Attack",
+        "effectId": "attack.first_strike",
         "effectArgs": {
           "priority": 2
         }
@@ -609,7 +619,7 @@
       "description": "If own attack is Triangle, attack first.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "conditional"
     }
   },
   {
@@ -655,7 +665,7 @@
       "description": "If own Level is C, boost own Attack Power +300.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "conditional"
     }
   },
   {
@@ -701,7 +711,7 @@
       "description": "Change own Specialty to Fire. Boost own Attack Power +200.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "compose"
     }
   },
   {
@@ -735,7 +745,10 @@
         "damage": 150,
         "type": "cross",
         "description": "Nature Foe x3",
+        "effectId": "attack.specialty_mult",
         "effectArgs": {
+          "specialty": "Nature",
+          "multiplier": 3,
           "priority": 1
         }
       }
@@ -811,7 +824,10 @@
         "damage": 220,
         "type": "cross",
         "description": "Ice Foe x3",
+        "effectId": "attack.specialty_mult",
         "effectArgs": {
+          "specialty": "Ice",
+          "multiplier": 3,
           "priority": 1
         }
       }
@@ -820,7 +836,7 @@
       "description": "If opponent's Specialty is Ice, own Attack Power is tripled.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "conditional"
     }
   },
   {
@@ -854,7 +870,10 @@
         "damage": 220,
         "type": "cross",
         "description": "Ice Foe x3",
+        "effectId": "attack.specialty_mult",
         "effectArgs": {
+          "specialty": "Ice",
+          "multiplier": 3,
           "priority": 1
         }
       }
@@ -897,6 +916,7 @@
         "damage": 130,
         "type": "cross",
         "description": "1st Attack",
+        "effectId": "attack.first_strike",
         "effectArgs": {
           "priority": 2
         }
@@ -940,6 +960,7 @@
         "damage": 120,
         "type": "cross",
         "description": "1st Attack",
+        "effectId": "attack.first_strike",
         "effectArgs": {
           "priority": 2
         }
@@ -949,7 +970,7 @@
       "description": "Own HP become 10. Boost own Attack Power +500.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "compose"
     }
   },
   {
@@ -1034,7 +1055,8 @@
       "description": "Own Circle Attack Power becomes same as own HP.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "atk_set_to_hp",
+      "targetAttack": "circle"
     }
   },
   {
@@ -1124,7 +1146,7 @@
       "description": "If both Levels are C, boost own Attack Power +400.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "conditional"
     }
   },
   {
@@ -1164,7 +1186,8 @@
       "description": "Change own Specialty to Fire.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "change_own_specialty",
+      "targetAttack": "Fire"
     }
   },
   {
@@ -1282,6 +1305,7 @@
         "damage": 130,
         "type": "cross",
         "description": "1st Attack",
+        "effectId": "attack.first_strike",
         "effectArgs": {
           "priority": 2
         }
@@ -1420,7 +1444,10 @@
         "damage": 150,
         "type": "cross",
         "description": "Ice Foe x3.",
+        "effectId": "attack.specialty_mult",
         "effectArgs": {
+          "specialty": "Ice",
+          "multiplier": 3,
           "priority": 1
         }
       }
@@ -1429,7 +1456,7 @@
       "description": "If opponent's Specialty is Ice, own Attack Power is doubled.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "conditional"
     }
   },
   {
@@ -1548,7 +1575,7 @@
       "description": "Change own Specialty to Ice. Recover own HP by +100.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "compose"
     }
   },
   {
@@ -1582,7 +1609,10 @@
         "damage": 400,
         "type": "cross",
         "description": "Fire Foe x3",
+        "effectId": "attack.specialty_mult",
         "effectArgs": {
+          "specialty": "Fire",
+          "multiplier": 3,
           "priority": 1
         }
       }
@@ -1591,8 +1621,7 @@
       "description": "If own Specialty is Ice, opponent's Support Effect is voided.",
       "value": 0,
       "priority": 3,
-      "type": "void_enemy_support",
-      "requireType": "Ice"
+      "type": "void_enemy_support"
     }
   },
   {
@@ -1626,7 +1655,10 @@
         "damage": 400,
         "type": "cross",
         "description": "Fire Foe x3",
+        "effectId": "attack.specialty_mult",
         "effectArgs": {
+          "specialty": "Fire",
+          "multiplier": 3,
           "priority": 1
         }
       }
@@ -1635,7 +1667,7 @@
       "description": "If own Cards in Hand 3 or more, opponent's Attack Power becomes 0.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "conditional"
     }
   },
   {
@@ -1771,7 +1803,7 @@
       "description": "If own Specialty is Ice, opponent's Attack Power is halved.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "conditional"
     }
   },
   {
@@ -1897,6 +1929,7 @@
         "damage": 200,
         "type": "cross",
         "description": "Jamming",
+        "effectId": "attack.jamming",
         "effectArgs": {
           "priority": 3
         }
@@ -1951,7 +1984,8 @@
       "description": "Lower opponent's Circle Attack Power to 0.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "enemy_atk_zero",
+      "targetAttack": "circle"
     }
   },
   {
@@ -1996,7 +2030,8 @@
       "description": "Lower opponent's Cross Attack Power to 0.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "enemy_atk_zero",
+      "targetAttack": "cross"
     }
   },
   {
@@ -2077,7 +2112,10 @@
         "damage": 200,
         "type": "cross",
         "description": "Fire Foe x3",
+        "effectId": "attack.specialty_mult",
         "effectArgs": {
+          "specialty": "Fire",
+          "multiplier": 3,
           "priority": 1
         }
       }
@@ -2086,7 +2124,7 @@
       "description": "If opponent's Specialty is Fire, own Attack Power is tripled.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "conditional"
     }
   },
   {
@@ -2131,7 +2169,7 @@
       "description": "If own Attack is not Circle, recover own HP by +300.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "conditional"
     }
   },
   {
@@ -2174,9 +2212,9 @@
     },
     "supportEffect": {
       "description": "Own HP become 700.",
-      "value": 0,
+      "value": 700,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "hp_set"
     }
   },
   {
@@ -2221,7 +2259,7 @@
       "description": "Opponent's Attack Power is halved.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "enemy_atk_halve"
     }
   },
   {
@@ -2294,7 +2332,10 @@
         "damage": 170,
         "type": "cross",
         "description": "Fire Foe x3",
+        "effectId": "attack.specialty_mult",
         "effectArgs": {
+          "specialty": "Fire",
+          "multiplier": 3,
           "priority": 1
         }
       }
@@ -2348,7 +2389,8 @@
       "description": "Change opponent's Specialty to Ice.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "change_enemy_specialty",
+      "targetAttack": "Ice"
     }
   },
   {
@@ -2393,7 +2435,8 @@
       "description": "Lower opponent's Circle Attack Power to 0.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "enemy_atk_zero",
+      "targetAttack": "circle"
     }
   },
   {
@@ -2512,6 +2555,7 @@
         "damage": 170,
         "type": "cross",
         "description": "Jamming",
+        "effectId": "attack.jamming",
         "effectArgs": {
           "priority": 3
         }
@@ -2521,7 +2565,8 @@
       "description": "Change own Specialty to Ice.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "change_own_specialty",
+      "targetAttack": "Ice"
     }
   },
   {
@@ -2555,7 +2600,10 @@
         "damage": 180,
         "type": "cross",
         "description": "Fire Foe x3",
+        "effectId": "attack.specialty_mult",
         "effectArgs": {
+          "specialty": "Fire",
+          "multiplier": 3,
           "priority": 1
         }
       }
@@ -2564,7 +2612,7 @@
       "description": "If opponent's Specialty is fire, own Attack Power is tripled.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "conditional"
     }
   },
   {
@@ -2689,7 +2737,8 @@
       "description": "Lower opponent's Triangle Attack Power to 0.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "enemy_atk_zero",
+      "targetAttack": "triangle"
     }
   },
   {
@@ -2773,7 +2822,7 @@
       "description": "If own HP are less then 200, reduce opponent's Attack Power to 0.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "conditional"
     }
   },
   {
@@ -2818,7 +2867,7 @@
       "description": "If opponent's Specialty is Fire, reduce opponent's Attack Power to 0.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "conditional"
     }
   },
   {
@@ -2852,7 +2901,10 @@
         "damage": 150,
         "type": "cross",
         "description": "Fire Foe x3",
+        "effectId": "attack.specialty_mult",
         "effectArgs": {
+          "specialty": "Fire",
+          "multiplier": 3,
           "priority": 1
         }
       }
@@ -2861,7 +2913,7 @@
       "description": "If opponent's Specialty is Fire, own Attack Power is doubled.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "conditional"
     }
   },
   {
@@ -2906,7 +2958,8 @@
       "description": "Reduce opponent's Circle Attack Power to 0.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "enemy_atk_zero",
+      "targetAttack": "circle"
     }
   },
   {
@@ -2951,7 +3004,8 @@
       "description": "Reduce opponent's Cross Attack Power to 0.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "enemy_atk_zero",
+      "targetAttack": "cross"
     }
   },
   {
@@ -3065,7 +3119,10 @@
         "damage": 420,
         "type": "cross",
         "description": "Dark Foe x3",
+        "effectId": "attack.specialty_mult",
         "effectArgs": {
+          "specialty": "Dark",
+          "multiplier": 3,
           "priority": 1
         }
       }
@@ -3074,7 +3131,7 @@
       "description": "If opponent's Specialty is Darkness, own Attack Power is +200 & HP +200.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "conditional"
     }
   },
   {
@@ -3153,6 +3210,7 @@
         "damage": 360,
         "type": "cross",
         "description": "1st Attack",
+        "effectId": "attack.first_strike",
         "effectArgs": {
           "priority": 2
         }
@@ -3162,7 +3220,7 @@
       "description": "If own level is U, own Attack Power is doubled.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "conditional"
     }
   },
   {
@@ -3206,7 +3264,7 @@
       "description": "If opponent's HP are 1000+, own attack becomes \"Eat-up HP.\"",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "conditional"
     }
   },
   {
@@ -3240,6 +3298,7 @@
         "damage": 250,
         "type": "cross",
         "description": "1st Attack",
+        "effectId": "attack.first_strike",
         "effectArgs": {
           "priority": 2
         }
@@ -3277,7 +3336,10 @@
         "damage": 370,
         "type": "cross",
         "description": "Darkness Foe x3",
+        "effectId": "attack.specialty_mult",
         "effectArgs": {
+          "specialty": "Dark",
+          "multiplier": 3,
           "priority": 1
         }
       }
@@ -3286,7 +3348,7 @@
       "description": "If opponent's Specialty is Darkness, boost own Attack Power +500.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "conditional"
     }
   },
   {
@@ -3331,7 +3393,7 @@
       "description": "If opponent's Specialty is not Nature, attack second.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "conditional"
     }
   },
   {
@@ -3365,7 +3427,10 @@
         "damage": 330,
         "type": "cross",
         "description": "Darkness Foe x3",
+        "effectId": "attack.specialty_mult",
         "effectArgs": {
+          "specialty": "Dark",
+          "multiplier": 3,
           "priority": 1
         }
       }
@@ -3374,7 +3439,7 @@
       "description": "If opponent's Specialty is Darkness, recover own HP by +500.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "conditional"
     }
   },
   {
@@ -3532,6 +3597,7 @@
         "damage": 200,
         "type": "cross",
         "description": "1st Attack",
+        "effectId": "attack.first_strike",
         "effectArgs": {
           "priority": 2
         }
@@ -3541,7 +3607,7 @@
       "description": "If own level is U, own Attack Power is doubled.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "conditional"
     }
   },
   {
@@ -3575,7 +3641,10 @@
         "damage": 260,
         "type": "cross",
         "description": "Darkness Foe x3",
+        "effectId": "attack.specialty_mult",
         "effectArgs": {
+          "specialty": "Dark",
+          "multiplier": 3,
           "priority": 1
         }
       }
@@ -3584,7 +3653,7 @@
       "description": "If opponent's Specialty is Darkness, own Attack Power is tripled.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "conditional"
     }
   },
   {
@@ -3629,7 +3698,7 @@
       "description": "If own HP are less than 500, boost own Attack Power +300.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "conditional"
     }
   },
   {
@@ -3715,7 +3784,7 @@
       "description": "If own level is lower, boost own Attack Power +500.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "conditional"
     }
   },
   {
@@ -3800,7 +3869,7 @@
       "description": "Recover own HP by +100. Boost own Attack Power by +100.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "compose"
     }
   },
   {
@@ -3845,7 +3914,7 @@
       "description": "If opponent's Specialty is Darkness, lower opponent's Attack Power to 0.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "conditional"
     }
   },
   {
@@ -3879,6 +3948,7 @@
         "damage": 250,
         "type": "cross",
         "description": "1st Attack",
+        "effectId": "attack.first_strike",
         "effectArgs": {
           "priority": 2
         }
@@ -4003,6 +4073,7 @@
         "damage": 100,
         "type": "cross",
         "description": "Jamming",
+        "effectId": "attack.jamming",
         "effectArgs": {
           "priority": 3
         }
@@ -4012,7 +4083,8 @@
       "description": "Changes opponent's Specialty to Nature.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "change_enemy_specialty",
+      "targetAttack": "Nature"
     }
   },
   {
@@ -4057,7 +4129,7 @@
       "description": "Lower opponent's Attack Power to 0. Opponent's HP are doubled.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "compose"
     }
   },
   {
@@ -4091,6 +4163,7 @@
         "damage": 170,
         "type": "cross",
         "description": "1st Attack",
+        "effectId": "attack.first_strike",
         "effectArgs": {
           "priority": 2
         }
@@ -4134,7 +4207,7 @@
       "description": "If own Level is R, boost own Attack Power +300.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "conditional"
     }
   },
   {
@@ -4179,7 +4252,7 @@
       "description": "If opponent's Specialty is Darkness, lower opponent's Attack Power -200.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "conditional"
     }
   },
   {
@@ -4302,7 +4375,7 @@
       "description": "Changes own Specialty to Nature. Draw 1 Card.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "compose"
     }
   },
   {
@@ -4336,7 +4409,10 @@
         "damage": 130,
         "type": "cross",
         "description": "Ice Foe x3",
+        "effectId": "attack.specialty_mult",
         "effectArgs": {
+          "specialty": "Ice",
+          "multiplier": 3,
           "priority": 1
         }
       }
@@ -4345,7 +4421,7 @@
       "description": "If opponent's Specialty is Ice, boost own Attack Power +300.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "conditional"
     }
   },
   {
@@ -4390,7 +4466,7 @@
       "description": "If own HP are more than opponent's HP, own Attack Power is doubled.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "conditional"
     }
   },
   {
@@ -4424,6 +4500,7 @@
         "damage": 190,
         "type": "cross",
         "description": "Jamming",
+        "effectId": "attack.jamming",
         "effectArgs": {
           "priority": 3
         }
@@ -4431,9 +4508,10 @@
     },
     "supportEffect": {
       "description": "Lower both Attack Powers -200.",
-      "value": 0,
+      "value": -200,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "both_atk_buff",
+      "targetAttack": "all"
     }
   },
   {
@@ -4477,7 +4555,7 @@
       "description": "Own HP are halved. Change own Specialty to Darkness.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "compose"
     }
   },
   {
@@ -4561,7 +4639,7 @@
       "description": "Own HP become 10. Changes opponent's Specialty to Darkness.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "compose"
     }
   },
   {
@@ -4595,7 +4673,10 @@
         "damage": 400,
         "type": "cross",
         "description": "Nature Foe x3",
+        "effectId": "attack.specialty_mult",
         "effectArgs": {
+          "specialty": "Nature",
+          "multiplier": 3,
           "priority": 1
         }
       }
@@ -4632,6 +4713,7 @@
         "damage": 400,
         "type": "cross",
         "description": "Jamming",
+        "effectId": "attack.jamming",
         "effectArgs": {
           "priority": 3
         }
@@ -4713,6 +4795,7 @@
         "damage": 180,
         "type": "cross",
         "description": "Jamming",
+        "effectId": "attack.jamming",
         "effectArgs": {
           "priority": 3
         }
@@ -4764,9 +4847,10 @@
     },
     "supportEffect": {
       "description": "Both players boost Attack Power +200.",
-      "value": 0,
+      "value": 200,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "both_atk_buff",
+      "targetAttack": "all"
     }
   },
   {
@@ -4844,6 +4928,7 @@
         "damage": 300,
         "type": "cross",
         "description": "1st Attack",
+        "effectId": "attack.first_strike",
         "effectArgs": {
           "priority": 2
         }
@@ -4853,7 +4938,7 @@
       "description": "Both players' HP are halved.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "both_halve_hp"
     }
   },
   {
@@ -4887,7 +4972,10 @@
         "damage": 450,
         "type": "cross",
         "description": "Nature Foe x3",
+        "effectId": "attack.specialty_mult",
         "effectArgs": {
+          "specialty": "Nature",
+          "multiplier": 3,
           "priority": 1
         }
       }
@@ -4974,6 +5062,7 @@
         "damage": 200,
         "type": "cross",
         "description": "Jamming",
+        "effectId": "attack.jamming",
         "effectArgs": {
           "priority": 3
         }
@@ -4983,7 +5072,7 @@
       "description": "Own HP become 10. Own Attack Power is doubled.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "compose"
     }
   },
   {
@@ -5023,7 +5112,7 @@
       "description": "Own HP are halved. Boost own Attack Power +400.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "compose"
     }
   },
   {
@@ -5101,6 +5190,7 @@
         "damage": 220,
         "type": "cross",
         "description": "Jamming",
+        "effectId": "attack.jamming",
         "effectArgs": {
           "priority": 3
         }
@@ -5150,7 +5240,8 @@
       "description": "Own Attack becomes Triangle.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "force_self_attack",
+      "targetAttack": "triangle"
     }
   },
   {
@@ -5184,7 +5275,10 @@
         "damage": 250,
         "type": "cross",
         "description": "Nature Foe x3",
+        "effectId": "attack.specialty_mult",
         "effectArgs": {
+          "specialty": "Nature",
+          "multiplier": 3,
           "priority": 1
         }
       }
@@ -5193,7 +5287,7 @@
       "description": "If opponent's Specialty is Nature, own Attack Power is tripled.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "conditional"
     }
   },
   {
@@ -5233,7 +5327,8 @@
       "description": "Own Attack becomes Cross.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "force_self_attack",
+      "targetAttack": "cross"
     }
   },
   {
@@ -5323,7 +5418,8 @@
       "description": "Change own Specialty to Darkness.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "change_own_specialty",
+      "targetAttack": "Dark"
     }
   },
   {
@@ -5367,7 +5463,7 @@
       "description": "Own HP are halved. Boost own Attack Power +300.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "compose"
     }
   },
   {
@@ -5409,9 +5505,10 @@
     },
     "supportEffect": {
       "description": "Both players boost Attack Power +300.",
-      "value": 0,
+      "value": 300,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "both_atk_buff",
+      "targetAttack": "all"
     }
   },
   {
@@ -5456,7 +5553,8 @@
       "description": "Both players use Triangle.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "both_change_attack",
+      "targetAttack": "triangle"
     }
   },
   {
@@ -5540,7 +5638,8 @@
       "description": "Own Attack becomes Circle.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "force_self_attack",
+      "targetAttack": "circle"
     }
   },
   {
@@ -5574,6 +5673,7 @@
         "damage": 240,
         "type": "cross",
         "description": "1st Attack",
+        "effectId": "attack.first_strike",
         "effectArgs": {
           "priority": 2
         }
@@ -5583,7 +5683,8 @@
       "description": "Both players use Cross.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "both_change_attack",
+      "targetAttack": "cross"
     }
   },
   {
@@ -5628,7 +5729,8 @@
       "description": "Both players use Circle.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "both_change_attack",
+      "targetAttack": "circle"
     }
   },
   {
@@ -5666,9 +5768,9 @@
     },
     "supportEffect": {
       "description": "Opponent's Attack Power become 300.",
-      "value": 0,
+      "value": 300,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "enemy_atk_set"
     }
   },
   {
@@ -5702,7 +5804,10 @@
         "damage": 190,
         "type": "cross",
         "description": "Nature Foe x3",
+        "effectId": "attack.specialty_mult",
         "effectArgs": {
+          "specialty": "Nature",
+          "multiplier": 3,
           "priority": 1
         }
       }
@@ -5711,7 +5816,7 @@
       "description": "If opponent's Specialty is Nature, own Attack Power is doubled.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "conditional"
     }
   },
   {
@@ -5756,7 +5861,7 @@
       "description": "If opponent's Level is A, opponent's HP are halved.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "conditional"
     }
   },
   {
@@ -5801,7 +5906,7 @@
       "description": "Reduce own Attack Power by -100. Recover own HP by +200.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "compose"
     }
   },
   {
@@ -5846,7 +5951,7 @@
       "description": "Boost own Cross Attack Power +200. Circle & Triangle Attack Power are 0.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "compose"
     }
   },
   {
@@ -5880,7 +5985,10 @@
         "damage": 190,
         "type": "cross",
         "description": "Rare Foe x3",
+        "effectId": "attack.specialty_mult",
         "effectArgs": {
+          "specialty": "Rare",
+          "multiplier": 3,
           "priority": 1
         }
       }
@@ -5889,7 +5997,7 @@
       "description": "If opponent's Specialty is Rare, opponent's HP become 100.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "conditional"
     }
   },
   {
@@ -5933,7 +6041,7 @@
       "description": "Own Attack becomes \"Eat-up HP.\" Own Attack Power is halved.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "compose"
     }
   },
   {
@@ -5967,6 +6075,7 @@
         "damage": 100,
         "type": "cross",
         "description": "Jamming",
+        "effectId": "attack.jamming",
         "effectArgs": {
           "priority": 3
         }
@@ -5976,7 +6085,7 @@
       "description": "Opponent's HP are halved. opponent's Attack Power is doubled.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "compose"
     }
   },
   {
@@ -6010,6 +6119,7 @@
         "damage": 380,
         "type": "cross",
         "description": "Jamming",
+        "effectId": "attack.jamming",
         "effectArgs": {
           "priority": 3
         }
@@ -6053,7 +6163,10 @@
         "damage": 380,
         "type": "cross",
         "description": "Rare Foe x3",
+        "effectId": "attack.specialty_mult",
         "effectArgs": {
+          "specialty": "Rare",
+          "multiplier": 3,
           "priority": 1
         }
       }
@@ -6062,7 +6175,7 @@
       "description": "If opponent's Specialty is Rare, lower opponent's Attack Power to 0.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "conditional"
     }
   },
   {
@@ -6142,6 +6255,7 @@
         "damage": 300,
         "type": "cross",
         "description": "Jamming",
+        "effectId": "attack.jamming",
         "effectArgs": {
           "priority": 3
         }
@@ -6151,7 +6265,7 @@
       "description": "Recover own HP by +100. Boost own Cross Attack Power by +100.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "compose"
     }
   },
   {
@@ -6196,7 +6310,7 @@
       "description": "If opponent's Specialty is Darkness, lower opponent's Attack Power to 0.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "conditional"
     }
   },
   {
@@ -6241,7 +6355,7 @@
       "description": "Swap own Specialty with opponent's Specialty.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "swap_specialty"
     }
   },
   {
@@ -6275,6 +6389,7 @@
         "damage": 200,
         "type": "cross",
         "description": "Jamming",
+        "effectId": "attack.jamming",
         "effectArgs": {
           "priority": 3
         }
@@ -6284,7 +6399,7 @@
       "description": "Opponent's Specialty becomes the same as own Specialty.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "enemy_specialty_becomes_own"
     }
   },
   {
@@ -6363,7 +6478,10 @@
         "damage": 430,
         "type": "cross",
         "description": "Darkness Foe x3",
+        "effectId": "attack.specialty_mult",
         "effectArgs": {
+          "specialty": "Dark",
+          "multiplier": 3,
           "priority": 1
         }
       }
@@ -6372,7 +6490,7 @@
       "description": "Recover own HP by +200. Boost own Attack Power by +100.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "compose"
     }
   },
   {
@@ -6406,6 +6524,7 @@
         "damage": 280,
         "type": "cross",
         "description": "1st Attack",
+        "effectId": "attack.first_strike",
         "effectArgs": {
           "priority": 2
         }
@@ -6483,6 +6602,7 @@
         "damage": 150,
         "type": "cross",
         "description": "Jamming",
+        "effectId": "attack.jamming",
         "effectArgs": {
           "priority": 3
         }
@@ -6492,7 +6612,8 @@
       "description": "Lower opponent's Cross Attack Power to 0.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "enemy_atk_zero",
+      "targetAttack": "cross"
     }
   },
   {
@@ -6571,7 +6692,10 @@
         "damage": 230,
         "type": "cross",
         "description": "Darkness Foe x3",
+        "effectId": "attack.specialty_mult",
         "effectArgs": {
+          "specialty": "Dark",
+          "multiplier": 3,
           "priority": 1
         }
       }
@@ -6580,8 +6704,7 @@
       "description": "If opponent's Specialty is Darkness, opponent's Support Effect is voided.",
       "value": 0,
       "priority": 3,
-      "type": "void_enemy_support",
-      "requireOpponentType": "Dark"
+      "type": "void_enemy_support"
     }
   },
   {
@@ -6842,6 +6965,7 @@
         "damage": 200,
         "type": "cross",
         "description": "Jamming",
+        "effectId": "attack.jamming",
         "effectArgs": {
           "priority": 3
         }
@@ -6885,7 +7009,10 @@
         "damage": 250,
         "type": "cross",
         "description": "Rare Foe x3",
+        "effectId": "attack.specialty_mult",
         "effectArgs": {
+          "specialty": "Rare",
+          "multiplier": 3,
           "priority": 1
         }
       }
@@ -6968,7 +7095,10 @@
         "damage": 220,
         "type": "cross",
         "description": "Rare Foe x3",
+        "effectId": "attack.specialty_mult",
         "effectArgs": {
+          "specialty": "Rare",
+          "multiplier": 3,
           "priority": 1
         }
       }
@@ -7086,6 +7216,7 @@
         "damage": 210,
         "type": "cross",
         "description": "1st Attack",
+        "effectId": "attack.first_strike",
         "effectArgs": {
           "priority": 2
         }
@@ -7095,7 +7226,7 @@
       "description": "Opponent uses Circle. Lower opponent's Attack Power -100.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "compose"
     }
   },
   {
@@ -7135,7 +7266,7 @@
       "description": "If 1 or less Cards left in own Hand, opponent's Attack Power goes to 0.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "conditional"
     }
   },
   {
@@ -7259,6 +7390,7 @@
         "damage": 50,
         "type": "cross",
         "description": "Jamming",
+        "effectId": "attack.jamming",
         "effectArgs": {
           "priority": 3
         }
@@ -7302,7 +7434,10 @@
         "damage": 190,
         "type": "cross",
         "description": "Rare Foe x3",
+        "effectId": "attack.specialty_mult",
         "effectArgs": {
+          "specialty": "Rare",
+          "multiplier": 3,
           "priority": 1
         }
       }
@@ -7350,7 +7485,7 @@
       "description": "Own HP become same as opponent's.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "hp_copy_from_opponent"
     }
   },
   {
@@ -7395,7 +7530,7 @@
       "description": "Opponent's HP become same as own. Own Attack Power becomes 0.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "compose"
     }
   },
   {
@@ -7441,7 +7576,7 @@
       "description": "Boost own Attack Power +100. Draw 1 Card.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "compose"
     }
   },
   {
@@ -7486,7 +7621,7 @@
       "description": "Boost own Attack Power by +100. Draw 1 Card.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "compose"
     }
   },
   {
@@ -7531,7 +7666,7 @@
       "description": "If foe's Specialty is Darkness, own Attack Power is Doubled. Draw 1 Card.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "conditional"
     }
   },
   {
@@ -7571,7 +7706,7 @@
       "description": "Boost own Attack Power +100. Draw 1 Card.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "compose"
     },
     "isPartner": true
   },
@@ -7663,7 +7798,7 @@
       "description": "Lower Opponent's Attack Power -100. Draw 1 Card.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "compose"
     }
   },
   {
@@ -7697,7 +7832,10 @@
         "damage": 250,
         "type": "cross",
         "description": "Fire Foe x3",
+        "effectId": "attack.specialty_mult",
         "effectArgs": {
+          "specialty": "Fire",
+          "multiplier": 3,
           "priority": 1
         }
       }
@@ -7706,7 +7844,7 @@
       "description": "Change own Specialty to Nature. Draw 1 Card.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "compose"
     }
   },
   {
@@ -7749,9 +7887,9 @@
     },
     "supportEffect": {
       "description": "Draw 3 Cards.",
-      "value": 0,
+      "value": 3,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "draw_cards"
     }
   },
   {
@@ -7785,6 +7923,7 @@
         "damage": 200,
         "type": "cross",
         "description": "1st Attack",
+        "effectId": "attack.first_strike",
         "effectArgs": {
           "priority": 2
         }
@@ -7794,7 +7933,7 @@
       "description": "If foe's Specialty is Nature, own Attack Power is doubled. Draw 1 Card.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "conditional"
     }
   },
   {
@@ -7839,7 +7978,7 @@
       "description": "Change own Specialty to Nature. Draw 1 card.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "compose"
     }
   },
   {
@@ -7883,9 +8022,9 @@
     },
     "supportEffect": {
       "description": "Draw 3 Cards.",
-      "value": 0,
+      "value": 3,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "draw_cards"
     },
     "isPartner": true
   },
@@ -7932,7 +8071,7 @@
       "description": "If foe's Specialty is Darkness, own Attack Power is doubled. Draw 1 Card.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "conditional"
     },
     "isPartner": true
   },
@@ -7979,7 +8118,7 @@
       "description": "Change own Specialty to Nature. Draw 1 Card.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "compose"
     },
     "isPartner": true
   },
@@ -8025,7 +8164,7 @@
       "description": "Boost own Attack Power by +100. Draw 1 Card.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "compose"
     }
   },
   {
@@ -8059,6 +8198,7 @@
         "damage": 150,
         "type": "cross",
         "description": "Jamming",
+        "effectId": "attack.jamming",
         "effectArgs": {
           "priority": 3
         }
@@ -8068,7 +8208,7 @@
       "description": "Lower Opponent's Attack Power -100. Draw 1 Card.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "compose"
     }
   },
   {
@@ -8113,7 +8253,7 @@
       "description": "Lower Opponent's Attack Power -100. Draw 1 Card.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "compose"
     },
     "isPartner": true
   },
@@ -8157,9 +8297,9 @@
     },
     "supportEffect": {
       "description": "Draw 3 Cards.",
-      "value": 0,
+      "value": 3,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "draw_cards"
     }
   },
   {
@@ -10133,7 +10273,6 @@
     "name": "ArmorCrush Digivolve",
     "cardKind": "evolution_option",
     "effectId": "evolution_option.armor_crush",
-    "effectArgs": {},
     "level": "",
     "type": "Rare",
     "hp": 0,
@@ -10215,7 +10354,6 @@
     "name": "De-Armor Digivolve",
     "cardKind": "evolution_option",
     "effectId": "evolution_option.de_armor",
-    "effectArgs": {},
     "level": "",
     "type": "Rare",
     "hp": 0,

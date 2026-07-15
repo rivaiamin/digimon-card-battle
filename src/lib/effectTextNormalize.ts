@@ -4,6 +4,7 @@
  */
 
 import type { EffectArgs } from "../types";
+import { parseCondition, splitConditional } from "./effectCondition";
 
 export type AttackType = "circle" | "triangle" | "cross";
 
@@ -240,7 +241,189 @@ export function inferSupportEffectFromDescription(
         return { type: "draw_cards", value: Number(draw[1]), description: text };
     }
 
+    // --- Attack power: multiply (own) ---
+    const dblAtkSlot = text.match(/^own (circle|triangle|cross) attack power is doubled$/i);
+    if (dblAtkSlot) {
+        return { type: "atk_mult", targetAttack: letterToAttack(dblAtkSlot[1])!, value: 2, description: text };
+    }
+    if (/^own attack power is doubled$/i.test(text)) {
+        return { type: "atk_mult", targetAttack: "all", value: 2, description: text };
+    }
+    if (/^own attack power is tripled$/i.test(text)) {
+        return { type: "atk_mult", targetAttack: "all", value: 3, description: text };
+    }
+    if (/^own attack power is halved$/i.test(text)) {
+        return { type: "atk_mult", targetAttack: "all", value: 0.5, description: text };
+    }
+
+    // --- Attack power: opponent multiply / lower / set ---
+    if (/^opponent'?s attack power is doubled$/i.test(text)) {
+        return { type: "enemy_atk_mult", value: 2, description: text };
+    }
+    if (/^opponent'?s attack power is halved$/i.test(text)) {
+        return { type: "enemy_atk_halve", description: text };
+    }
+    const enemyLower = text.match(/^lower opponent'?s attack power -?(\d+)$/i);
+    if (enemyLower) {
+        return { type: "enemy_atk_lower", value: Number(enemyLower[1]), description: text };
+    }
+    const enemyBecome = text.match(/^opponent'?s attack power becomes? (\d+)$/i);
+    if (enemyBecome) {
+        return { type: "enemy_atk_set", value: Number(enemyBecome[1]), description: text };
+    }
+
+    // --- Attack power: zero (opponent) ---
+    const enemyZeroSlot = text.match(
+        /^(?:lower |reduce )?opponent'?s (circle|triangle|cross) attack power (?:is |goes )?(?:to )?0$/i
+    );
+    if (enemyZeroSlot) {
+        return { type: "enemy_atk_zero", targetAttack: letterToAttack(enemyZeroSlot[1])!, description: text };
+    }
+    if (
+        /^opponent'?s attack power (?:is|goes to|becomes?) 0$/i.test(text) ||
+        /^(?:reduce|lower) opponent'?s attack power to 0$/i.test(text)
+    ) {
+        return { type: "enemy_atk_zero", targetAttack: "all", description: text };
+    }
+
+    // --- Attack power: set (own) ---
+    if (/^own attack power becomes 0$/i.test(text)) {
+        return { type: "atk_set", targetAttack: "all", value: 0, description: text };
+    }
+    if (/^own attack power (?:matches|is same as) own hp$/i.test(text)) {
+        return { type: "atk_set_to_hp", targetAttack: "all", description: text };
+    }
+    const ownSlotHp = text.match(/^own (circle|triangle|cross) attack power becomes same as own hp$/i);
+    if (ownSlotHp) {
+        return { type: "atk_set_to_hp", targetAttack: letterToAttack(ownSlotHp[1])!, description: text };
+    }
+    if (/^own attack power is boosted by the number of own hp$/i.test(text)) {
+        return { type: "atk_add_hp", description: text };
+    }
+    const reduceOwn = text.match(/^reduce own attack power by -?(\d+)$/i);
+    if (reduceOwn) {
+        return { type: "atk_buff", targetAttack: "all", value: -Number(reduceOwn[1]), description: text };
+    }
+    const lowerBoth = text.match(/^lower both attack powers -?(\d+)$/i);
+    if (lowerBoth) {
+        return { type: "both_atk_buff", targetAttack: "all", value: -Number(lowerBoth[1]), description: text };
+    }
+    const bothBoost = text.match(/^boost both players'? attack power \+?(\d+)$/i);
+    if (bothBoost) {
+        return { type: "both_atk_buff", targetAttack: "all", value: Number(bothBoost[1]), description: text };
+    }
+
+    // --- Loose forms used inside "A & B" conditional consequents ---
+    const ownAtkPlus = text.match(/^own attack power (?:is )?\+(\d+)$/i);
+    if (ownAtkPlus) {
+        return { type: "atk_buff", targetAttack: "all", value: Number(ownAtkPlus[1]), description: text };
+    }
+    const bareHpPlus = text.match(/^hp \+(\d+)$/i);
+    if (bareHpPlus) {
+        return { type: "hp_heal", value: Number(bareHpPlus[1]), description: text };
+    }
+
+    // --- HP: set / double / swap / copy ---
+    const ownHpBecome = text.match(/^own hp becomes? (\d+)$/i);
+    if (ownHpBecome) {
+        return { type: "hp_set", value: Number(ownHpBecome[1]), description: text };
+    }
+    const enemyHpBecome = text.match(/^opponent'?s hp becomes? (\d+)$/i);
+    if (enemyHpBecome) {
+        return { type: "enemy_hp_set", value: Number(enemyHpBecome[1]), description: text };
+    }
+    if (/^own hp becomes? same as opponent'?s$/i.test(text)) {
+        return { type: "hp_copy_from_opponent", description: text };
+    }
+    if (/^opponent'?s hp becomes? same as own$/i.test(text)) {
+        return { type: "enemy_hp_copy_from_own", description: text };
+    }
+    if (/^switch hp with opponent$/i.test(text)) {
+        return { type: "hp_swap", description: text };
+    }
+    if (/^opponent'?s hp are doubled$/i.test(text)) {
+        return { type: "enemy_hp_double", description: text };
+    }
+    const enemyHeal = text.match(/^recover foe'?s hp (?:by )?\+?(\d+)$/i);
+    if (enemyHeal) {
+        return { type: "enemy_hp_heal", value: Number(enemyHeal[1]), description: text };
+    }
+
+    // --- Specialty: opponent / both / swap / copy ---
+    const enemySpec = text.match(
+        /^changes? opponent'?s specialty to (fire|ice|nature|darkness|dark|rare)$/i
+    );
+    if (enemySpec) {
+        return {
+            type: "change_enemy_specialty",
+            targetAttack: normalizeSpecialtyLabel(enemySpec[1] ?? ""),
+            description: text,
+        };
+    }
+    const bothSpec = text.match(
+        /^changes? both players'? specialties to (fire|ice|nature|darkness|dark|rare)$/i
+    );
+    if (bothSpec) {
+        return {
+            type: "both_change_specialty",
+            targetAttack: normalizeSpecialtyLabel(bothSpec[1] ?? ""),
+            description: text,
+        };
+    }
+    if (/^swap own specialty with opponent'?s specialty$/i.test(text)) {
+        return { type: "swap_specialty", description: text };
+    }
+    if (/^opponent'?s specialty becomes (?:the )?same as own(?: specialty)?$/i.test(text)) {
+        return { type: "enemy_specialty_becomes_own", description: text };
+    }
+
+    // --- Own attack change / ordering ---
+    const ownAtkBecome = text.match(/^own attack becomes (circle|triangle|cross)$/i);
+    if (ownAtkBecome) {
+        return { type: "force_self_attack", targetAttack: letterToAttack(ownAtkBecome[1])!, description: text };
+    }
+    if (
+        /^opponent'?s attack changes from circle to triangle, triangle to cross,? or cross to circle$/i.test(
+            text
+        )
+    ) {
+        return { type: "rotate_enemy_attack", description: text };
+    }
+    if (/^attack second$/i.test(text)) {
+        return { type: "attack_second", description: text };
+    }
+
+    // --- Void support+option, copy full stats ---
+    if (/^opponent'?s support and option effects are voided$/i.test(text)) {
+        return { type: "void_enemy_support", description: text };
+    }
+    if (/^own attack power,? hp,? and specialty become same as (?:the )?opponent'?s$/i.test(text)) {
+        return { type: "copy_opponent_stats", description: text };
+    }
+
     return null;
+}
+
+/**
+ * A conditional line ("If <gate>, <consequent>") whose gate is recognized and
+ * whose consequent fully parses. Stored as `type: "conditional"` with the full
+ * text; the resolver re-parses and evaluates it at battle time (FC-027).
+ * `&`-joined consequents (e.g. "own Attack Power +200 & HP +200") are split too.
+ */
+export function inferConditionalEffect(text: string): InferredSupportEffect | null {
+    const split = splitConditional(text.trim());
+    if (!split) return null;
+    if (!parseCondition(split.head)) return null;
+    const consequent = split.consequent.replace(/\s*&\s*/g, ". ");
+    const clauses = splitEffectClauses(consequent);
+    if (clauses.length === 0) return null;
+    if (clauses.some(c => inferSupportEffectFromDescription(c) == null)) return null;
+    return { type: "conditional", description: text.trim() };
+}
+
+/** True when a single clause maps to a known primitive or a conditional gate. */
+function clauseParses(clause: string): boolean {
+    return inferSupportEffectFromDescription(clause) != null || inferConditionalEffect(clause) != null;
 }
 
 /**
@@ -256,11 +439,13 @@ export function inferCompoundSupportEffect(
     const single = inferSupportEffectFromDescription(text);
     if (single) return single;
 
+    const conditional = inferConditionalEffect(text);
+    if (conditional) return conditional;
+
     const clauses = splitEffectClauses(text);
     if (clauses.length < 2) return null;
 
-    const steps = clauses.map(c => inferSupportEffectFromDescription(c));
-    if (steps.some(s => s == null)) return null;
+    if (clauses.some(c => !clauseParses(c))) return null;
 
     return {
         type: "compose",
@@ -309,7 +494,11 @@ export function supportTypeToEffectId(
             return { effectId: "support.draw_cards", effectArgs: {} };
         case "compose":
             return { effectId: "support.compose", effectArgs: {} };
+        case "conditional":
+            return { effectId: "support.conditional", effectArgs: {} };
         default:
-            return null;
+            // Phase-1 primitives (atk_set, enemy_*, hp_*, swap_specialty, …) resolve
+            // by type at runtime; expose a stable id so the catalog marks them mapped.
+            return type ? { effectId: `support.${type}`, effectArgs: {} } : null;
     }
 }

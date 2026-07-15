@@ -324,14 +324,19 @@ export function resolveBattleExchange(input: BattleExchangeInput): BattleExchang
         events
     );
 
-    const attackerFirst =
+    const attackerFirstStrike =
         input.supportCtx.firstStrikePlayers.has(input.attacker.sessionId) ||
         getAttackEffect(input.attacker.active, input.attackerAttack)?.effectId ===
             "attack.first_strike";
-    const defenderFirst =
+    const defenderFirstStrike =
         input.supportCtx.firstStrikePlayers.has(input.defender.sessionId) ||
         getAttackEffect(input.defender.active, input.defenderAttack)?.effectId ===
             "attack.first_strike";
+    // "Attack second" (FC-027) mirrors first strike: the holder yields priority.
+    const attackerSecond = input.supportCtx.attackSecondPlayers?.has(input.attacker.sessionId) ?? false;
+    const defenderSecond = input.supportCtx.attackSecondPlayers?.has(input.defender.sessionId) ?? false;
+    const attackerFirst = (attackerFirstStrike || defenderSecond) && !attackerSecond;
+    const defenderFirst = (defenderFirstStrike || attackerSecond) && !defenderSecond;
 
     const applyHit = (
         from: BattleCombatant,
