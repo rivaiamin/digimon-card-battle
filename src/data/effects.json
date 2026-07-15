@@ -1,18 +1,18 @@
 {
   "source": "https://github.com/AsyrafKZ/digital-card-battle-clone-data-collection",
   "sourceFile": "scripts/data/asyrafkz/effectList2.txt",
-  "generatedAt": "2026-07-15T15:11:24.084Z",
+  "generatedAt": "2026-07-15T15:38:23.269Z",
   "counts": {
     "total": 257,
     "byStatus": {
-      "implemented": 177,
-      "catalog_only": 79,
+      "implemented": 199,
+      "catalog_only": 57,
       "partial": 1
     },
     "byKind": {
       "cross": 17,
-      "support": 112,
-      "unknown": 43,
+      "support": 127,
+      "unknown": 28,
       "mixed": 78,
       "evolution": 7
     }
@@ -557,7 +557,9 @@
       "text": "Circle Counterattack. Attack second.",
       "sourceText": "{{button|c}} Counterattack. Attack second.",
       "kind": "mixed",
-      "status": "catalog_only"
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_circle_to_0",
@@ -596,7 +598,9 @@
       "text": "Cross Counterattack. Attack second.",
       "sourceText": "{{button|x}} Counterattack. Attack second.",
       "kind": "mixed",
-      "status": "catalog_only"
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_cross_to_0",
@@ -1007,15 +1011,19 @@
       "id": "fx_if_foe_s_specialty_is_fire_or_ice_his_attack_power_goes_to_0",
       "text": "If foe's Specialty is Fire or Ice, his Attack Power goes to 0.",
       "sourceText": "If foe's Specialty is Fire or Ice, his Attack Power goes to 0.",
-      "kind": "unknown",
-      "status": "catalog_only"
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_if_foe_s_specialty_is_nature_or_darkness_his_attack_power_goes_to_0",
       "text": "If foe's Specialty is Nature or Darkness, his Attack Power goes to 0.",
       "sourceText": "If foe's Specialty is Nature or Darkness, his Attack Power goes to 0.",
-      "kind": "unknown",
-      "status": "catalog_only"
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_if_foe_s_specialty_is_nature_own_attack_power_is_doubled_draw_1_card",
@@ -1037,22 +1045,28 @@
       "id": "fx_if_opponent_is_level_a_his_atk_pwr_becomes_0_and_own_atk_pwr_is_doubled",
       "text": "If opponent is Level A, his Atk Pwr becomes 0 and own Atk Pwr is doubled.",
       "sourceText": "If opponent is Level A, his Atk Pwr becomes 0 and own Atk Pwr is doubled.",
-      "kind": "unknown",
-      "status": "catalog_only"
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_if_opponent_is_level_u_his_atk_pwr_becomes_0_and_own_atk_pwr_is_doubled",
       "text": "If opponent is Level U, his Atk Pwr becomes 0 and own Atk Pwr is doubled.",
       "sourceText": "If opponent is Level U, his Atk Pwr becomes 0 and own Atk Pwr is doubled.",
-      "kind": "unknown",
-      "status": "catalog_only"
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_if_opponent_used_circle_change_it_to_cross",
       "text": "If opponent used Circle, change it to Cross.",
       "sourceText": "If opponent used {{button|c}}, change it to {{button|x}}.",
-      "kind": "unknown",
-      "status": "catalog_only"
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_if_opponent_used_cross_discard_all_cards_in_opponent_s_hand",
@@ -1065,22 +1079,28 @@
       "id": "fx_if_opponent_uses_circle_attack_first_and_boost_own_attack_power_500",
       "text": "If opponent uses Circle, attack first and boost own Attack Power +500.",
       "sourceText": "If opponent uses {{button|c}}, attack first and boost own Attack Power +500.",
-      "kind": "unknown",
-      "status": "catalog_only"
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_if_opponent_uses_cross_attack_first_and_boost_own_attack_power_500",
       "text": "If opponent uses Cross, attack first and boost own Attack Power +500.",
       "sourceText": "If opponent uses {{button|x}}, attack first and boost own Attack Power +500.",
-      "kind": "unknown",
-      "status": "catalog_only"
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_if_opponent_uses_triangle_attack_first_and_boost_own_attack_power_500",
       "text": "If opponent uses Triangle, attack first and boost own Attack Power +500.",
       "sourceText": "If opponent uses {{button|t}}, attack first and boost own Attack Power +500.",
-      "kind": "unknown",
-      "status": "catalog_only"
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_if_opponent_s_hp_are_1000_own_attack_becomes_eat_up_hp",
@@ -1345,8 +1365,10 @@
       "id": "fx_if_own_hp_are_less_than_foe_s_hp_recovcer_own_hp_by_700",
       "text": "If own HP are less than foe's HP, recovcer own HP by +700.",
       "sourceText": "If own HP are less than foe's HP, recovcer own HP by +700.",
-      "kind": "unknown",
-      "status": "catalog_only"
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_if_own_hp_are_less_then_200_reduce_opponent_s_attack_power_to_0",
@@ -1469,15 +1491,19 @@
       "id": "fx_if_own_specialty_is_darkness_boost_own_attack_power_100_recover_hp_200",
       "text": "If own Specialty is Darkness, boost own Attack Power +100, recover HP +200.",
       "sourceText": "If own Specialty is Darkness, boost own Attack Power +100, recover HP +200.",
-      "kind": "unknown",
-      "status": "catalog_only"
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_if_own_specialty_is_fire_boost_own_attack_power_100_recover_hp_200",
       "text": "If own Specialty is Fire, boost own Attack Power +100, recover HP +200.",
       "sourceText": "If own Specialty is Fire, boost own Attack Power +100, recover HP +200.",
-      "kind": "unknown",
-      "status": "catalog_only"
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_if_own_specialty_is_fire_boost_own_attack_power_300",
@@ -1501,8 +1527,10 @@
       "id": "fx_if_own_specialty_is_ice_boost_own_attack_power_100_recover_hp_200",
       "text": "If own Specialty is Ice, boost own Attack Power +100, recover HP +200.",
       "sourceText": "If own Specialty is Ice, boost own Attack Power +100, recover HP +200.",
-      "kind": "unknown",
-      "status": "catalog_only"
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_if_own_specialty_is_ice_opponent_s_attack_power_is_halved",
@@ -1526,22 +1554,28 @@
       "id": "fx_if_own_specialty_is_nature_boost_own_attack_power_100_recover_hp_200",
       "text": "If own Specialty is Nature, boost own Attack Power +100, recover HP +200.",
       "sourceText": "If own Specialty is Nature, boost own Attack Power +100, recover HP +200.",
-      "kind": "unknown",
-      "status": "catalog_only"
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_if_own_specialty_is_rare_boost_own_attack_power_100_recover_hp_200",
       "text": "If own Specialty is Rare, boost own Attack Power +100, recover HP +200.",
       "sourceText": "If own Specialty is Rare, boost own Attack Power +100, recover HP +200.",
-      "kind": "unknown",
-      "status": "catalog_only"
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_if_specialties_are_same_boost_own_attack_power_200_recover_hp_400",
       "text": "If Specialties are same, boost own Attack Power +200, recover HP +400.",
       "sourceText": "If Specialties are same, boost own Attack Power +200, recover HP +400.",
-      "kind": "unknown",
-      "status": "catalog_only"
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_jamming",
@@ -1634,7 +1668,9 @@
       "text": "Make own HP 10. Own Attack Power is tripled.",
       "sourceText": "Make own HP 10. Own Attack Power is tripled.",
       "kind": "mixed",
-      "status": "catalog_only"
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_move_the_top_card_from_offline_pile_to_online_deck",
@@ -1856,7 +1892,9 @@
       "text": "Opponent's Support and Option Effects are voided. His Attack Power is 0.",
       "sourceText": "Opponent's Support and Option Effects are voided. His Attack Power is 0.",
       "kind": "mixed",
-      "status": "catalog_only"
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_opponent_s_support_effect_is_voided",
@@ -1901,7 +1939,9 @@
       "text": "Own attack becomes \"Eat-up HP.\"",
       "sourceText": "Own attack becomes \"Eat-up HP.\"",
       "kind": "mixed",
-      "status": "catalog_only"
+      "implementedEffectId": "support.grant_eat_up_hp",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_own_attack_becomes_eat_up_hp_own_attack_power_is_halved",
@@ -2067,7 +2107,9 @@
       "text": "Own HP are halved. Counterattack. Attack second.",
       "sourceText": "Own HP are halved. Counterattack. Attack second.",
       "kind": "mixed",
-      "status": "catalog_only"
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_own_hp_are_halved_opponent_s_attack_power_becomes_0",
@@ -2307,7 +2349,9 @@
       "text": "Triangle Counterattack. Attack second.",
       "sourceText": "{{button|t}} Counterattack. Attack second.",
       "kind": "mixed",
-      "status": "catalog_only"
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_triangle_to_0",

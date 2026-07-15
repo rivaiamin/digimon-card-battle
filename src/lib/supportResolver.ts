@@ -9,6 +9,7 @@ import { sortEffectsByConflictPolicy } from "./effectConflictResolver";
 import {
     inferConditionalEffect,
     inferSupportEffectFromDescription,
+    splitConsequentClauses,
     splitEffectClauses,
 } from "./effectTextNormalize";
 import {
@@ -25,6 +26,7 @@ export type SupportEffectType =
     | "void_enemy_support"
     | "first_strike"
     | "attack_second"
+    | "grant_counter"
     | "change_attack"
     | "both_change_attack"
     | "force_self_attack"
@@ -71,6 +73,7 @@ export const SUPPORT_PRIORITY: Record<SupportEffectType, number> = {
     void_enemy_support: 1,
     first_strike: 1,
     attack_second: 1,
+    grant_counter: 1,
     change_attack: 2,
     both_change_attack: 2,
     force_self_attack: 2,
@@ -139,6 +142,8 @@ export interface SupportBattleContext {
     forcedAttack: Map<string, AttackType>;
     /** Support-granted Eat-up HP for the rest of this exchange (FC-027). */
     eatUpHpPlayers: Set<string>;
+    /** Support-granted counterattack: reflect+nullify a matching incoming attack (FC-027). */
+    counterGrants: Map<string, { targetAttack: string; multiplier: number }>;
 }
 
 export function createSupportBattleContext(): SupportBattleContext {
@@ -150,6 +155,7 @@ export function createSupportBattleContext(): SupportBattleContext {
         attackSecondPlayers: new Set(),
         forcedAttack: new Map(),
         eatUpHpPlayers: new Set(),
+        counterGrants: new Map(),
     };
 }
 
@@ -493,8 +499,7 @@ function applySingleEffect(
         if (!split) return;
         const cond = parseCondition(split.head);
         if (!cond || !evaluateCondition(cond, runtime.condition)) return;
-        const consequent = split.consequent.replace(/\s*&\s*/g, ". ");
-        for (const clause of splitEffectClauses(consequent)) {
+        for (const clause of splitConsequentClauses(split.consequent)) {
             const step = inferSupportEffectFromDescription(clause);
             if (!step) continue;
             applySingleEffect(source, target, inferredToEffect(step), ctx, hooks, runtime);
@@ -512,6 +517,12 @@ function applySingleEffect(
         case "attack_second":
             ctx.attackSecondPlayers.add(source.sessionId);
             break;
+        case "grant_counter": {
+            const targetAttack = String(effect.targetAttack || "all");
+            const multiplier = effect.value > 0 ? effect.value : 2;
+            ctx.counterGrants.set(source.sessionId, { targetAttack, multiplier });
+            break;
+        }
         case "change_attack": {
             const forced = effect.targetAttack as AttackType;
             if (forced === "circle" || forced === "triangle" || forced === "cross") {

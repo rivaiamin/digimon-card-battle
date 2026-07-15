@@ -251,6 +251,40 @@ describe("conditional support effects (FC-027)", () => {
     }
 });
 
+describe("grant_counter (FC-027)", () => {
+    function combatant(sessionId: string, hp: number, damage: number): BattleCombatant {
+        return {
+            sessionId,
+            hp,
+            maxHp: hp,
+            specialty: "Fire",
+            active: { circle: { damage }, triangle: { damage }, cross: { damage } },
+        };
+    }
+
+    it("reflects and nullifies a matching incoming attack", () => {
+        const attacker = combatant("atk", 1000, 400);
+        const defender = combatant("def", 1000, 200);
+        const ctx = createSupportBattleContext();
+        ctx.counterGrants.set("def", { targetAttack: "circle", multiplier: 2 });
+        // Attacker uses circle → defender's granted circle-counter reflects 400×2 = 800.
+        const r = resolveFullBattle(attacker, defender, "circle", "cross", "atk", ctx);
+        expect(r.p2Hp).toBe(1000); // defender took no damage
+        expect(r.p1Hp).toBe(200); // attacker took reflected 800
+    });
+
+    it("does not fire when the incoming attack does not match", () => {
+        const attacker = combatant("atk", 1000, 400);
+        const defender = combatant("def", 1000, 200);
+        const ctx = createSupportBattleContext();
+        ctx.counterGrants.set("def", { targetAttack: "circle", multiplier: 2 });
+        // Attacker uses triangle → no counter; normal take-turn trade.
+        const r = resolveFullBattle(attacker, defender, "triangle", "cross", "atk", ctx);
+        expect(r.p2Hp).toBe(600); // defender took attacker's triangle 400
+        expect(r.p1Hp).toBe(800); // attacker took defender's cross 200
+    });
+});
+
 describe("attack_second ordering (FC-027)", () => {
     function combatant(sessionId: string, hp: number, damage: number): BattleCombatant {
         return {

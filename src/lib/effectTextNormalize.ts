@@ -27,6 +27,25 @@ export function normalizeSpecialtyLabel(raw: string): string {
     return raw.trim();
 }
 
+/**
+ * Canonicalize catalog phrasing so one set of rules covers the source's synonyms:
+ * possessive pronouns / "foe" → "opponent's", "Atk Pwr" → "Attack Power", and
+ * a couple of source-data typos. Applied before parsing conditions/effects.
+ */
+export function canonicalizeEffectText(raw: string): string {
+    return String(raw)
+        .replace(/\bAtk\s*\.?\s*(?:Pwr|Power)\b/gi, "Attack Power")
+        .replace(/\bAttack\s*Pwr\b/gi, "Attack Power")
+        .replace(/\bmumber\b/gi, "number")
+        .replace(/\brecovcer\b/gi, "recover")
+        .replace(/\bhis\b/gi, "opponent's")
+        .replace(/\bher\b/gi, "opponent's")
+        .replace(/\bfoe'?s\b/gi, "opponent's")
+        .replace(/\bfoe\b/gi, "opponent")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
 /** Cross / attack descriptions like "1st Attack", "Jamming", "Ice Foe x3". */
 export function parseAttackEffectFromDescription(
     description: string
@@ -103,10 +122,11 @@ export function splitEffectClauses(text: string): string[] {
 export function inferSupportEffectFromDescription(
     description: string
 ): InferredSupportEffect | null {
-    const text = description
-        .trim()
-        .replace(/\.$/, "")
+    // Strip quotes BEFORE the trailing period, else `Eat-up HP."` keeps its dot.
+    const text = canonicalizeEffectText(description)
         .replace(/["“”]/g, "")
+        .replace(/\.\s*$/, "")
+        .replace(/^(?:then|and)\s+/i, "") // leading connector left by clause splitting
         .trim();
     if (!text || /^none$/i.test(text)) return null;
 
@@ -344,7 +364,7 @@ export function inferSupportEffectFromDescription(
     if (/^opponent'?s hp are doubled$/i.test(text)) {
         return { type: "enemy_hp_double", description: text };
     }
-    const enemyHeal = text.match(/^recover foe'?s hp (?:by )?\+?(\d+)$/i);
+    const enemyHeal = text.match(/^recover (?:opponent'?s|foe'?s) hp (?:by )?\+?(\d+)$/i);
     if (enemyHeal) {
         return { type: "enemy_hp_heal", value: Number(enemyHeal[1]), description: text };
     }
@@ -401,6 +421,29 @@ export function inferSupportEffectFromDescription(
         return { type: "copy_opponent_stats", description: text };
     }
 
+    // --- Extra consequent / clause phrasings ---
+    const changeIt = text.match(/^change it to (circle|triangle|cross)$/i);
+    if (changeIt) {
+        return { type: "change_attack", targetAttack: letterToAttack(changeIt[1])!, description: text };
+    }
+    const recoverHp = text.match(/^recover hp (?:by )?\+?(\d+)$/i);
+    if (recoverHp) {
+        return { type: "hp_heal", value: Number(recoverHp[1]), description: text };
+    }
+    const makeOwnHp = text.match(/^make own hp (\d+)$/i);
+    if (makeOwnHp) {
+        return { type: "hp_set", value: Number(makeOwnHp[1]), description: text };
+    }
+
+    // --- Support-granted counterattack (reflect + nullify a matching attack) ---
+    const counterSlot = text.match(/^(circle|triangle|cross) counterattack$/i);
+    if (counterSlot) {
+        return { type: "grant_counter", targetAttack: letterToAttack(counterSlot[1])!, description: text };
+    }
+    if (/^counterattack$/i.test(text)) {
+        return { type: "grant_counter", targetAttack: "all", description: text };
+    }
+
     return null;
 }
 
@@ -410,12 +453,16 @@ export function inferSupportEffectFromDescription(
  * text; the resolver re-parses and evaluates it at battle time (FC-027).
  * `&`-joined consequents (e.g. "own Attack Power +200 & HP +200") are split too.
  */
+/** Split a conditional consequent on its clause separators (`&`, `and`, `,`, `.`). */
+export function splitConsequentClauses(consequent: string): string[] {
+    return splitEffectClauses(consequent.replace(/\s*&\s*|\s+and\s+|,\s*/gi, ". "));
+}
+
 export function inferConditionalEffect(text: string): InferredSupportEffect | null {
-    const split = splitConditional(text.trim());
+    const split = splitConditional(canonicalizeEffectText(text));
     if (!split) return null;
     if (!parseCondition(split.head)) return null;
-    const consequent = split.consequent.replace(/\s*&\s*/g, ". ");
-    const clauses = splitEffectClauses(consequent);
+    const clauses = splitConsequentClauses(split.consequent);
     if (clauses.length === 0) return null;
     if (clauses.some(c => inferSupportEffectFromDescription(c) == null)) return null;
     return { type: "conditional", description: text.trim() };

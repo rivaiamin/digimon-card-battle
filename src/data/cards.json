@@ -1849,7 +1849,7 @@
       "description": "Triangle Counterattack. Attack second.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "compose"
     }
   },
   {
@@ -1895,7 +1895,7 @@
       "description": "Circle Counterattack. Attack second.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "compose"
     }
   },
   {
@@ -2521,7 +2521,7 @@
       "description": "If opponent used Circle, change it to Cross.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "conditional"
     }
   },
   {
@@ -3176,7 +3176,7 @@
       "description": "Cross Counterattack. Attack second.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "compose"
     }
   },
   {
@@ -6221,7 +6221,7 @@
       "description": "Circle Counterattack. Attack second.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "compose"
     }
   },
   {

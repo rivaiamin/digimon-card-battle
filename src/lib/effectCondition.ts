@@ -15,7 +15,7 @@
  */
 
 import type { AttackType } from "./effectTextNormalize";
-import { letterToAttack, normalizeSpecialtyLabel } from "./effectTextNormalize";
+import { canonicalizeEffectText, letterToAttack, normalizeSpecialtyLabel } from "./effectTextNormalize";
 
 /** One side of a battle comparison (the effect owner or their opponent). */
 export interface ConditionSubject {
@@ -154,7 +154,7 @@ const SPECIALTY_WORD = "(Fire|Ice|Nature|Dark(?:ness)?|Rare)";
  * Returns null when the clause is not a recognized gate.
  */
 export function parseCondition(rawHead: string): EffectCondition | null {
-    const text = rawHead.trim().replace(/^if\s+/i, "").trim();
+    const text = canonicalizeEffectText(rawHead).replace(/^if\s+/i, "").trim();
     if (!text) return null;
 
     // --- Attack comparisons ---
@@ -203,7 +203,12 @@ export function parseCondition(rawHead: string): EffectCondition | null {
     }
 
     // --- Specialty comparisons ---
-    m = text.match(new RegExp(`^foe'?s\\s+specialty\\s+is\\s+${SPECIALTY_WORD}\\s+or\\s+${SPECIALTY_WORD}$`, "i"));
+    m = text.match(
+        new RegExp(
+            `^(?:opponent'?s|foe'?s)\\s+specialty\\s+is\\s+${SPECIALTY_WORD}\\s+or\\s+${SPECIALTY_WORD}$`,
+            "i"
+        )
+    );
     if (m) return { kind: "opponent_specialty_in", specialties: [m[1]!, m[2]!] };
     m = text.match(new RegExp(`^(?:opponent'?s|foe'?s)\\s+specialty\\s+is\\s+not\\s+${SPECIALTY_WORD}$`, "i"));
     if (m) return { kind: "opponent_specialty_not", specialty: m[1]! };

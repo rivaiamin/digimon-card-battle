@@ -110,6 +110,7 @@ export const KNOWN_EFFECT_IDS = new Set<string>([
     "support.swap_specialty",
     "support.enemy_specialty_becomes_own",
     "support.copy_opponent_stats",
+    "support.grant_counter",
 ]);
 
 function toCardKind(rawKind: unknown): CardKind {

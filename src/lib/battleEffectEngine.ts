@@ -190,6 +190,34 @@ function applyCrossEffects(
         }
     }
 
+    // Support-granted counterattack (FC-027): reflect+nullify a matching incoming attack.
+    const attackerGrant = supportCtx.counterGrants?.get(attacker.sessionId);
+    if (
+        attackerGrant &&
+        (attackerGrant.targetAttack === "all" || attackerGrant.targetAttack === defenderAttack)
+    ) {
+        toDefender = Math.floor(toAttacker * attackerGrant.multiplier);
+        toAttacker = 0;
+        events.push({
+            type: "cross_counter",
+            sessionId: attacker.sessionId,
+            detail: { granted: true, counteredAttack: defenderAttack, damage: toDefender },
+        });
+    }
+    const defenderGrant = supportCtx.counterGrants?.get(defender.sessionId);
+    if (
+        defenderGrant &&
+        (defenderGrant.targetAttack === "all" || defenderGrant.targetAttack === attackerAttack)
+    ) {
+        toAttacker = Math.floor(toDefender * defenderGrant.multiplier);
+        toDefender = 0;
+        events.push({
+            type: "cross_counter",
+            sessionId: defender.sessionId,
+            detail: { granted: true, counteredAttack: attackerAttack, damage: toAttacker },
+        });
+    }
+
     // Crash must not re-apply damage that Counter already zeroed on that direction.
     const defenderCounteredIncoming = events.some(
         (e) => e.type === "cross_counter" && e.sessionId === defender.sessionId
