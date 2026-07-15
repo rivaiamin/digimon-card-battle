@@ -1180,6 +1180,50 @@ export const FIDELITY_SCENARIOS: FidelityScenario[] = [
             }
         },
     },
+    {
+        id: "support-dp-slot-effects",
+        fidelityIds: ["FC-027"],
+        description: "DP-slot count boosts attack; discarding DP cards shrinks slot and DP gauge",
+        run() {
+            const mk = (sessionId: string) => ({
+                sessionId,
+                hp: 1000,
+                dp: 30,
+                hand: [] as unknown[],
+                trash: [] as unknown[],
+                dpSlot: [{ plusDp: 10 }, { plusDp: 10 }, { plusDp: 10 }],
+                active: {
+                    type: "Fire",
+                    maxHp: 1000,
+                    circle: { damage: 400 },
+                    triangle: { damage: 300 },
+                    cross: { damage: 200 },
+                },
+                supportCard: null,
+            });
+
+            const a = mk("a");
+            const boost = {
+                cardKind: "digimon",
+                supportEffect: { type: "atk_add_dp_count", value: 100, requireType: "", requireOpponentType: "" },
+            };
+            const ctx = createSupportBattleContext();
+            resolveSupportPhase(a as never, mk("d") as never, boost as never, null, ctx);
+            if (getEffectiveAttackDamage(a as never, "circle", ctx) !== 700) {
+                throw new Error("3 DP cards ×100 must add +300 ATK");
+            }
+
+            const a2 = mk("a");
+            const discard = {
+                cardKind: "digimon",
+                supportEffect: { type: "discard_own_dp", value: 2, requireType: "", requireOpponentType: "" },
+            };
+            resolveSupportPhase(a2 as never, mk("d") as never, discard as never, null, createSupportBattleContext());
+            if (a2.dpSlot.length !== 1 || a2.dp !== 10) {
+                throw new Error(`discard 2 DP → slot=${a2.dpSlot.length} dp=${a2.dp}`);
+            }
+        },
+    },
 ];
 
 export function runFidelityScenario(scenario: FidelityScenario): ScenarioRunResult {

@@ -15,6 +15,7 @@ function subject(overrides: Partial<ConditionSubject> = {}): ConditionSubject {
         level: "Rookie",
         specialty: "Fire",
         handCount: 3,
+        dpSlotCount: 0,
         ...overrides,
     };
 }

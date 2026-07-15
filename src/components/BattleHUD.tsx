@@ -276,14 +276,14 @@ export const BattleHUD: React.FC<HUDProps> = ({
             scoreColor="ps-red"
             role={oppRole}
             deck={state.opponent.deck.length}
-            trash={state.opponent.trash.length}
+            trash={state.opponent.trash.length + (state.opponent.dpSlot?.length ?? 0)}
             dp={state.opponent.dp}
             mirror
           />
         ) : (
           <ResourceRow
             deck={state.opponent.deck.length}
-            trash={state.opponent.trash.length}
+            trash={state.opponent.trash.length + (state.opponent.dpSlot?.length ?? 0)}
             dp={state.opponent.dp}
           />
         )}
@@ -320,7 +320,7 @@ export const BattleHUD: React.FC<HUDProps> = ({
               <div className={showRoles ? "ml-auto" : undefined}>
                 <ResourceRow
                   deck={state.player.deck.length}
-                  trash={state.player.trash.length}
+                  trash={state.player.trash.length + (state.player.dpSlot?.length ?? 0)}
                   dp={state.player.dp}
                   compact
                 />

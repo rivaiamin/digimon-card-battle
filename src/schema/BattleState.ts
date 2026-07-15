@@ -56,6 +56,8 @@ export class PlayerSchema extends Schema {
     @type([CardSchema]) hand = new ArraySchema<CardSchema>();
     @type([CardSchema]) deck = new ArraySchema<CardSchema>();
     @type([CardSchema]) trash = new ArraySchema<CardSchema>();
+    /** Cards discarded for DP (the DP Slot pile). Its size drives DP-count effects (FC-027). */
+    @type([CardSchema]) dpSlot = new ArraySchema<CardSchema>();
     @type("number") dp: number = 0;
     @type("number") score: number = 0;
 

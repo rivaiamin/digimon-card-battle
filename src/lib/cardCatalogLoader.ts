@@ -111,6 +111,13 @@ export const KNOWN_EFFECT_IDS = new Set<string>([
     "support.enemy_specialty_becomes_own",
     "support.copy_opponent_stats",
     "support.grant_counter",
+    "support.atk_add_dp_count",
+    "support.hp_add_dp_count",
+    "support.discard_own_dp",
+    "support.discard_enemy_dp",
+    "support.atk_mult_by_dp_discards",
+    "support.hp_add_dp_discards",
+    "support.discard_both_dp_equal",
 ]);
 
 function toCardKind(rawKind: unknown): CardKind {

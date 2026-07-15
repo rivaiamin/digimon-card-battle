@@ -26,6 +26,8 @@ export interface ConditionSubject {
     /** Fire | Ice | Nature | Dark | Rare (raw catalog label). */
     specialty: string;
     handCount: number;
+    /** Cards in this player's DP Slot (FC-027). */
+    dpSlotCount: number;
 }
 
 export interface ConditionContext {
@@ -54,7 +56,8 @@ export type EffectCondition =
     | { kind: "opponent_specialty_in"; specialties: string[] }
     | { kind: "specialties_same" }
     | { kind: "own_hand_gte"; value: number }
-    | { kind: "own_hand_lte"; value: number };
+    | { kind: "own_hand_lte"; value: number }
+    | { kind: "opponent_dp_slot_gt"; value: number };
 
 /** Rank levels for lower/higher comparisons. Armor sits at Champion tier (DCB). */
 const LEVEL_RANK: Record<string, number> = {
@@ -142,6 +145,8 @@ export function evaluateCondition(cond: EffectCondition, ctx: ConditionContext):
             return self.handCount >= cond.value;
         case "own_hand_lte":
             return self.handCount <= cond.value;
+        case "opponent_dp_slot_gt":
+            return opponent.dpSlotCount > cond.value;
         default:
             return false;
     }
@@ -225,6 +230,10 @@ export function parseCondition(rawHead: string): EffectCondition | null {
     if (m) return { kind: "own_hand_lte", value: Number(m[1]) };
     m = text.match(/^own\s+cards?\s+in\s+hand\s+(\d+)\s+or\s+less$/i);
     if (m) return { kind: "own_hand_lte", value: Number(m[1]) };
+
+    // --- DP-slot count ---
+    m = text.match(/^opponent\s+has\s+more\s+th[ae]n\s+(\d+)\s+cards?\s+in\s+dp\s+slot$/i);
+    if (m) return { kind: "opponent_dp_slot_gt", value: Number(m[1]) };
 
     return null;
 }

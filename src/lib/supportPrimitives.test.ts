@@ -251,6 +251,75 @@ describe("conditional support effects (FC-027)", () => {
     }
 });
 
+function addDpCards(player: PlayerSchema, n: number, plusDp = 10) {
+    for (let i = 0; i < n; i++) {
+        const c = new CardSchema();
+        c.id = `${player.sessionId}-dp-${i}`;
+        c.cardKind = "digimon";
+        c.plusDp = plusDp;
+        player.dpSlot.push(c);
+    }
+    player.dp += n * plusDp;
+}
+
+describe("DP-slot primitives (FC-027)", () => {
+    it("atk_add_dp_count adds (DP card count × per) to own attack", () => {
+        const a = makePlayer("a");
+        addDpCards(a, 3);
+        const ctx = resolveActive(a, makePlayer("d", "Ice"), sup("atk_add_dp_count", { value: 100 }));
+        expect(getEffectiveAttackDamage(a, "circle", ctx)).toBe(700); // 400 + 3×100
+    });
+
+    it("hp_add_dp_count adds (count × per) to own HP", () => {
+        const a = makePlayer("a", "Fire", 500);
+        a.active!.maxHp = 2000;
+        addDpCards(a, 2);
+        resolveActive(a, makePlayer("d", "Ice"), sup("hp_add_dp_count", { value: 100 }));
+        expect(a.hp).toBe(700);
+    });
+
+    it("discard_own_dp removes N DP cards and reduces DP", () => {
+        const a = makePlayer("a");
+        addDpCards(a, 3); // dp = 30, slot = 3
+        resolveActive(a, makePlayer("d", "Ice"), sup("discard_own_dp", { value: 2 }));
+        expect(a.dpSlot.length).toBe(1);
+        expect(a.dp).toBe(10);
+        expect(a.trash.length).toBe(2);
+    });
+
+    it("discard_enemy_dp removes the opponent's DP cards", () => {
+        const a = makePlayer("a");
+        const d = makePlayer("d", "Ice");
+        addDpCards(d, 2);
+        resolveActive(a, d, sup("discard_enemy_dp", { value: 0 })); // 0 = all
+        expect(d.dpSlot.length).toBe(0);
+        expect(d.dp).toBe(0);
+    });
+
+    it("atk_mult_by_dp_discards multiplies by the number discarded, emptying the slot", () => {
+        const a = makePlayer("a");
+        addDpCards(a, 2);
+        const ctx = resolveActive(a, makePlayer("d", "Ice"), sup("atk_mult_by_dp_discards", { targetAttack: "all" }));
+        expect(a.dpSlot.length).toBe(0);
+        expect(getEffectiveAttackDamage(a, "circle", ctx)).toBe(800); // 400 × 2
+    });
+
+    it("conditional gate reads opponent DP-slot count", () => {
+        const a = makePlayer("a");
+        const d = makePlayer("d", "Ice");
+        addDpCards(d, 3);
+        const card = sup("conditional", {
+            description: "If opponent has more than 2 Cards in DP Slot, opponent's Attack Power becomes 0",
+        });
+        const ctx = createSupportBattleContext();
+        resolveSupportPhase(a, d, card, null, ctx, undefined, undefined, {
+            activeAttack: "circle",
+            defenderAttack: "circle",
+        });
+        expect(getEffectiveAttackDamage(d, "circle", ctx)).toBe(0);
+    });
+});
+
 describe("grant_counter (FC-027)", () => {
     function combatant(sessionId: string, hp: number, damage: number): BattleCombatant {
         return {

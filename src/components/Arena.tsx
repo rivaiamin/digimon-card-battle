@@ -145,6 +145,7 @@ const mapSchemaToPlayerState = (schema: any): PlayerState => {
         hand: Array.from(schema.hand || []).map((c: any) => mapSchemaCardToData(c)),
         deck: Array.from(schema.deck || []).map((c: any) => mapSchemaCardToData(c)),
         trash: Array.from(schema.trash || []).map((c: any) => mapSchemaCardToData(c)),
+        dpSlot: Array.from(schema.dpSlot || []).map((c: any) => mapSchemaCardToData(c)),
         dp: schema.dp,
         score: schema.score,
         supportCard: schema.supportCard ? mapSchemaCardToData(schema.supportCard) : null,

@@ -479,6 +479,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             p.deck.clear();
             p.hand.clear();
             p.trash.clear();
+            p.dpSlot.clear();
             p.dp = 0;
             p.score = 0;
             p.supportCard = null;
@@ -623,8 +624,9 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
     private discardForDp(player: PlayerSchema, cardIds: string[]) {
         type DiscardRow = { id: string; cardKind: string; plusDp: number };
         const hand = player.hand as unknown as DiscardRow[];
-        const trash = player.trash as unknown as DiscardRow[];
-        const result = applyDiscardForDp(hand, trash, cardIds);
+        // DP discards go to the DP Slot pile (not the Offline Pile / trash).
+        const dpSlot = player.dpSlot as unknown as DiscardRow[];
+        const result = applyDiscardForDp(hand, dpSlot, cardIds);
         if (result.dpGained > 0) {
             player.dp += result.dpGained;
         }

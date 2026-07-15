@@ -40,9 +40,9 @@
     },
     "supportEffect": {
       "description": "Add number of DP Cards in DP Slot x100 to own Attack Power.",
-      "value": 0,
+      "value": 100,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "atk_add_dp_count"
     }
   },
   {
@@ -1010,7 +1010,7 @@
       "description": "Discard all own DP Cards in DP Slot, boost own Attack Power +300.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "compose"
     }
   },
   {
@@ -1756,9 +1756,9 @@
     },
     "supportEffect": {
       "description": "Add number of DP Cards in DP Slot x100 to own HP.",
-      "value": 0,
+      "value": 100,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "hp_add_dp_count"
     }
   },
   {
@@ -5156,7 +5156,7 @@
       "description": "Discard 1 DP Card from own DP Slot. Boost own Attack Power +200.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "compose"
     }
   },
   {
@@ -5374,7 +5374,8 @@
       "description": "Discard Cards in own DP Slot and multiply Attack Power by number of discards.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "atk_mult_by_dp_discards",
+      "targetAttack": "all"
     }
   },
   {
@@ -5598,7 +5599,7 @@
       "description": "Discard 1 Card in DP Slot. change opponent's Specialty to Darkness.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "compose"
     }
   },
   {
@@ -5951,7 +5952,7 @@
       "description": "Boost own Cross Attack Power +200. Circle & Triangle Attack Power are 0.",
       "value": 0,
       "priority": 1,
-      "type": "compose"
+      "type": "catalog_text"
     }
   },
   {
@@ -6129,7 +6130,7 @@
       "description": "Discard 1 of opponent's Cards in DP Slot. Draw 1 Card.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "compose"
     }
   },
   {
@@ -6658,7 +6659,7 @@
       "description": "If opponent has more than 2 Cards in DP Slot, his Attack Power is 0.",
       "value": 0,
       "priority": 1,
-      "type": "catalog_text"
+      "type": "conditional"
     }
   },
   {
@@ -6838,9 +6839,9 @@
     },
     "supportEffect": {
       "description": "Discard opponent's top DP Card shown in DP Slot.",
-      "value": 0,
+      "value": 1,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "discard_enemy_dp"
     }
   },
   {
@@ -6929,9 +6930,9 @@
     },
     "supportEffect": {
       "description": "Discard opponent's 2 top DP Cards in his DP Slot.",
-      "value": 0,
+      "value": 2,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "discard_enemy_dp"
     }
   },
   {
@@ -7061,7 +7062,7 @@
       "description": "Discard all Cards in DP Slot. Foe discards same number of DP Cards.",
       "value": 0,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "discard_both_dp_equal"
     }
   },
   {
@@ -7308,9 +7309,9 @@
     },
     "supportEffect": {
       "description": "Discard all Cards in DP Slot. Recover HP, mumber of discards x100.",
-      "value": 0,
+      "value": 100,
       "priority": 2,
-      "type": "catalog_text"
+      "type": "hp_add_dp_discards"
     }
   },
   {

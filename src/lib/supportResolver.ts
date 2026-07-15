@@ -62,6 +62,13 @@ export type SupportEffectType =
     | "enemy_specialty_becomes_own"
     | "copy_opponent_stats"
     | "hand_x_atk"
+    | "atk_add_dp_count"
+    | "hp_add_dp_count"
+    | "discard_own_dp"
+    | "discard_enemy_dp"
+    | "atk_mult_by_dp_discards"
+    | "hp_add_dp_discards"
+    | "discard_both_dp_equal"
     | "grant_eat_up_hp"
     | "zero_attacks"
     | "draw_cards"
@@ -109,11 +116,18 @@ export const SUPPORT_PRIORITY: Record<SupportEffectType, number> = {
     hand_x_atk: 4,
     grant_eat_up_hp: 4,
     copy_opponent_stats: 4,
+    atk_add_dp_count: 4,
+    hp_add_dp_count: 4,
+    discard_own_dp: 3,
+    discard_enemy_dp: 3,
+    atk_mult_by_dp_discards: 3,
+    discard_both_dp_equal: 3,
     compose: 4,
     conditional: 4,
     draw_cards: 5,
     hp_heal: 5,
     enemy_hp_heal: 5,
+    hp_add_dp_discards: 5,
 };
 
 export type SupportEffectInput = {
@@ -220,6 +234,7 @@ function conditionSubject(player: PlayerSchema, attack: AttackType | null): Cond
         level: player.active?.level ?? "",
         specialty: player.active?.type ?? "",
         handCount: player.hand.length,
+        dpSlotCount: player.dpSlot?.length ?? 0,
     };
 }
 
@@ -461,6 +476,22 @@ function inferredToEffect(step: {
     } as unknown as SupportEffectSchema;
 }
 
+/** Move up to `count` cards from a player's DP Slot to trash, reducing their DP gauge. */
+function discardDpCards(player: PlayerSchema, count: number): number {
+    const slot = player.dpSlot;
+    if (!slot) return 0;
+    const n = Math.min(Math.max(0, count), slot.length);
+    let removedDp = 0;
+    for (let i = 0; i < n; i++) {
+        const card = slot.shift();
+        if (!card) break;
+        removedDp += Number((card as { plusDp?: number }).plusDp ?? 0);
+        player.trash?.push(card);
+    }
+    player.dp = Math.max(0, player.dp - removedDp);
+    return n;
+}
+
 function multiplyAttack(ctx: SupportBattleContext, sessionId: string, factor: number, target: string) {
     const mult = getMultipliers(ctx, sessionId);
     if (target === "all" || !target) {
@@ -484,7 +515,7 @@ function applySingleEffect(
     const type = String(effect.type ?? "");
 
     if (type === "compose") {
-        const clauses = splitEffectClauses(String(effect.description ?? ""));
+        const clauses = splitConsequentClauses(String(effect.description ?? ""));
         for (const clause of clauses) {
             const step = inferSupportEffectFromDescription(clause) ?? inferConditionalEffect(clause);
             if (!step) continue;
@@ -632,6 +663,40 @@ function applySingleEffect(
         case "hand_x_atk": {
             const per = effect.value > 0 ? effect.value : 100;
             applyAtkBuff(ctx, source.sessionId, source.hand.length * per, "all");
+            break;
+        }
+        case "atk_add_dp_count": {
+            const per = effect.value > 0 ? effect.value : 100;
+            applyAtkBuff(ctx, source.sessionId, (source.dpSlot?.length ?? 0) * per, "all");
+            break;
+        }
+        case "hp_add_dp_count": {
+            const per = effect.value > 0 ? effect.value : 100;
+            const max = source.active?.maxHp ?? source.hp;
+            source.hp = Math.min(max, source.hp + (source.dpSlot?.length ?? 0) * per);
+            break;
+        }
+        case "discard_own_dp":
+            discardDpCards(source, effect.value > 0 ? effect.value : (source.dpSlot?.length ?? 0));
+            break;
+        case "discard_enemy_dp":
+            discardDpCards(target, effect.value > 0 ? effect.value : (target.dpSlot?.length ?? 0));
+            break;
+        case "atk_mult_by_dp_discards": {
+            const discarded = discardDpCards(source, source.dpSlot?.length ?? 0);
+            multiplyAttack(ctx, source.sessionId, Math.max(0, discarded), effect.targetAttack || "all");
+            break;
+        }
+        case "hp_add_dp_discards": {
+            const per = effect.value > 0 ? effect.value : 100;
+            const discarded = discardDpCards(source, source.dpSlot?.length ?? 0);
+            const max = source.active?.maxHp ?? source.hp;
+            source.hp = Math.min(max, source.hp + discarded * per);
+            break;
+        }
+        case "discard_both_dp_equal": {
+            const discarded = discardDpCards(source, source.dpSlot?.length ?? 0);
+            discardDpCards(target, discarded);
             break;
         }
         case "hp_heal": {

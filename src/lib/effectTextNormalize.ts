@@ -435,6 +435,66 @@ export function inferSupportEffectFromDescription(
         return { type: "hp_set", value: Number(makeOwnHp[1]), description: text };
     }
 
+    // --- DP Slot (FC-027) ---
+    const dpAtkCount = text.match(/^add number of dp cards? in dp slot x(\d+) to own attack power$/i);
+    if (dpAtkCount) return { type: "atk_add_dp_count", value: Number(dpAtkCount[1]), description: text };
+    const dpHpCount = text.match(/^add number of dp cards? in dp slot x(\d+) to own hp$/i);
+    if (dpHpCount) return { type: "hp_add_dp_count", value: Number(dpHpCount[1]), description: text };
+
+    // Atomic discard-then-use-count lines (matched before compose can split them):
+    if (
+        /^discard (?:all )?(?:cards? in )?own dp slot(?: cards?)?\.? (?:and )?multiply (?:own )?attack power by number of discards$/i.test(
+            text
+        )
+    ) {
+        return { type: "atk_mult_by_dp_discards", targetAttack: "all", description: text };
+    }
+    const dpHpDiscards = text.match(
+        /^discard all cards? in (?:own )?dp slot\.? recover hp,? number of discards x(\d+)$/i
+    );
+    if (dpHpDiscards) return { type: "hp_add_dp_discards", value: Number(dpHpDiscards[1]), description: text };
+    if (/^discard all cards? in (?:own )?dp slot\.? opponent discards same number of dp cards$/i.test(text)) {
+        return { type: "discard_both_dp_equal", description: text };
+    }
+
+    // Simple DP-slot discards (also usable as compose clauses):
+    const dpDiscardOwn = text.match(
+        /^discard (\d+|all)(?: own)?(?: dp)? cards?(?: shown)?(?: in| from)(?: own)? dp slot$/i
+    );
+    if (dpDiscardOwn) {
+        return {
+            type: "discard_own_dp",
+            value: /all/i.test(dpDiscardOwn[1]!) ? 0 : Number(dpDiscardOwn[1]),
+            description: text,
+        };
+    }
+    const dpDiscardEnemyTop = text.match(
+        /^discard opponent'?s (\d+ )?top dp cards?(?: shown)?(?: in| from) (?:opponent'?s )?dp slot$/i
+    );
+    if (dpDiscardEnemyTop) {
+        return {
+            type: "discard_enemy_dp",
+            value: dpDiscardEnemyTop[1] ? Number(dpDiscardEnemyTop[1]) : 1,
+            description: text,
+        };
+    }
+    const dpDiscardEnemyOf = text.match(
+        /^discard (\d+) of opponent'?s cards?(?: in| from)(?: opponent'?s)? dp slot$/i
+    );
+    if (dpDiscardEnemyOf) {
+        return { type: "discard_enemy_dp", value: Number(dpDiscardEnemyOf[1]), description: text };
+    }
+    const dpDiscardEnemyAll = text.match(
+        /^discard (\d+|all) opponent'?s cards?(?: in| from)(?: opponent'?s)? dp slot$/i
+    );
+    if (dpDiscardEnemyAll) {
+        return {
+            type: "discard_enemy_dp",
+            value: /all/i.test(dpDiscardEnemyAll[1]!) ? 0 : Number(dpDiscardEnemyAll[1]),
+            description: text,
+        };
+    }
+
     // --- Support-granted counterattack (reflect + nullify a matching attack) ---
     const counterSlot = text.match(/^(circle|triangle|cross) counterattack$/i);
     if (counterSlot) {
@@ -489,7 +549,7 @@ export function inferCompoundSupportEffect(
     const conditional = inferConditionalEffect(text);
     if (conditional) return conditional;
 
-    const clauses = splitEffectClauses(text);
+    const clauses = splitConsequentClauses(text);
     if (clauses.length < 2) return null;
 
     if (clauses.some(c => !clauseParses(c))) return null;
