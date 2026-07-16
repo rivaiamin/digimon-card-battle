@@ -78,6 +78,49 @@ describe("effectTextNormalize (FC-026 / FC-027)", () => {
     });
 });
 
+describe("parser hardening (FC-027 Phase 2 Layer A)", () => {
+    it("strips quotes before the trailing period (Eat-up HP)", () => {
+        expect(inferSupportEffectFromDescription('Own attack becomes "Eat-up HP."')).toMatchObject({
+            type: "grant_eat_up_hp",
+        });
+    });
+
+    it("canonicalizes synonyms (his/foe's → opponent's, Atk Pwr → Attack Power)", () => {
+        expect(inferSupportEffectFromDescription("his Attack Power goes to 0")).toMatchObject({
+            type: "enemy_atk_zero",
+        });
+        expect(inferSupportEffectFromDescription("opponent's Atk Pwr becomes 0")).toMatchObject({
+            type: "enemy_atk_set",
+            value: 0,
+        });
+    });
+
+    it("splits conditional consequents on comma and 'and'", () => {
+        expect(
+            inferCompoundSupportEffect(
+                "If own Specialty is Fire, boost own Attack Power +100, recover HP +200"
+            )?.type
+        ).toBe("conditional");
+        expect(
+            inferCompoundSupportEffect(
+                "If opponent uses Circle, attack first and boost own Attack Power +500"
+            )?.type
+        ).toBe("conditional");
+        expect(
+            inferCompoundSupportEffect("If foe's Specialty is Fire or Ice, his Attack Power goes to 0")
+                ?.type
+        ).toBe("conditional");
+    });
+
+    it("maps counterattack clauses", () => {
+        expect(inferSupportEffectFromDescription("Circle Counterattack")).toMatchObject({
+            type: "grant_counter",
+            targetAttack: "circle",
+        });
+        expect(inferCompoundSupportEffect("Cross Counterattack. Attack second.")?.type).toBe("compose");
+    });
+});
+
 describe("support compose effects (FC-027)", () => {
     function makePlayer(sessionId: string, specialty = "Fire", hp = 1000): PlayerSchema {
         const p = new PlayerSchema();

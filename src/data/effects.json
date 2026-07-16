@@ -1,0 +1,2517 @@
+{
+  "source": "https://github.com/AsyrafKZ/digital-card-battle-clone-data-collection",
+  "sourceFile": "scripts/data/asyrafkz/effectList2.txt",
+  "generatedAt": "2026-07-15T16:06:37.777Z",
+  "counts": {
+    "total": 257,
+    "byStatus": {
+      "implemented": 252,
+      "partial": 1,
+      "catalog_only": 4
+    },
+    "byKind": {
+      "cross": 17,
+      "support": 152,
+      "mixed": 77,
+      "evolution": 8,
+      "unknown": 3
+    }
+  },
+  "effects": [
+    {
+      "id": "fx_1st_attack",
+      "text": "1st Attack",
+      "sourceText": "1st Attack",
+      "kind": "cross",
+      "implementedEffectId": "attack.first_strike",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_add_number_of_cards_in_hand_x100_to_own_attack_power",
+      "text": "Add number of Cards in Hand x100 to own Attack Power.",
+      "sourceText": "Add number of Cards in Hand x100 to own Attack Power.",
+      "kind": "support",
+      "implementedEffectId": "support.hand_x_atk",
+      "implementedArgs": {
+        "targetAttack": "all",
+        "value": 100
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_add_number_of_dp_cards_in_dp_slot_x100_to_own_attack_power",
+      "text": "Add number of DP Cards in DP Slot x100 to own Attack Power.",
+      "sourceText": "Add number of DP Cards in DP Slot x100 to own Attack Power.",
+      "kind": "support",
+      "implementedEffectId": "support.atk_add_dp_count",
+      "implementedArgs": {
+        "value": 100
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_add_number_of_dp_cards_in_dp_slot_x100_to_own_hp",
+      "text": "Add number of DP Cards in DP Slot x100 to own HP.",
+      "sourceText": "Add number of DP Cards in DP Slot x100 to own HP.",
+      "kind": "support",
+      "implementedEffectId": "support.hp_add_dp_count",
+      "implementedArgs": {
+        "value": 100
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_attack_first",
+      "text": "Attack first.",
+      "sourceText": "Attack first.",
+      "kind": "support",
+      "implementedEffectId": "support.first_strike",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_attack_first_boost_own_attack_power_100",
+      "text": "Attack first. Boost own Attack Power +100.",
+      "sourceText": "Attack first. Boost own Attack Power +100.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_attack_first_own_attack_becomes_eat_up_hp_boost_attack_power_200",
+      "text": "Attack first. Own attack becomes \"Eat-up HP.\" Boost Attack Power +200.",
+      "sourceText": "Attack first. Own attack becomes \"Eat-up HP.\" Boost Attack Power +200.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_boost_own_attack_power_100",
+      "text": "Boost own Attack Power +100.",
+      "sourceText": "Boost own Attack Power +100.",
+      "kind": "support",
+      "implementedEffectId": "support.atk_buff",
+      "implementedArgs": {
+        "targetAttack": "all",
+        "value": 100
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_boost_own_attack_power_100_draw_1_card",
+      "text": "Boost own Attack Power +100. Draw 1 Card.",
+      "sourceText": "Boost own Attack Power +100. Draw 1 Card.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_boost_own_attack_power_200",
+      "text": "Boost own Attack Power +200.",
+      "sourceText": "Boost own Attack Power +200.",
+      "kind": "support",
+      "implementedEffectId": "support.atk_buff",
+      "implementedArgs": {
+        "targetAttack": "all",
+        "value": 200
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_boost_own_attack_power_300",
+      "text": "Boost own Attack Power +300.",
+      "sourceText": "Boost own Attack Power +300.",
+      "kind": "support",
+      "implementedEffectId": "support.atk_buff",
+      "implementedArgs": {
+        "targetAttack": "all",
+        "value": 300
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_boost_own_attack_power_by_100_draw_1_card",
+      "text": "Boost own Attack Power by +100. Draw 1 Card.",
+      "sourceText": "Boost own Attack Power by +100. Draw 1 Card.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_boost_own_circle_attack_power_300",
+      "text": "Boost own Circle Attack Power +300.",
+      "sourceText": "Boost own {{button|c}} Attack Power +300.",
+      "kind": "support",
+      "implementedEffectId": "support.atk_buff",
+      "implementedArgs": {
+        "targetAttack": "circle",
+        "value": 300
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_boost_own_cross_attack_power_200",
+      "text": "Boost own Cross Attack Power +200.",
+      "sourceText": "Boost own {{button|x}} Attack Power +200.",
+      "kind": "support",
+      "implementedEffectId": "support.atk_buff",
+      "implementedArgs": {
+        "targetAttack": "cross",
+        "value": 200
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_boost_own_cross_attack_power_200_circle_triangle_attack_power_are_0",
+      "text": "Boost own Cross Attack Power +200. Circle & Triangle Attack Power are 0.",
+      "sourceText": "Boost own {{button|x}} Attack Power +200. {{button|c}} & {{button|t}} Attack Power are 0.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_boost_own_triangle_attack_power_300",
+      "text": "Boost own Triangle Attack Power +300.",
+      "sourceText": "Boost own {{button|t}} Attack Power +300.",
+      "kind": "support",
+      "implementedEffectId": "support.atk_buff",
+      "implementedArgs": {
+        "targetAttack": "triangle",
+        "value": 300
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_both_players_boost_attack_power_200",
+      "text": "Both players boost Attack Power +200.",
+      "sourceText": "Both players boost Attack Power +200.",
+      "kind": "support",
+      "implementedEffectId": "support.both_atk_buff",
+      "implementedArgs": {
+        "targetAttack": "all",
+        "value": 200
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_both_players_boost_attack_power_300",
+      "text": "Both players boost Attack Power +300.",
+      "sourceText": "Both players boost Attack Power +300.",
+      "kind": "support",
+      "implementedEffectId": "support.both_atk_buff",
+      "implementedArgs": {
+        "targetAttack": "all",
+        "value": 300
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_both_players_discard_all_cards_in_hands",
+      "text": "Both players discard all Cards in Hands.",
+      "sourceText": "Both players discard all Cards in Hands.",
+      "kind": "support",
+      "implementedEffectId": "support.discard_both_hands",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_both_players_use_circle",
+      "text": "Both players use Circle.",
+      "sourceText": "Both players use {{button|c}}.",
+      "kind": "support",
+      "implementedEffectId": "support.both_change_attack",
+      "implementedArgs": {
+        "targetAttack": "circle"
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_both_players_use_cross",
+      "text": "Both players use Cross.",
+      "sourceText": "Both players use {{button|x}}.",
+      "kind": "support",
+      "implementedEffectId": "support.both_change_attack",
+      "implementedArgs": {
+        "targetAttack": "cross"
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_both_players_use_triangle",
+      "text": "Both players use Triangle.",
+      "sourceText": "Both players use {{button|t}}.",
+      "kind": "support",
+      "implementedEffectId": "support.both_change_attack",
+      "implementedArgs": {
+        "targetAttack": "triangle"
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_both_players_attack_power_becomes_0",
+      "text": "Both players' Attack Power becomes 0.",
+      "sourceText": "Both players' Attack Power becomes 0.",
+      "kind": "support",
+      "implementedEffectId": "support.both_atk_zero",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_both_players_attacks_become_circle_boost_own_circle_attack_power_100",
+      "text": "Both players' attacks become Circle. Boost own Circle Attack Power +100.",
+      "sourceText": "Both players' attacks become {{button|c}}. Boost own {{button|c}} Attack Power +100.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_both_players_hp_are_halved",
+      "text": "Both players' HP are halved.",
+      "sourceText": "Both players' HP are halved.",
+      "kind": "support",
+      "implementedEffectId": "support.both_halve_hp",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_can_digivolve_digimon_at_same_level_need_dp_ignore_specialty",
+      "text": "Can digivolve Digimon at same Level. (Need DP) (Ignore Specialty)",
+      "sourceText": "Can digivolve Digimon at same Level. (Need DP) (Ignore Specialty)",
+      "kind": "evolution",
+      "implementedEffectId": "evolution_option.mutant",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_can_digivolve_from_r_to_u_dp_are_needed",
+      "text": "Can digivolve from R to U. (DP are needed.)",
+      "sourceText": "Can digivolve from R to U. (DP are needed.)",
+      "kind": "evolution",
+      "implementedEffectId": "evolution_option.warp_evolve",
+      "implementedArgs": {
+        "skipLevels": 1
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_can_digivolve_regardless_of_own_specialty_by_adding_dp_20",
+      "text": "Can digivolve regardless of own Specialty by adding DP +20.",
+      "sourceText": "Can digivolve regardless of own Specialty by adding DP +20.",
+      "kind": "evolution",
+      "implementedEffectId": "evolution_option.dp_adjust",
+      "implementedArgs": {
+        "delta": 20
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_can_digivolve_regardless_of_own_specialty_level_or_digivolve_pts",
+      "text": "Can digivolve regardless of own Specialty, Level, or Digivolve Pts.",
+      "sourceText": "Can digivolve regardless of own Specialty, Level, or Digivolve Pts.",
+      "kind": "evolution",
+      "implementedEffectId": "evolution_option.download",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_can_disregard_dp_in_digivolving_not_possible_in_abnormal_states",
+      "text": "Can disregard DP in digivolving. (Not possible in Abnormal states)",
+      "sourceText": "Can disregard DP in digivolving. (Not possible in Abnormal states)",
+      "kind": "evolution",
+      "implementedEffectId": "evolution_option.dp_adjust",
+      "implementedArgs": {
+        "delta": -999
+      },
+      "status": "partial"
+    },
+    {
+      "id": "fx_change_opponent_s_specialty_to_ice",
+      "text": "Change opponent's Specialty to Ice.",
+      "sourceText": "Change opponent's Specialty to Ice.",
+      "kind": "support",
+      "implementedEffectId": "support.change_enemy_specialty",
+      "implementedArgs": {
+        "targetAttack": "Ice"
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_change_own_specialty_to_darkness",
+      "text": "Change own Specialty to Darkness.",
+      "sourceText": "Change own Specialty to Darkness.",
+      "kind": "support",
+      "implementedEffectId": "support.change_own_specialty",
+      "implementedArgs": {
+        "targetAttack": "Dark"
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_change_own_specialty_to_darkness_both_players_hp_are_halved",
+      "text": "Change own Specialty to Darkness. Both players' HP are halved.",
+      "sourceText": "Change own Specialty to Darkness. Both players' HP are halved.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_change_own_specialty_to_fire",
+      "text": "Change own Specialty to Fire.",
+      "sourceText": "Change own Specialty to Fire.",
+      "kind": "support",
+      "implementedEffectId": "support.change_own_specialty",
+      "implementedArgs": {
+        "targetAttack": "Fire"
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_change_own_specialty_to_fire_boost_own_attack_power_200",
+      "text": "Change own Specialty to Fire. Boost own Attack Power +200.",
+      "sourceText": "Change own Specialty to Fire. Boost own Attack Power +200.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_change_own_specialty_to_ice",
+      "text": "Change own Specialty to Ice.",
+      "sourceText": "Change own Specialty to Ice.",
+      "kind": "support",
+      "implementedEffectId": "support.change_own_specialty",
+      "implementedArgs": {
+        "targetAttack": "Ice"
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_change_own_specialty_to_ice_recover_own_hp_by_100",
+      "text": "Change own Specialty to Ice. Recover own HP by +100.",
+      "sourceText": "Change own Specialty to Ice. Recover own HP by +100.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_change_own_specialty_to_ice_recover_own_hp_by_200",
+      "text": "Change own Specialty to Ice. Recover own HP by +200.",
+      "sourceText": "Change own Specialty to Ice. Recover own HP by +200.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_change_own_specialty_to_nature",
+      "text": "Change own Specialty to Nature.",
+      "sourceText": "Change own Specialty to Nature.",
+      "kind": "support",
+      "implementedEffectId": "support.change_own_specialty",
+      "implementedArgs": {
+        "targetAttack": "Nature"
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_change_own_specialty_to_nature_attack_first",
+      "text": "Change own Specialty to Nature. Attack first.",
+      "sourceText": "Change own Specialty to Nature. Attack first.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_change_own_specialty_to_nature_draw_1_card",
+      "text": "Change own Specialty to Nature. Draw 1 Card.",
+      "sourceText": "Change own Specialty to Nature. Draw 1 Card.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_change_own_specialty_to_rare_opponent_discards_1_card_at_random",
+      "text": "Change own Specialty to Rare. Opponent discards 1 Card at random.",
+      "sourceText": "Change own Specialty to Rare. Opponent discards 1 Card at random.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_changes_both_players_specialties_to_rare",
+      "text": "Changes both players' Specialties to Rare.",
+      "sourceText": "Changes both players' Specialties to Rare.",
+      "kind": "support",
+      "implementedEffectId": "support.both_change_specialty",
+      "implementedArgs": {
+        "targetAttack": "Rare"
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_changes_opponent_s_specialty_to_darkness_draw_1_card_from_own_online_deck",
+      "text": "Changes opponent's Specialty to Darkness. Draw 1 Card from own Online Deck.",
+      "sourceText": "Changes opponent's Specialty to Darkness. Draw 1 Card from own Online Deck.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_changes_opponent_s_specialty_to_fire_draw_1_card_from_own_online_deck",
+      "text": "Changes opponent's Specialty to Fire. Draw 1 Card from own Online Deck.",
+      "sourceText": "Changes opponent's Specialty to Fire. Draw 1 Card from own Online Deck.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_changes_opponent_s_specialty_to_ice_draw_1_card_from_own_online_deck",
+      "text": "Changes opponent's Specialty to Ice. Draw 1 Card from own Online Deck.",
+      "sourceText": "Changes opponent's Specialty to Ice. Draw 1 Card from own Online Deck.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_changes_opponent_s_specialty_to_nature",
+      "text": "Changes opponent's Specialty to Nature.",
+      "sourceText": "Changes opponent's Specialty to Nature.",
+      "kind": "support",
+      "implementedEffectId": "support.change_enemy_specialty",
+      "implementedArgs": {
+        "targetAttack": "Nature"
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_changes_opponent_s_specialty_to_nature_draw_1_card_from_own_online_deck",
+      "text": "Changes opponent's Specialty to Nature. Draw 1 Card from own Online Deck.",
+      "sourceText": "Changes opponent's Specialty to Nature. Draw 1 Card from own Online Deck.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_changes_opponent_s_specialty_to_rare_draw_1_card_from_own_online_deck",
+      "text": "Changes opponent's Specialty to Rare. Draw 1 Card from own Online Deck.",
+      "sourceText": "Changes opponent's Specialty to Rare. Draw 1 Card from own Online Deck.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_changes_own_specialty_to_fire",
+      "text": "Changes own Specialty to Fire.",
+      "sourceText": "Changes own Specialty to Fire.",
+      "kind": "support",
+      "implementedEffectId": "support.change_own_specialty",
+      "implementedArgs": {
+        "targetAttack": "Fire"
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_changes_own_specialty_to_fire_boost_own_attack_power_100",
+      "text": "Changes own Specialty to Fire. Boost own Attack Power +100.",
+      "sourceText": "Changes own Specialty to Fire. Boost own Attack Power +100.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_changes_own_specialty_to_nature_draw_1_card",
+      "text": "Changes own Specialty to Nature. Draw 1 Card.",
+      "sourceText": "Changes own Specialty to Nature. Draw 1 Card.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_changes_own_specialty_to_rare",
+      "text": "Changes own Specialty to Rare.",
+      "sourceText": "Changes own Specialty to Rare.",
+      "kind": "support",
+      "implementedEffectId": "support.change_own_specialty",
+      "implementedArgs": {
+        "targetAttack": "Rare"
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_circle_counter",
+      "text": "Circle Counter",
+      "sourceText": "{{button|c}} Counter",
+      "kind": "cross",
+      "implementedEffectId": "cross.counter",
+      "implementedArgs": {
+        "targetAttack": "circle",
+        "multiplier": 2
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_circle_counterattack_attack_second",
+      "text": "Circle Counterattack. Attack second.",
+      "sourceText": "{{button|c}} Counterattack. Attack second.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_circle_to_0",
+      "text": "Circle to 0",
+      "sourceText": "{{button|c}} to 0",
+      "kind": "cross",
+      "implementedEffectId": "cross.to_zero",
+      "implementedArgs": {
+        "targetAttack": "circle"
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_crash",
+      "text": "Crash",
+      "sourceText": "Crash",
+      "kind": "cross",
+      "implementedEffectId": "cross.crash",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_cross_counter",
+      "text": "Cross Counter",
+      "sourceText": "{{button|x}} Counter",
+      "kind": "cross",
+      "implementedEffectId": "cross.counter",
+      "implementedArgs": {
+        "targetAttack": "cross",
+        "multiplier": 2
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_cross_counterattack_attack_second",
+      "text": "Cross Counterattack. Attack second.",
+      "sourceText": "{{button|x}} Counterattack. Attack second.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_cross_to_0",
+      "text": "Cross to 0",
+      "sourceText": "{{button|x}} to 0",
+      "kind": "cross",
+      "implementedEffectId": "cross.to_zero",
+      "implementedArgs": {
+        "targetAttack": "cross"
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_dark_foe_x3",
+      "text": "Dark Foe x3",
+      "sourceText": "Dark Foe x3",
+      "kind": "cross",
+      "implementedEffectId": "attack.specialty_mult",
+      "implementedArgs": {
+        "specialty": "Dark",
+        "multiplier": 3
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_darkness_foe_x3",
+      "text": "Darkness Foe x3",
+      "sourceText": "Darkness Foe x3",
+      "kind": "cross",
+      "implementedEffectId": "attack.specialty_mult",
+      "implementedArgs": {
+        "specialty": "Dark",
+        "multiplier": 3
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_digimon_ko_d_in_battle_revives_with_500_hp_battle_is_still_lost",
+      "text": "Digimon KO'd in battle revives with 500 HP. Battle is still lost.",
+      "sourceText": "Digimon KO'd in battle revives with 500 HP. Battle is still lost.",
+      "kind": "mixed",
+      "implementedEffectId": "support.revive",
+      "implementedArgs": {
+        "value": 500
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_digivolve_a_level_a_digimon_to_c_or_u_dp_are_needed",
+      "text": "Digivolve a Level A Digimon to C or U. (DP are needed.)",
+      "sourceText": "Digivolve a Level A Digimon to C or U. (DP are needed.)",
+      "kind": "evolution",
+      "implementedEffectId": "evolution_option.armor_crush",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_discard_1_card_at_random_from_own_hand_hp_of_both_players_are_200",
+      "text": "Discard 1 Card at random from own Hand. HP of both Players are 200.",
+      "sourceText": "Discard 1 Card at random from own Hand. HP of both Players are 200.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_discard_1_card_from_opponent_s_hand_at_random",
+      "text": "Discard 1 Card from opponent's Hand at random.",
+      "sourceText": "Discard 1 Card from opponent's Hand at random.",
+      "kind": "support",
+      "implementedEffectId": "support.discard_enemy_hand_random",
+      "implementedArgs": {
+        "value": 1
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_discard_1_card_from_own_hand_boost_both_players_attack_power_600",
+      "text": "Discard 1 Card from own Hand. Boost both players' Attack Power +600.",
+      "sourceText": "Discard 1 Card from own Hand. Boost both players' Attack Power +600.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_discard_1_card_in_dp_slot_change_opponent_s_specialty_to_darkness",
+      "text": "Discard 1 Card in DP Slot. change opponent's Specialty to Darkness.",
+      "sourceText": "Discard 1 Card in DP Slot. change opponent's Specialty to Darkness.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_discard_1_card_in_own_dp_slot_discard_all_foe_s_cards_in_dp_slot",
+      "text": "Discard 1 Card in own DP Slot. Discard all foe's Cards in DP Slot.",
+      "sourceText": "Discard 1 Card in own DP Slot. Discard all foe's Cards in DP Slot.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_discard_1_dp_card_from_own_dp_slot_boost_own_attack_power_200",
+      "text": "Discard 1 DP Card from own DP Slot. Boost own Attack Power +200.",
+      "sourceText": "Discard 1 DP Card from own DP Slot. Boost own Attack Power +200.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_discard_1_of_opponent_s_cards_in_dp_slot_draw_1_card",
+      "text": "Discard 1 of opponent's Cards in DP Slot. Draw 1 Card.",
+      "sourceText": "Discard 1 of opponent's Cards in DP Slot. Draw 1 Card.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_discard_2_cards_from_opponent_s_online_deck_draw_1_card",
+      "text": "Discard 2 Cards from opponent's Online Deck. Draw 1 Card.",
+      "sourceText": "Discard 2 Cards from opponent's Online Deck. Draw 1 Card.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_discard_3_cards_from_opponent_s_online_deck",
+      "text": "Discard 3 Cards from opponent's Online Deck.",
+      "sourceText": "Discard 3 Cards from opponent's Online Deck.",
+      "kind": "support",
+      "implementedEffectId": "support.discard_enemy_deck",
+      "implementedArgs": {
+        "value": 3
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_discard_5_cards_from_own_online_deck_boost_own_attack_power_400",
+      "text": "Discard 5 Cards from own Online Deck. Boost own Attack Power +400.",
+      "sourceText": "Discard 5 Cards from own Online Deck. Boost own Attack Power +400.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_discard_7_cards_from_both_players_online_decks",
+      "text": "Discard 7 Cards from both players' Online Decks.",
+      "sourceText": "Discard 7 Cards from both players' Online Decks.",
+      "kind": "support",
+      "implementedEffectId": "support.discard_both_deck",
+      "implementedArgs": {
+        "value": 7
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_discard_7_cards_from_online_deck_own_attack_power_is_same_as_own_hp",
+      "text": "Discard 7 Cards from Online Deck. Own Attack Power is same as own HP.",
+      "sourceText": "Discard 7 Cards from Online Deck. Own Attack Power is same as own HP.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_discard_7_cards_from_own_online_deck_own_attack_is_eat_up_hp",
+      "text": "Discard 7 Cards from own Online Deck, own Attack is \"Eat-up HP.\"",
+      "sourceText": "Discard 7 Cards from own Online Deck, own Attack is \"Eat-up HP.\"",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_discard_7_cards_from_own_online_deck_boost_own_attack_power_500",
+      "text": "Discard 7 Cards from own Online Deck. Boost own Attack Power +500.",
+      "sourceText": "Discard 7 Cards from own Online Deck. Boost own Attack Power +500.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_discard_7_cards_from_own_online_deck_opponent_s_hp_are_halved",
+      "text": "Discard 7 Cards from own Online Deck. Opponent's HP are halved.",
+      "sourceText": "Discard 7 Cards from own Online Deck. Opponent's HP are halved.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_discard_7_cards_from_own_online_deck_recover_own_hp_by_1000",
+      "text": "Discard 7 Cards from own Online Deck. Recover own HP by +1000.",
+      "sourceText": "Discard 7 Cards from own Online Deck. Recover own HP by +1000.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_discard_all_cards_in_dp_slot_foe_discards_same_number_of_dp_cards",
+      "text": "Discard all Cards in DP Slot. Foe discards same number of DP Cards.",
+      "sourceText": "Discard all Cards in DP Slot. Foe discards same number of DP Cards.",
+      "kind": "mixed",
+      "implementedEffectId": "support.discard_both_dp_equal",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_discard_all_cards_in_dp_slot_recover_hp_mumber_of_discards_x100",
+      "text": "Discard all Cards in DP Slot. Recover HP, mumber of discards x100.",
+      "sourceText": "Discard all Cards in DP Slot. Recover HP, mumber of discards x100.",
+      "kind": "mixed",
+      "implementedEffectId": "support.hp_add_dp_discards",
+      "implementedArgs": {
+        "value": 100
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_discard_all_cards_in_own_hand_then_draw_2_cards",
+      "text": "Discard all Cards in own Hand, then draw 2 Cards.",
+      "sourceText": "Discard all Cards in own Hand, then draw 2 Cards.",
+      "kind": "support",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_discard_all_cards_in_own_hand_own_attack_power_is_doubled",
+      "text": "Discard all Cards in own Hand. Own Attack Power is doubled.",
+      "sourceText": "Discard all Cards in own Hand. Own Attack Power is doubled.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_discard_all_own_dp_cards_in_dp_slot_boost_own_attack_power_300",
+      "text": "Discard all own DP Cards in DP Slot, boost own Attack Power +300.",
+      "sourceText": "Discard all own DP Cards in DP Slot, boost own Attack Power +300.",
+      "kind": "support",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_discard_cards_in_own_dp_slot_and_multiply_attack_power_by_number_of_discards",
+      "text": "Discard Cards in own DP Slot and multiply Attack Power by number of discards.",
+      "sourceText": "Discard Cards in own DP Slot and multiply Attack Power by number of discards.",
+      "kind": "support",
+      "implementedEffectId": "support.atk_mult_by_dp_discards",
+      "implementedArgs": {
+        "targetAttack": "all"
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_discard_opponent_s_2_top_dp_cards_in_his_dp_slot",
+      "text": "Discard opponent's 2 top DP Cards in his DP Slot.",
+      "sourceText": "Discard opponent's 2 top DP Cards in his DP Slot.",
+      "kind": "support",
+      "implementedEffectId": "support.discard_enemy_dp",
+      "implementedArgs": {
+        "value": 2
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_discard_opponent_s_top_dp_card_shown_in_dp_slot",
+      "text": "Discard opponent's top DP Card shown in DP Slot.",
+      "sourceText": "Discard opponent's top DP Card shown in DP Slot.",
+      "kind": "support",
+      "implementedEffectId": "support.discard_enemy_dp",
+      "implementedArgs": {
+        "value": 1
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_discard_own_dp_slot_cards_multiply_own_attack_power_by_number_of_discards",
+      "text": "Discard own DP Slot Cards. Multiply own Attack Power by number of discards.",
+      "sourceText": "Discard own DP Slot Cards. Multiply own Attack Power by number of discards.",
+      "kind": "mixed",
+      "implementedEffectId": "support.atk_mult_by_dp_discards",
+      "implementedArgs": {
+        "targetAttack": "all"
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_discard_own_hand_multiply_own_attack_power_by_number_of_discarded_cards",
+      "text": "Discard own Hand. Multiply own Attack Power by number of discarded Cards.",
+      "sourceText": "Discard own Hand. Multiply own Attack Power by number of discarded Cards.",
+      "kind": "mixed",
+      "implementedEffectId": "support.mult_by_hand_discards",
+      "implementedArgs": {
+        "targetAttack": "all"
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_downgrade_a_level_a_digimon_to_level_r",
+      "text": "Downgrade a Level A Digimon to Level R.",
+      "sourceText": "Downgrade a Level A Digimon to Level R.",
+      "kind": "evolution",
+      "implementedEffectId": "evolution_option.de_armor",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_downgrade_own_digivolution_by_1_level_hp_double_when_successful",
+      "text": "DownGrade own digivolution by 1 Level. HP double when successful.",
+      "sourceText": "DownGrade own digivolution by 1 Level. HP double when successful.",
+      "kind": "evolution",
+      "status": "catalog_only"
+    },
+    {
+      "id": "fx_draw_2_cards_from_online_deck",
+      "text": "Draw 2 Cards from Online Deck.",
+      "sourceText": "Draw 2 Cards from Online Deck.",
+      "kind": "support",
+      "implementedEffectId": "support.draw_cards",
+      "implementedArgs": {
+        "value": 2
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_draw_3_cards",
+      "text": "Draw 3 Cards.",
+      "sourceText": "Draw 3 Cards.",
+      "kind": "support",
+      "implementedEffectId": "support.draw_cards",
+      "implementedArgs": {
+        "value": 3
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_draw_until_there_are_4_cards_in_own_hand_recover_own_hp_by_100",
+      "text": "Draw until there are 4 Cards in own Hand. Recover own HP by +100.",
+      "sourceText": "Draw until there are 4 Cards in own Hand. Recover own HP by +100.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_eat_up_hp",
+      "text": "Eat-Up HP",
+      "sourceText": "Eat-Up HP",
+      "kind": "cross",
+      "implementedEffectId": "cross.eat_up_hp",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_fire_foe_x3",
+      "text": "Fire Foe x3",
+      "sourceText": "Fire Foe x3",
+      "kind": "cross",
+      "implementedEffectId": "attack.specialty_mult",
+      "implementedArgs": {
+        "specialty": "Fire",
+        "multiplier": 3
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_ice_foe_x3",
+      "text": "Ice Foe x3",
+      "sourceText": "Ice Foe x3",
+      "kind": "cross",
+      "implementedEffectId": "attack.specialty_mult",
+      "implementedArgs": {
+        "specialty": "Ice",
+        "multiplier": 3
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_ice_foe_x3",
+      "text": "Ice Foe x3.",
+      "sourceText": "Ice Foe x3.",
+      "kind": "cross",
+      "implementedEffectId": "attack.specialty_mult",
+      "implementedArgs": {
+        "specialty": "Ice",
+        "multiplier": 3
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_1_or_less_cards_left_in_own_hand_opponent_s_attack_power_goes_to_0",
+      "text": "If 1 or less Cards left in own Hand, opponent's Attack Power goes to 0.",
+      "sourceText": "If 1 or less Cards left in own Hand, opponent's Attack Power goes to 0.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_both_attacks_are_different_own_attack_power_is_doubled",
+      "text": "If both attacks are different, own Attack Power is doubled.",
+      "sourceText": "If both attacks are different, own Attack Power is doubled.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_both_attacks_are_different_recover_own_hp_by_500",
+      "text": "If both Attacks are different, recover own HP by +500.",
+      "sourceText": "If both Attacks are different, recover own HP by +500.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_both_attacks_are_same_discard_7_cards_from_foe_s_online_deck",
+      "text": "If both Attacks are same, discard 7 Cards from foe's Online Deck.",
+      "sourceText": "If both Attacks are same, discard 7 Cards from foe's Online Deck.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_both_attacks_are_same_own_attack_power_is_tripled",
+      "text": "If both Attacks are same, own Attack Power is tripled.",
+      "sourceText": "If both Attacks are same, own Attack Power is tripled.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_both_levels_are_c_boost_own_attack_power_400",
+      "text": "If both Levels are C, boost own Attack Power +400.",
+      "sourceText": "If both Levels are C, boost own Attack Power +400.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_both_players_use_same_attack_discard_all_cards_in_foe_s_hand",
+      "text": "If both players use same Attack, discard all Cards in foe's Hand.",
+      "sourceText": "If both players use same Attack, discard all Cards in foe's Hand.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_both_players_use_same_attack_opponent_s_attack_power_becomes_0",
+      "text": "If both players use same attack, opponent's Attack Power becomes 0.",
+      "sourceText": "If both players use same attack, opponent's Attack Power becomes 0.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_both_players_use_same_attack_recover_own_hp_700",
+      "text": "If both players use same Attack, recover own HP +700.",
+      "sourceText": "If both players use same Attack, recover own HP +700.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_foe_s_specialty_is_darkness_own_attack_power_is_doubled_draw_1_card",
+      "text": "If foe's Specialty is Darkness, own Attack Power is Doubled. Draw 1 Card.",
+      "sourceText": "If foe's Specialty is Darkness, own Attack Power is Doubled. Draw 1 Card.",
+      "kind": "mixed",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_foe_s_specialty_is_fire_or_ice_his_attack_power_goes_to_0",
+      "text": "If foe's Specialty is Fire or Ice, his Attack Power goes to 0.",
+      "sourceText": "If foe's Specialty is Fire or Ice, his Attack Power goes to 0.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_foe_s_specialty_is_nature_or_darkness_his_attack_power_goes_to_0",
+      "text": "If foe's Specialty is Nature or Darkness, his Attack Power goes to 0.",
+      "sourceText": "If foe's Specialty is Nature or Darkness, his Attack Power goes to 0.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_foe_s_specialty_is_nature_own_attack_power_is_doubled_draw_1_card",
+      "text": "If foe's Specialty is Nature, own Attack Power is doubled. Draw 1 Card.",
+      "sourceText": "If foe's Specialty is Nature, own Attack Power is doubled. Draw 1 Card.",
+      "kind": "mixed",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_opponent_has_more_than_2_cards_in_dp_slot_his_attack_power_is_0",
+      "text": "If opponent has more than 2 Cards in DP Slot, his Attack Power is 0.",
+      "sourceText": "If opponent has more than 2 Cards in DP Slot, his Attack Power is 0.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_opponent_is_level_a_his_atk_pwr_becomes_0_and_own_atk_pwr_is_doubled",
+      "text": "If opponent is Level A, his Atk Pwr becomes 0 and own Atk Pwr is doubled.",
+      "sourceText": "If opponent is Level A, his Atk Pwr becomes 0 and own Atk Pwr is doubled.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_opponent_is_level_u_his_atk_pwr_becomes_0_and_own_atk_pwr_is_doubled",
+      "text": "If opponent is Level U, his Atk Pwr becomes 0 and own Atk Pwr is doubled.",
+      "sourceText": "If opponent is Level U, his Atk Pwr becomes 0 and own Atk Pwr is doubled.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_opponent_used_circle_change_it_to_cross",
+      "text": "If opponent used Circle, change it to Cross.",
+      "sourceText": "If opponent used {{button|c}}, change it to {{button|x}}.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_opponent_used_cross_discard_all_cards_in_opponent_s_hand",
+      "text": "If opponent used Cross, discard all Cards in opponent's Hand.",
+      "sourceText": "If opponent used {{button|x}}, discard all Cards in opponent's Hand.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_opponent_uses_circle_attack_first_and_boost_own_attack_power_500",
+      "text": "If opponent uses Circle, attack first and boost own Attack Power +500.",
+      "sourceText": "If opponent uses {{button|c}}, attack first and boost own Attack Power +500.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_opponent_uses_cross_attack_first_and_boost_own_attack_power_500",
+      "text": "If opponent uses Cross, attack first and boost own Attack Power +500.",
+      "sourceText": "If opponent uses {{button|x}}, attack first and boost own Attack Power +500.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_opponent_uses_triangle_attack_first_and_boost_own_attack_power_500",
+      "text": "If opponent uses Triangle, attack first and boost own Attack Power +500.",
+      "sourceText": "If opponent uses {{button|t}}, attack first and boost own Attack Power +500.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_opponent_s_hp_are_1000_own_attack_becomes_eat_up_hp",
+      "text": "If opponent's HP are 1000+, own attack becomes \"Eat-up HP.\"",
+      "sourceText": "If opponent's HP are 1000+, own attack becomes \"Eat-up HP.\"",
+      "kind": "mixed",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_opponent_s_hp_are_lower_then_own_opponent_s_hp_become_10",
+      "text": "If opponent's HP are lower then own, opponent's HP become 10.",
+      "sourceText": "If opponent's HP are lower then own, opponent's HP become 10.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_opponent_s_hp_are_more_than_1000_opponent_s_hp_are_halved",
+      "text": "If opponent's HP are more than 1000, opponent's HP are halved.",
+      "sourceText": "If opponent's HP are more than 1000, opponent's HP are halved.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_opponent_s_hp_is_less_than_own_boost_own_attack_power_400",
+      "text": "If opponent's HP is less than own, boost own Attack Power +400.",
+      "sourceText": "If opponent's HP is less than own, boost own Attack Power +400.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_opponent_s_level_is_a_opponent_s_hp_are_halved",
+      "text": "If opponent's Level is A, opponent's HP are halved.",
+      "sourceText": "If opponent's Level is A, opponent's HP are halved.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_opponent_s_specialty_is_darkness_boost_own_attack_power_500",
+      "text": "If opponent's Specialty is Darkness, boost own Attack Power +500.",
+      "sourceText": "If opponent's Specialty is Darkness, boost own Attack Power +500.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_opponent_s_specialty_is_darkness_lower_opponent_s_attack_power_200",
+      "text": "If opponent's Specialty is Darkness, lower opponent's Attack Power -200.",
+      "sourceText": "If opponent's Specialty is Darkness, lower opponent's Attack Power -200.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_opponent_s_specialty_is_darkness_lower_opponent_s_attack_power_to_0",
+      "text": "If opponent's Specialty is Darkness, lower opponent's Attack Power to 0.",
+      "sourceText": "If opponent's Specialty is Darkness, lower opponent's Attack Power to 0.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_opponent_s_specialty_is_darkness_opponent_s_support_effect_is_voided",
+      "text": "If opponent's Specialty is Darkness, opponent's Support Effect is voided.",
+      "sourceText": "If opponent's Specialty is Darkness, opponent's Support Effect is voided.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_opponent_s_specialty_is_darkness_own_attack_power_is_200_hp_200",
+      "text": "If opponent's Specialty is Darkness, own Attack Power is +200 & HP +200.",
+      "sourceText": "If opponent's Specialty is Darkness, own Attack Power is +200 & HP +200.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_opponent_s_specialty_is_darkness_own_attack_power_is_tripled",
+      "text": "If opponent's Specialty is Darkness, own Attack Power is tripled.",
+      "sourceText": "If opponent's Specialty is Darkness, own Attack Power is tripled.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_opponent_s_specialty_is_darkness_recover_own_hp_by_500",
+      "text": "If opponent's Specialty is Darkness, recover own HP by +500.",
+      "sourceText": "If opponent's Specialty is Darkness, recover own HP by +500.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_opponent_s_specialty_is_fire_own_attack_power_is_doubled",
+      "text": "If opponent's Specialty is Fire, own Attack Power is doubled.",
+      "sourceText": "If opponent's Specialty is Fire, own Attack Power is doubled.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_opponent_s_specialty_is_fire_own_attack_power_is_tripled",
+      "text": "If opponent's Specialty is Fire, own Attack Power is tripled.",
+      "sourceText": "If opponent's Specialty is Fire, own Attack Power is tripled.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_opponent_s_specialty_is_fire_reduce_opponent_s_attack_power_to_0",
+      "text": "If opponent's Specialty is Fire, reduce opponent's Attack Power to 0.",
+      "sourceText": "If opponent's Specialty is Fire, reduce opponent's Attack Power to 0.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_opponent_s_specialty_is_ice_boost_own_attack_power_300",
+      "text": "If opponent's Specialty is Ice, boost own Attack Power +300.",
+      "sourceText": "If opponent's Specialty is Ice, boost own Attack Power +300.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_opponent_s_specialty_is_ice_own_attack_power_is_doubled",
+      "text": "If opponent's Specialty is Ice, own Attack Power is doubled.",
+      "sourceText": "If opponent's Specialty is Ice, own Attack Power is doubled.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_opponent_s_specialty_is_ice_own_attack_power_is_tripled",
+      "text": "If opponent's Specialty is Ice, own Attack Power is tripled.",
+      "sourceText": "If opponent's Specialty is Ice, own Attack Power is tripled.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_opponent_s_specialty_is_nature_opponent_discards_all_cards",
+      "text": "If opponent's Specialty is Nature, opponent discards all Cards.",
+      "sourceText": "If opponent's Specialty is Nature, opponent discards all Cards.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_opponent_s_specialty_is_nature_own_attack_power_is_doubled",
+      "text": "If opponent's Specialty is Nature, own Attack Power is doubled.",
+      "sourceText": "If opponent's Specialty is Nature, own Attack Power is doubled.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_opponent_s_specialty_is_nature_own_attack_power_is_tripled",
+      "text": "If opponent's Specialty is Nature, own Attack Power is tripled.",
+      "sourceText": "If opponent's Specialty is Nature, own Attack Power is tripled.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_opponent_s_specialty_is_not_nature_attack_second",
+      "text": "If opponent's Specialty is not Nature, attack second.",
+      "sourceText": "If opponent's Specialty is not Nature, attack second.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_opponent_s_specialty_is_rare_lower_opponent_s_attack_power_to_0",
+      "text": "If opponent's Specialty is Rare, lower opponent's Attack Power to 0.",
+      "sourceText": "If opponent's Specialty is Rare, lower opponent's Attack Power to 0.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_opponent_s_specialty_is_rare_opponent_s_hp_become_100",
+      "text": "If opponent's Specialty is Rare, opponent's HP become 100.",
+      "sourceText": "If opponent's Specialty is Rare, opponent's HP become 100.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_own_attack_is_circle_attack_first",
+      "text": "If own Attack is Circle, attack first.",
+      "sourceText": "If own Attack is {{button|c}}, attack first.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_own_attack_is_not_circle_recover_own_hp_by_300",
+      "text": "If own Attack is not Circle, recover own HP by +300.",
+      "sourceText": "If own Attack is not {{button|c}}, recover own HP by +300.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_own_attack_is_triangle_attack_first",
+      "text": "If own attack is Triangle, attack first.",
+      "sourceText": "If own attack is {{button|t}}, attack first.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_own_cards_in_hand_3_or_more_opponent_s_attack_power_becomes_0",
+      "text": "If own Cards in Hand 3 or more, opponent's Attack Power becomes 0.",
+      "sourceText": "If own Cards in Hand 3 or more, opponent's Attack Power becomes 0.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_own_hp_are_less_than_500_boost_own_attack_power_300",
+      "text": "If own HP are less than 500, boost own Attack Power +300.",
+      "sourceText": "If own HP are less than 500, boost own Attack Power +300.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_own_hp_are_less_than_foe_s_hp_recovcer_own_hp_by_700",
+      "text": "If own HP are less than foe's HP, recovcer own HP by +700.",
+      "sourceText": "If own HP are less than foe's HP, recovcer own HP by +700.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_own_hp_are_less_then_200_reduce_opponent_s_attack_power_to_0",
+      "text": "If own HP are less then 200, reduce opponent's Attack Power to 0.",
+      "sourceText": "If own HP are less then 200, reduce opponent's Attack Power to 0.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_own_hp_are_more_than_opponent_s_hp_own_attack_power_is_doubled",
+      "text": "If own HP are more than opponent's HP, own Attack Power is doubled.",
+      "sourceText": "If own HP are more than opponent's HP, own Attack Power is doubled.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_own_level_is_a_boost_own_attack_power_300",
+      "text": "If own Level is A, boost own Attack Power +300.",
+      "sourceText": "If own Level is A, boost own Attack Power +300.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_own_level_is_below_opponent_s_opponent_s_attack_power_becomes_0",
+      "text": "If own Level is below opponent's, opponent's Attack Power becomes 0.",
+      "sourceText": "If own Level is below opponent's, opponent's Attack Power becomes 0.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_own_level_is_c_boost_own_attack_power_300",
+      "text": "If own Level is C, boost own Attack Power +300.",
+      "sourceText": "If own Level is C, boost own Attack Power +300.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_own_level_is_c_boost_own_attack_power_400",
+      "text": "If own Level is C, boost own Attack Power +400.",
+      "sourceText": "If own Level is C, boost own Attack Power +400.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_own_level_is_lower_boost_own_attack_power_500",
+      "text": "If own level is lower, boost own Attack Power +500.",
+      "sourceText": "If own level is lower, boost own Attack Power +500.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_own_level_is_lower_switch_hp_with_opponent",
+      "text": "If own Level is lower, switch HP with opponent.",
+      "sourceText": "If own Level is lower, switch HP with opponent.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_own_level_is_r_boost_own_attack_power_300",
+      "text": "If own Level is R, boost own Attack Power +300.",
+      "sourceText": "If own Level is R, boost own Attack Power +300.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_own_level_is_r_boost_own_attack_power_400",
+      "text": "If own Level is R, boost own Attack Power +400.",
+      "sourceText": "If own Level is R, boost own Attack Power +400.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_own_level_is_u_boost_own_attack_power_400",
+      "text": "If own Level is U, boost own Attack Power +400.",
+      "sourceText": "If own Level is U, boost own Attack Power +400.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_own_level_is_u_boost_own_attack_power_500",
+      "text": "If own Level is U, boost own Attack Power +500.",
+      "sourceText": "If own Level is U, boost own Attack Power +500.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_own_level_is_u_own_attack_power_is_doubled",
+      "text": "If own level is U, own Attack Power is doubled.",
+      "sourceText": "If own level is U, own Attack Power is doubled.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_own_specialty_is_darkness_boost_own_attack_power_100_recover_hp_200",
+      "text": "If own Specialty is Darkness, boost own Attack Power +100, recover HP +200.",
+      "sourceText": "If own Specialty is Darkness, boost own Attack Power +100, recover HP +200.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_own_specialty_is_fire_boost_own_attack_power_100_recover_hp_200",
+      "text": "If own Specialty is Fire, boost own Attack Power +100, recover HP +200.",
+      "sourceText": "If own Specialty is Fire, boost own Attack Power +100, recover HP +200.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_own_specialty_is_fire_boost_own_attack_power_300",
+      "text": "If own Specialty is Fire, boost own Attack Power +300.",
+      "sourceText": "If own Specialty is Fire, boost own Attack Power +300.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_own_specialty_is_fire_own_attack_power_is_doubled",
+      "text": "If own Specialty is Fire, own Attack Power is doubled.",
+      "sourceText": "If own Specialty is Fire, own Attack Power is doubled.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_own_specialty_is_ice_boost_own_attack_power_100_recover_hp_200",
+      "text": "If own Specialty is Ice, boost own Attack Power +100, recover HP +200.",
+      "sourceText": "If own Specialty is Ice, boost own Attack Power +100, recover HP +200.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_own_specialty_is_ice_opponent_s_attack_power_is_halved",
+      "text": "If own Specialty is Ice, opponent's Attack Power is halved.",
+      "sourceText": "If own Specialty is Ice, opponent's Attack Power is halved.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_own_specialty_is_ice_opponent_s_support_effect_is_voided",
+      "text": "If own Specialty is Ice, opponent's Support Effect is voided.",
+      "sourceText": "If own Specialty is Ice, opponent's Support Effect is voided.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_own_specialty_is_nature_boost_own_attack_power_100_recover_hp_200",
+      "text": "If own Specialty is Nature, boost own Attack Power +100, recover HP +200.",
+      "sourceText": "If own Specialty is Nature, boost own Attack Power +100, recover HP +200.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_own_specialty_is_rare_boost_own_attack_power_100_recover_hp_200",
+      "text": "If own Specialty is Rare, boost own Attack Power +100, recover HP +200.",
+      "sourceText": "If own Specialty is Rare, boost own Attack Power +100, recover HP +200.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_if_specialties_are_same_boost_own_attack_power_200_recover_hp_400",
+      "text": "If Specialties are same, boost own Attack Power +200, recover HP +400.",
+      "sourceText": "If Specialties are same, boost own Attack Power +200, recover HP +400.",
+      "kind": "support",
+      "implementedEffectId": "support.conditional",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_jamming",
+      "text": "Jamming",
+      "sourceText": "Jamming",
+      "kind": "cross",
+      "implementedEffectId": "attack.jamming",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_ko_d_digimon_revives_with_100_hp_battle_is_still_lost",
+      "text": "KO'd Digimon revives with 100 HP. Battle is still lost.",
+      "sourceText": "KO'd Digimon revives with 100 HP. Battle is still lost.",
+      "kind": "mixed",
+      "implementedEffectId": "support.revive",
+      "implementedArgs": {
+        "value": 100
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_ko_d_digimon_revives_with_1000_battle_is_still_lost",
+      "text": "KO'd Digimon revives with 1000. Battle is still lost.",
+      "sourceText": "KO'd Digimon revives with 1000. Battle is still lost.",
+      "kind": "mixed",
+      "implementedEffectId": "support.revive",
+      "implementedArgs": {
+        "value": 1000
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_lower_both_attack_powers_200",
+      "text": "Lower both Attack Powers -200.",
+      "sourceText": "Lower both Attack Powers -200.",
+      "kind": "support",
+      "implementedEffectId": "support.both_atk_buff",
+      "implementedArgs": {
+        "targetAttack": "all",
+        "value": -200
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_lower_opponent_s_attack_power_100_draw_1_card",
+      "text": "Lower Opponent's Attack Power -100. Draw 1 Card.",
+      "sourceText": "Lower Opponent's Attack Power -100. Draw 1 Card.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_lower_opponent_s_attack_power_to_0_opponent_s_hp_are_doubled",
+      "text": "Lower opponent's Attack Power to 0. Opponent's HP are doubled.",
+      "sourceText": "Lower opponent's Attack Power to 0. Opponent's HP are doubled.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_lower_opponent_s_circle_attack_power_to_0",
+      "text": "Lower opponent's Circle Attack Power to 0.",
+      "sourceText": "Lower opponent's {{button|c}} Attack Power to 0.",
+      "kind": "support",
+      "implementedEffectId": "support.enemy_atk_zero",
+      "implementedArgs": {
+        "targetAttack": "circle"
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_lower_opponent_s_cross_attack_power_to_0",
+      "text": "Lower opponent's Cross Attack Power to 0.",
+      "sourceText": "Lower opponent's {{button|x}} Attack Power to 0.",
+      "kind": "support",
+      "implementedEffectId": "support.enemy_atk_zero",
+      "implementedArgs": {
+        "targetAttack": "cross"
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_lower_opponent_s_triangle_attack_power_to_0",
+      "text": "Lower opponent's Triangle Attack Power to 0.",
+      "sourceText": "Lower opponent's {{button|t}} Attack Power to 0.",
+      "kind": "support",
+      "implementedEffectId": "support.enemy_atk_zero",
+      "implementedArgs": {
+        "targetAttack": "triangle"
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_make_own_hp_10_own_attack_power_is_tripled",
+      "text": "Make own HP 10. Own Attack Power is tripled.",
+      "sourceText": "Make own HP 10. Own Attack Power is tripled.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_move_the_top_card_from_offline_pile_to_online_deck",
+      "text": "Move the top Card from Offline Pile to Online Deck.",
+      "sourceText": "Move the top Card from Offline Pile to Online Deck.",
+      "kind": "support",
+      "implementedEffectId": "support.offline_to_online",
+      "implementedArgs": {
+        "value": 1
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_move_top_10_cards_from_offline_pile_to_online_deck_then_shuffle",
+      "text": "Move top 10 Cards from Offline Pile to Online Deck, then shuffle.",
+      "sourceText": "Move top 10 Cards from Offline Pile to Online Deck, then shuffle.",
+      "kind": "support",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_move_top_3_cards_from_offline_pile_to_online_deck_and_shuffle",
+      "text": "Move top 3 Cards from Offline Pile to Online Deck and shuffle.",
+      "sourceText": "Move top 3 Cards from Offline Pile to Online Deck and shuffle.",
+      "kind": "support",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_nature_foe_x3",
+      "text": "Nature Foe x3",
+      "sourceText": "Nature Foe x3",
+      "kind": "cross",
+      "implementedEffectId": "attack.specialty_mult",
+      "implementedArgs": {
+        "specialty": "Nature",
+        "multiplier": 3
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_opponent_discards_2_cards_at_random_from_his_hand",
+      "text": "Opponent discards 2 Cards at random from his Hand.",
+      "sourceText": "Opponent discards 2 Cards at random from his Hand.",
+      "kind": "support",
+      "implementedEffectId": "support.discard_enemy_hand_random",
+      "implementedArgs": {
+        "value": 2
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_opponent_discards_2_cards_from_his_online_deck_and_1_card_from_hand",
+      "text": "Opponent discards 2 Cards from his Online Deck and 1 Card from Hand.",
+      "sourceText": "Opponent discards 2 Cards from his Online Deck and 1 Card from Hand.",
+      "kind": "unknown",
+      "status": "catalog_only"
+    },
+    {
+      "id": "fx_opponent_discards_4_top_cards_from_online_deck",
+      "text": "Opponent discards 4 top Cards from Online Deck.",
+      "sourceText": "Opponent discards 4 top Cards from Online Deck.",
+      "kind": "support",
+      "implementedEffectId": "support.discard_enemy_deck",
+      "implementedArgs": {
+        "value": 4
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_opponent_discards_his_hand_and_all_cards_in_his_dp_slot",
+      "text": "Opponent discards his Hand and all Cards in his DP Slot.",
+      "sourceText": "Opponent discards his Hand and all Cards in his DP Slot.",
+      "kind": "unknown",
+      "status": "catalog_only"
+    },
+    {
+      "id": "fx_opponent_uses_circle",
+      "text": "Opponent uses Circle.",
+      "sourceText": "Opponent uses {{button|c}}.",
+      "kind": "support",
+      "implementedEffectId": "support.change_attack",
+      "implementedArgs": {
+        "targetAttack": "circle"
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_opponent_uses_circle_lower_opponent_s_attack_power_100",
+      "text": "Opponent uses Circle. Lower opponent's Attack Power -100.",
+      "sourceText": "Opponent uses {{button|c}}. Lower opponent's Attack Power -100.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_opponent_uses_cross",
+      "text": "Opponent uses Cross.",
+      "sourceText": "Opponent uses {{button|x}}.",
+      "kind": "support",
+      "implementedEffectId": "support.change_attack",
+      "implementedArgs": {
+        "targetAttack": "cross"
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_opponent_uses_o",
+      "text": "Opponent uses O.",
+      "sourceText": "Opponent uses O.",
+      "kind": "support",
+      "implementedEffectId": "support.change_attack",
+      "implementedArgs": {
+        "targetAttack": "circle"
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_opponent_uses_triangle",
+      "text": "Opponent uses Triangle.",
+      "sourceText": "Opponent uses {{button|t}}.",
+      "kind": "support",
+      "implementedEffectId": "support.change_attack",
+      "implementedArgs": {
+        "targetAttack": "triangle"
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_opponent_s_attack_changes_from_circle_to_triangle_triangle_to_cross_or_cross_to_",
+      "text": "Opponent's attack changes from Circle to Triangle, Triangle to Cross, or Cross to Circle.",
+      "sourceText": "Opponent's attack changes from {{button|c}} to {{button|t}}, {{button|t}} to {{button|x}}, or {{button|x}} to {{button|c}}.",
+      "kind": "support",
+      "implementedEffectId": "support.rotate_enemy_attack",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_opponent_s_attack_power_become_300",
+      "text": "Opponent's Attack Power become 300.",
+      "sourceText": "Opponent's Attack Power become 300.",
+      "kind": "support",
+      "implementedEffectId": "support.enemy_atk_set",
+      "implementedArgs": {
+        "value": 300
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_opponent_s_attack_power_is_halved",
+      "text": "Opponent's Attack Power is halved.",
+      "sourceText": "Opponent's Attack Power is halved.",
+      "kind": "support",
+      "implementedEffectId": "support.enemy_atk_halve",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_opponent_s_circle_attack_power_goes_to_0_recover_own_hp_by_100",
+      "text": "Opponent's Circle Attack Power goes to 0. Recover own HP by +100.",
+      "sourceText": "Opponent's {{button|c}} Attack Power goes to 0. Recover own HP by +100.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_opponent_s_circle_attack_power_is_0",
+      "text": "Opponent's Circle Attack Power is 0.",
+      "sourceText": "Opponent's {{button|c}} Attack Power is 0.",
+      "kind": "support",
+      "implementedEffectId": "support.enemy_atk_zero",
+      "implementedArgs": {
+        "targetAttack": "circle"
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_opponent_s_cross_attack_power_goes_to_0_recover_own_hp_by_100",
+      "text": "Opponent's Cross Attack Power goes to 0. Recover own HP by +100.",
+      "sourceText": "Opponent's {{button|x}} Attack Power goes to 0. Recover own HP by +100.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_opponent_s_cross_attack_power_is_0",
+      "text": "Opponent's Cross Attack Power is 0.",
+      "sourceText": "Opponent's {{button|x}} Attack Power is 0.",
+      "kind": "support",
+      "implementedEffectId": "support.enemy_atk_zero",
+      "implementedArgs": {
+        "targetAttack": "cross"
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_opponent_s_hp_are_halved_opponent_s_attack_power_is_doubled",
+      "text": "Opponent's HP are halved. opponent's Attack Power is doubled.",
+      "sourceText": "Opponent's HP are halved. opponent's Attack Power is doubled.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_opponent_s_hp_become_same_as_own_own_attack_power_becomes_0",
+      "text": "Opponent's HP become same as own. Own Attack Power becomes 0.",
+      "sourceText": "Opponent's HP become same as own. Own Attack Power becomes 0.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_opponent_s_specialty_becomes_the_same_as_own_specialty",
+      "text": "Opponent's Specialty becomes the same as own Specialty.",
+      "sourceText": "Opponent's Specialty becomes the same as own Specialty.",
+      "kind": "support",
+      "implementedEffectId": "support.enemy_specialty_becomes_own",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_opponent_s_support_and_option_effects_are_voided",
+      "text": "Opponent's Support and Option Effects are voided.",
+      "sourceText": "Opponent's Support and Option Effects are voided.",
+      "kind": "support",
+      "implementedEffectId": "support.void_enemy_support",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_opponent_s_support_and_option_effects_are_voided_his_attack_power_is_0",
+      "text": "Opponent's Support and Option Effects are voided. His Attack Power is 0.",
+      "sourceText": "Opponent's Support and Option Effects are voided. His Attack Power is 0.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_opponent_s_support_effect_is_voided",
+      "text": "Opponent's Support Effect is voided.",
+      "sourceText": "Opponent's Support Effect is voided.",
+      "kind": "support",
+      "implementedEffectId": "support.void_enemy_support",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_opponent_s_support_effect_is_voided_own_attack_power_is_halved",
+      "text": "Opponent's Support Effect is voided. Own Attack Power is halved.",
+      "sourceText": "Opponent's Support Effect is voided. Own Attack Power is halved.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_opponent_s_triangle_attack_power_goes_to_0_recover_own_hp_by_100",
+      "text": "Opponent's Triangle Attack Power goes to 0. Recover own HP by +100.",
+      "sourceText": "Opponent's {{button|t}} Attack Power goes to 0. Recover own HP by +100.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_opponent_s_triangle_attack_power_is_0",
+      "text": "Opponent's Triangle Attack Power is 0.",
+      "sourceText": "Opponent's {{button|t}} Attack Power is 0.",
+      "kind": "support",
+      "implementedEffectId": "support.enemy_atk_zero",
+      "implementedArgs": {
+        "targetAttack": "triangle"
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_own_attack_becomes_eat_up_hp",
+      "text": "Own attack becomes \"Eat-up HP.\"",
+      "sourceText": "Own attack becomes \"Eat-up HP.\"",
+      "kind": "mixed",
+      "implementedEffectId": "support.grant_eat_up_hp",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_own_attack_becomes_eat_up_hp_own_attack_power_is_halved",
+      "text": "Own Attack becomes \"Eat-up HP.\" Own Attack Power is halved.",
+      "sourceText": "Own Attack becomes \"Eat-up HP.\" Own Attack Power is halved.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_own_attack_becomes_circle",
+      "text": "Own Attack becomes Circle.",
+      "sourceText": "Own Attack becomes {{button|c}}.",
+      "kind": "support",
+      "implementedEffectId": "support.force_self_attack",
+      "implementedArgs": {
+        "targetAttack": "circle"
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_own_attack_becomes_cross",
+      "text": "Own Attack becomes Cross.",
+      "sourceText": "Own Attack becomes {{button|x}}.",
+      "kind": "support",
+      "implementedEffectId": "support.force_self_attack",
+      "implementedArgs": {
+        "targetAttack": "cross"
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_own_attack_becomes_triangle",
+      "text": "Own Attack becomes Triangle.",
+      "sourceText": "Own Attack becomes {{button|t}}.",
+      "kind": "support",
+      "implementedEffectId": "support.force_self_attack",
+      "implementedArgs": {
+        "targetAttack": "triangle"
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_own_attack_power_becomes_0_opponent_s_hp_are_halved",
+      "text": "Own Attack Power becomes 0. Opponent's HP are halved.",
+      "sourceText": "Own Attack Power becomes 0. Opponent's HP are halved.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_own_attack_power_is_boosted_by_the_number_of_own_hp",
+      "text": "Own Attack Power is boosted by the number of own HP.",
+      "sourceText": "Own Attack Power is boosted by the number of own HP.",
+      "kind": "support",
+      "implementedEffectId": "support.atk_add_hp",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_own_attack_power_is_halved_recover_own_hp_by_500",
+      "text": "Own Attack Power is halved. Recover own HP by +500.",
+      "sourceText": "Own Attack Power is halved. Recover own HP by +500.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_own_attack_power_is_tripled",
+      "text": "Own Attack Power is tripled.",
+      "sourceText": "Own Attack Power is tripled.",
+      "kind": "support",
+      "implementedEffectId": "support.atk_mult",
+      "implementedArgs": {
+        "targetAttack": "all",
+        "value": 3
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_own_attack_power_matches_own_hp_then_own_hp_are_halved",
+      "text": "Own Attack Power matches own HP, then own HP are halved.",
+      "sourceText": "Own Attack Power matches own HP, then own HP are halved.",
+      "kind": "support",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_own_attack_power_hp_and_specialty_become_same_as_the_opponent_s",
+      "text": "Own Attack Power, HP, and Specialty become same as the opponent's.",
+      "sourceText": "Own Attack Power, HP, and Specialty become same as the opponent's.",
+      "kind": "support",
+      "implementedEffectId": "support.copy_opponent_stats",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_own_circle_attack_power_becomes_same_as_own_hp",
+      "text": "Own Circle Attack Power becomes same as own HP.",
+      "sourceText": "Own {{button|c}} Attack Power becomes same as own HP.",
+      "kind": "support",
+      "implementedEffectId": "support.atk_set_to_hp",
+      "implementedArgs": {
+        "targetAttack": "circle"
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_own_circle_attack_power_is_doubled",
+      "text": "Own Circle Attack Power is doubled.",
+      "sourceText": "Own {{button|c}} Attack Power is doubled.",
+      "kind": "support",
+      "implementedEffectId": "support.atk_mult",
+      "implementedArgs": {
+        "targetAttack": "circle",
+        "value": 2
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_own_cross_attack_power_is_doubled",
+      "text": "Own Cross Attack Power is doubled.",
+      "sourceText": "Own {{button|x}} Attack Power is doubled.",
+      "kind": "support",
+      "implementedEffectId": "support.atk_mult",
+      "implementedArgs": {
+        "targetAttack": "cross",
+        "value": 2
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_own_hp_are_halved_boost_own_attack_power_300",
+      "text": "Own HP are halved. Boost own Attack Power +300.",
+      "sourceText": "Own HP are halved. Boost own Attack Power +300.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_own_hp_are_halved_boost_own_attack_power_400",
+      "text": "Own HP are halved. Boost own Attack Power +400.",
+      "sourceText": "Own HP are halved. Boost own Attack Power +400.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_own_hp_are_halved_change_own_specialty_to_darkness",
+      "text": "Own HP are halved. Change own Specialty to Darkness.",
+      "sourceText": "Own HP are halved. Change own Specialty to Darkness.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_own_hp_are_halved_counterattack_attack_second",
+      "text": "Own HP are halved. Counterattack. Attack second.",
+      "sourceText": "Own HP are halved. Counterattack. Attack second.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_own_hp_are_halved_opponent_s_attack_power_becomes_0",
+      "text": "Own HP are halved. Opponent's Attack Power becomes 0.",
+      "sourceText": "Own HP are halved. Opponent's Attack Power becomes 0.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_own_hp_become_10_boost_own_attack_power_500",
+      "text": "Own HP become 10. Boost own Attack Power +500.",
+      "sourceText": "Own HP become 10. Boost own Attack Power +500.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_own_hp_become_10_changes_opponent_s_specialty_to_darkness",
+      "text": "Own HP become 10. Changes opponent's Specialty to Darkness.",
+      "sourceText": "Own HP become 10. Changes opponent's Specialty to Darkness.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_own_hp_become_10_own_attack_power_is_doubled",
+      "text": "Own HP become 10. Own Attack Power is doubled.",
+      "sourceText": "Own HP become 10. Own Attack Power is doubled.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_own_hp_become_700",
+      "text": "Own HP become 700.",
+      "sourceText": "Own HP become 700.",
+      "kind": "support",
+      "implementedEffectId": "support.hp_set",
+      "implementedArgs": {
+        "value": 700
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_own_hp_become_same_as_opponent_s",
+      "text": "Own HP become same as opponent's.",
+      "sourceText": "Own HP become same as opponent's.",
+      "kind": "support",
+      "implementedEffectId": "support.hp_copy_from_opponent",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_own_triangle_attack_power_is_doubled",
+      "text": "Own Triangle Attack Power is doubled.",
+      "sourceText": "Own {{button|t}} Attack Power is doubled.",
+      "kind": "support",
+      "implementedEffectId": "support.atk_mult",
+      "implementedArgs": {
+        "targetAttack": "triangle",
+        "value": 2
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_pick_partner_card_from_own_online_deck_at_random_and_put_in_own_hand",
+      "text": "Pick Partner Card from own Online Deck at random and put in own Hand.",
+      "sourceText": "Pick Partner Card from own Online Deck at random and put in own Hand.",
+      "kind": "unknown",
+      "status": "catalog_only"
+    },
+    {
+      "id": "fx_randomly_discard_1_card_from_own_hand_opponent_s_attack_power_is_0",
+      "text": "Randomly discard 1 Card from own Hand. Opponent's Attack Power is 0.",
+      "sourceText": "Randomly discard 1 Card from own Hand. Opponent's Attack Power is 0.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_rare_foe_x3",
+      "text": "Rare Foe x3",
+      "sourceText": "Rare Foe x3",
+      "kind": "cross",
+      "implementedEffectId": "attack.specialty_mult",
+      "implementedArgs": {
+        "specialty": "Rare",
+        "multiplier": 3
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_recover_own_hp_by_100",
+      "text": "Recover own HP by +100.",
+      "sourceText": "Recover own HP by +100.",
+      "kind": "support",
+      "implementedEffectId": "support.hp_heal",
+      "implementedArgs": {
+        "value": 100
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_recover_own_hp_by_100_boost_own_attack_power_by_100",
+      "text": "Recover own HP by +100. Boost own Attack Power by +100.",
+      "sourceText": "Recover own HP by +100. Boost own Attack Power by +100.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_recover_own_hp_by_100_boost_own_cross_attack_power_by_100",
+      "text": "Recover own HP by +100. Boost own Cross Attack Power by +100.",
+      "sourceText": "Recover own HP by +100. Boost own {{button|x}} Attack Power by +100.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_recover_own_hp_by_1000",
+      "text": "Recover own HP by +1000.",
+      "sourceText": "Recover own HP by +1000.",
+      "kind": "support",
+      "implementedEffectId": "support.hp_heal",
+      "implementedArgs": {
+        "value": 1000
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_recover_own_hp_by_200",
+      "text": "Recover own HP by +200.",
+      "sourceText": "Recover own HP by +200.",
+      "kind": "support",
+      "implementedEffectId": "support.hp_heal",
+      "implementedArgs": {
+        "value": 200
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_recover_own_hp_by_200_boost_own_attack_power_by_100",
+      "text": "Recover own HP by +200. Boost own Attack Power by +100.",
+      "sourceText": "Recover own HP by +200. Boost own Attack Power by +100.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_recover_own_hp_by_300",
+      "text": "Recover own HP by +300.",
+      "sourceText": "Recover own HP by +300.",
+      "kind": "support",
+      "implementedEffectId": "support.hp_heal",
+      "implementedArgs": {
+        "value": 300
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_recover_own_hp_by_500_recover_foe_s_hp_by_200",
+      "text": "Recover own HP by +500. Recover foe's HP by +200.",
+      "sourceText": "Recover own HP by +500. Recover foe's HP by +200.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_reduce_opponent_s_circle_attack_power_to_0",
+      "text": "Reduce opponent's Circle Attack Power to 0.",
+      "sourceText": "Reduce opponent's {{button|c}} Attack Power to 0.",
+      "kind": "support",
+      "implementedEffectId": "support.enemy_atk_zero",
+      "implementedArgs": {
+        "targetAttack": "circle"
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_reduce_opponent_s_cross_attack_power_to_0",
+      "text": "Reduce opponent's Cross Attack Power to 0.",
+      "sourceText": "Reduce opponent's {{button|x}} Attack Power to 0.",
+      "kind": "support",
+      "implementedEffectId": "support.enemy_atk_zero",
+      "implementedArgs": {
+        "targetAttack": "cross"
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_reduce_own_attack_power_by_100_recover_own_hp_by_200",
+      "text": "Reduce own Attack Power by -100. Recover own HP by +200.",
+      "sourceText": "Reduce own Attack Power by -100. Recover own HP by +200.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_return_all_cards_in_own_hand_to_online_deck_and_shuffle",
+      "text": "Return all Cards in own Hand to Online Deck and Shuffle.",
+      "sourceText": "Return all Cards in own Hand to Online Deck and Shuffle.",
+      "kind": "support",
+      "implementedEffectId": "support.return_hand_to_deck_shuffle",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_swap_own_specialty_with_opponent_s_specialty",
+      "text": "Swap own Specialty with opponent's Specialty.",
+      "sourceText": "Swap own Specialty with opponent's Specialty.",
+      "kind": "support",
+      "implementedEffectId": "support.swap_specialty",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_triangle_counter",
+      "text": "Triangle Counter",
+      "sourceText": "{{button|t}} Counter",
+      "kind": "cross",
+      "implementedEffectId": "cross.counter",
+      "implementedArgs": {
+        "targetAttack": "triangle",
+        "multiplier": 2
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_triangle_counterattack_attack_second",
+      "text": "Triangle Counterattack. Attack second.",
+      "sourceText": "{{button|t}} Counterattack. Attack second.",
+      "kind": "mixed",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    },
+    {
+      "id": "fx_triangle_to_0",
+      "text": "Triangle to 0",
+      "sourceText": "{{button|t}} to 0",
+      "kind": "cross",
+      "implementedEffectId": "cross.to_zero",
+      "implementedArgs": {
+        "targetAttack": "triangle"
+      },
+      "status": "implemented"
+    },
+    {
+      "id": "fx_use_circle_and_boost_own_circle_attack_power_400",
+      "text": "Use Circle and Boost own Circle Attack Power +400.",
+      "sourceText": "Use {{button|c}} and Boost own {{button|c}} Attack Power +400.",
+      "kind": "support",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
+    }
+  ]
+}

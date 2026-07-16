@@ -56,6 +56,14 @@ export interface EvolutionModifiers {
     armorCrush: boolean;
     /** De-Armor Digivolve: Armor → Rookie. */
     deArmor: boolean;
+    /** Mutant Digivolve: onto a same-Level Digimon. */
+    sameLevel: boolean;
+    /** Download Digivolve: any level path allowed. */
+    ignoreLevel: boolean;
+    /** Skip the specialty gate (Mutant / Download). */
+    ignoreSpecialty: boolean;
+    /** Skip the DP cost gate (Download). */
+    ignoreDp: boolean;
 }
 
 const EMPTY_MODIFIERS: EvolutionModifiers = {
@@ -64,6 +72,10 @@ const EMPTY_MODIFIERS: EvolutionModifiers = {
     restoreFullStats: false,
     armorCrush: false,
     deArmor: false,
+    sameLevel: false,
+    ignoreLevel: false,
+    ignoreSpecialty: false,
+    ignoreDp: false,
 };
 
 export function parseEvolutionModifiers(card: OptionCardLike | null | undefined): EvolutionModifiers {
@@ -99,6 +111,19 @@ export function parseEvolutionModifiers(card: OptionCardLike | null | undefined)
                 ...EMPTY_MODIFIERS,
                 deArmor: true,
             };
+        case "evolution_option.mutant":
+            return {
+                ...EMPTY_MODIFIERS,
+                sameLevel: true,
+                ignoreSpecialty: true,
+            };
+        case "evolution_option.download":
+            return {
+                ...EMPTY_MODIFIERS,
+                ignoreLevel: true,
+                ignoreSpecialty: true,
+                ignoreDp: true,
+            };
         default:
             return { ...EMPTY_MODIFIERS };
     }
@@ -111,6 +136,10 @@ export function mergeEvolutionModifiers(a: EvolutionModifiers, b: EvolutionModif
         restoreFullStats: a.restoreFullStats || b.restoreFullStats,
         armorCrush: a.armorCrush || b.armorCrush,
         deArmor: a.deArmor || b.deArmor,
+        sameLevel: a.sameLevel || b.sameLevel,
+        ignoreLevel: a.ignoreLevel || b.ignoreLevel,
+        ignoreSpecialty: a.ignoreSpecialty || b.ignoreSpecialty,
+        ignoreDp: a.ignoreDp || b.ignoreDp,
     };
 }
 
@@ -125,6 +154,10 @@ export function canEvolveWithOption(
         warpSkipLevels: modifiers.warpSkipLevels,
         armorCrush: modifiers.armorCrush,
         deArmor: modifiers.deArmor,
+        sameLevel: modifiers.sameLevel,
+        ignoreLevel: modifiers.ignoreLevel,
+        ignoreSpecialty: modifiers.ignoreSpecialty,
+        ignoreDp: modifiers.ignoreDp,
     }).ok;
 }
 

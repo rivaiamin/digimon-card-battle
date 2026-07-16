@@ -17,6 +17,10 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+    inferCompoundSupportEffect,
+    parseAttackEffectFromDescription,
+} from "../src/lib/effectTextNormalize";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -258,7 +262,15 @@ function mapCrossEffect(
         return { effectId: "cross.eat_up_hp", effectArgs: {}, label: "Eat-Up HP" };
     }
 
-    // Foe x3 / Jamming / 1st Attack — catalog text only until effect engine covers them.
+    // Foe x3 / Jamming / 1st Attack (FC-027) via the shared attack normalizer.
+    const attackFx = parseAttackEffectFromDescription(e);
+    if (attackFx) {
+        return {
+            effectId: attackFx.effectId,
+            effectArgs: attackFx.effectArgs as Record<string, string | number>,
+            label: e,
+        };
+    }
     return { label: e };
 }
 
@@ -360,6 +372,18 @@ function mapSupportEffect(support: string, speed: number): SupportOut | null {
         };
     }
 
+    // Delegate everything else to the shared normalizer (FC-027): concrete
+    // primitive, `conditional`, or `compose`. Full text is kept for runtime re-parse.
+    const inferred = inferCompoundSupportEffect(text);
+    if (inferred) {
+        return {
+            ...base,
+            type: inferred.type,
+            ...(inferred.targetAttack ? { targetAttack: inferred.targetAttack } : {}),
+            value: inferred.value ?? 0,
+        };
+    }
+
     return { ...base, type: "catalog_text" };
 }
 
@@ -429,6 +453,22 @@ function mapEvolutionOption(
     effect: string
 ): { effectId?: string; effectArgs?: Record<string, number> } {
     const n = name.toLowerCase();
+    if (n.includes("mutant")) {
+        // "Can digivolve Digimon at same Level. (Ignore Specialty)"
+        return { effectId: "evolution_option.mutant" };
+    }
+    if (n.includes("download")) {
+        // "Can digivolve regardless of own Specialty, Level, or Digivolve Pts."
+        return { effectId: "evolution_option.download" };
+    }
+    if (n.includes("armorcrush") || n.includes("armor crush")) {
+        // "Digivolve a Level A Digimon to C or U." → Armor → Champion/Ultimate.
+        return { effectId: "evolution_option.armor_crush" };
+    }
+    if (n.includes("de-armor") || n.includes("de armor")) {
+        // "Downgrade a Level A Digimon to Level R." → Armor → Rookie.
+        return { effectId: "evolution_option.de_armor" };
+    }
     if (n.includes("warp")) {
         return { effectId: "evolution_option.warp_evolve", effectArgs: { skipLevels: 1 } };
     }

@@ -6,50 +6,158 @@
 
 import type { CardSchema, PlayerSchema, SupportEffectSchema } from "../schema/BattleState";
 import { sortEffectsByConflictPolicy } from "./effectConflictResolver";
-import { inferSupportEffectFromDescription, splitEffectClauses } from "./effectTextNormalize";
+import {
+    inferConditionalEffect,
+    inferSupportEffectFromDescription,
+    splitComposeClauses,
+    splitConsequentClauses,
+} from "./effectTextNormalize";
+import {
+    evaluateCondition,
+    parseCondition,
+    splitConditional,
+    type ConditionContext,
+    type ConditionSubject,
+} from "./effectCondition";
 
 export type AttackType = "circle" | "triangle" | "cross";
 
 export type SupportEffectType =
     | "void_enemy_support"
     | "first_strike"
+    | "attack_second"
+    | "grant_counter"
     | "change_attack"
     | "both_change_attack"
+    | "force_self_attack"
+    | "rotate_enemy_attack"
     | "atk_mult"
+    | "atk_set"
+    | "atk_set_to_hp"
+    | "atk_add_hp"
+    | "enemy_atk_zero"
+    | "enemy_atk_set"
+    | "enemy_atk_lower"
+    | "enemy_atk_halve"
+    | "enemy_atk_mult"
     | "halve_hp"
     | "self_halve_hp"
     | "both_halve_hp"
+    | "hp_set"
+    | "enemy_hp_set"
+    | "hp_double"
+    | "enemy_hp_double"
+    | "hp_swap"
+    | "hp_copy_from_opponent"
+    | "enemy_hp_copy_from_own"
     | "atk_buff"
     | "both_atk_buff"
     | "both_atk_zero"
     | "hp_heal"
     | "change_own_specialty"
+    | "enemy_hp_heal"
+    | "change_enemy_specialty"
+    | "both_change_specialty"
+    | "swap_specialty"
+    | "enemy_specialty_becomes_own"
+    | "copy_opponent_stats"
     | "hand_x_atk"
+    | "atk_add_dp_count"
+    | "hp_add_dp_count"
+    | "discard_own_dp"
+    | "discard_enemy_dp"
+    | "atk_mult_by_dp_discards"
+    | "hp_add_dp_discards"
+    | "discard_both_dp_equal"
+    | "discard_own_hand"
+    | "discard_own_hand_random"
+    | "discard_enemy_hand"
+    | "discard_enemy_hand_random"
+    | "discard_own_deck"
+    | "discard_enemy_deck"
+    | "discard_both_deck"
+    | "discard_both_hands"
+    | "return_hand_to_deck_shuffle"
+    | "offline_to_online"
+    | "mult_by_hand_discards"
+    | "draw_until"
+    | "both_hp_set"
+    | "shuffle_deck"
+    | "revive"
     | "grant_eat_up_hp"
     | "zero_attacks"
     | "draw_cards"
+    | "conditional"
     | "compose";
 
 /** Spec §2.B — lower runs first within the battle support stack. */
 export const SUPPORT_PRIORITY: Record<SupportEffectType, number> = {
     void_enemy_support: 1,
     first_strike: 1,
+    attack_second: 1,
+    grant_counter: 1,
     change_attack: 2,
     both_change_attack: 2,
+    force_self_attack: 2,
+    rotate_enemy_attack: 2,
     change_own_specialty: 2,
+    change_enemy_specialty: 2,
+    both_change_specialty: 2,
+    swap_specialty: 2,
+    enemy_specialty_becomes_own: 2,
     atk_mult: 3,
+    atk_set: 3,
+    enemy_atk_zero: 3,
+    enemy_atk_set: 3,
+    enemy_atk_halve: 3,
+    enemy_atk_mult: 3,
     zero_attacks: 3,
     both_atk_zero: 3,
     halve_hp: 3,
     self_halve_hp: 3,
     both_halve_hp: 3,
+    hp_set: 3,
+    enemy_hp_set: 3,
+    hp_double: 3,
+    enemy_hp_double: 3,
+    hp_swap: 3,
+    hp_copy_from_opponent: 3,
+    enemy_hp_copy_from_own: 3,
     atk_buff: 4,
     both_atk_buff: 4,
+    enemy_atk_lower: 4,
+    atk_add_hp: 4,
+    atk_set_to_hp: 4,
     hand_x_atk: 4,
     grant_eat_up_hp: 4,
+    copy_opponent_stats: 4,
+    atk_add_dp_count: 4,
+    hp_add_dp_count: 4,
+    discard_own_dp: 3,
+    discard_enemy_dp: 3,
+    atk_mult_by_dp_discards: 3,
+    discard_both_dp_equal: 3,
+    discard_own_hand: 4,
+    discard_own_hand_random: 4,
+    discard_enemy_hand: 4,
+    discard_enemy_hand_random: 4,
+    discard_own_deck: 4,
+    discard_enemy_deck: 4,
+    discard_both_deck: 4,
+    discard_both_hands: 4,
+    return_hand_to_deck_shuffle: 4,
+    offline_to_online: 4,
+    mult_by_hand_discards: 3,
+    both_hp_set: 3,
+    shuffle_deck: 4,
+    revive: 5,
+    compose: 4,
+    conditional: 4,
     draw_cards: 5,
     hp_heal: 5,
-    compose: 4,
+    enemy_hp_heal: 5,
+    hp_add_dp_discards: 5,
+    draw_until: 5,
 };
 
 export type SupportEffectInput = {
@@ -64,23 +172,37 @@ export type SupportEffectInput = {
 
 export type AttackBonuses = { circle: number; triangle: number; cross: number };
 export type AttackMultipliers = { circle: number; triangle: number; cross: number };
+/** Hard-set final attack power per slot; null = no override for that slot (FC-027). */
+export type AttackOverride = { circle: number | null; triangle: number | null; cross: number | null };
 
 export interface SupportBattleContext {
     attackBonus: Map<string, AttackBonuses>;
     attackMultiplier: Map<string, AttackMultipliers>;
+    /** Absolute attack-power set ("becomes 300", "= own HP"); wins over bonus/mult. */
+    attackOverride: Map<string, AttackOverride>;
     firstStrikePlayers: Set<string>;
+    /** Support-forced "attack second" (mirror of first strike, FC-027). */
+    attackSecondPlayers: Set<string>;
     forcedAttack: Map<string, AttackType>;
     /** Support-granted Eat-up HP for the rest of this exchange (FC-027). */
     eatUpHpPlayers: Set<string>;
+    /** Support-granted counterattack: reflect+nullify a matching incoming attack (FC-027). */
+    counterGrants: Map<string, { targetAttack: string; multiplier: number }>;
+    /** On-KO revive HP: the active survives at this HP but the battle is still lost (FC-027). */
+    reviveHp: Map<string, number>;
 }
 
 export function createSupportBattleContext(): SupportBattleContext {
     return {
         attackBonus: new Map(),
         attackMultiplier: new Map(),
+        attackOverride: new Map(),
         firstStrikePlayers: new Set(),
+        attackSecondPlayers: new Set(),
         forcedAttack: new Map(),
         eatUpHpPlayers: new Set(),
+        counterGrants: new Map(),
+        reviveHp: new Map(),
     };
 }
 
@@ -99,6 +221,77 @@ function getBonuses(ctx: SupportBattleContext, sessionId: string): AttackBonuses
 function getMultipliers(ctx: SupportBattleContext, sessionId: string): AttackMultipliers {
     return ctx.attackMultiplier.get(sessionId) ?? emptyMultipliers();
 }
+
+function emptyOverride(): AttackOverride {
+    return { circle: null, triangle: null, cross: null };
+}
+
+function getOverride(ctx: SupportBattleContext, sessionId: string): AttackOverride {
+    return ctx.attackOverride?.get(sessionId) ?? emptyOverride();
+}
+
+function setAttackOverride(
+    ctx: SupportBattleContext,
+    sessionId: string,
+    targetAttack: string,
+    value: number
+) {
+    if (!ctx.attackOverride) ctx.attackOverride = new Map();
+    const ov = getOverride(ctx, sessionId);
+    const v = Math.max(0, value);
+    if (targetAttack === "all" || !targetAttack) {
+        ov.circle = v;
+        ov.triangle = v;
+        ov.cross = v;
+    } else if (targetAttack === "circle" || targetAttack === "triangle" || targetAttack === "cross") {
+        ov[targetAttack] = v;
+    }
+    ctx.attackOverride.set(sessionId, ov);
+}
+
+/**
+ * Runtime facts a conditional / dynamic support effect needs beyond the two
+ * PlayerSchemas: the effective attacks and a source-relative condition context.
+ * Absent in the legacy simultaneous profile (attacks not yet chosen).
+ */
+export interface EffectRuntime {
+    condition: ConditionContext;
+    selfAttack: AttackType | null;
+    opponentAttack: AttackType | null;
+}
+
+function conditionSubject(player: PlayerSchema, attack: AttackType | null): ConditionSubject {
+    return {
+        attack,
+        hp: player.hp,
+        level: player.active?.level ?? "",
+        specialty: player.active?.type ?? "",
+        handCount: player.hand.length,
+        dpSlotCount: player.dpSlot?.length ?? 0,
+    };
+}
+
+function buildEffectRuntime(
+    source: PlayerSchema,
+    target: PlayerSchema,
+    sourceAttack: AttackType | null,
+    targetAttack: AttackType | null
+): EffectRuntime {
+    return {
+        condition: {
+            self: conditionSubject(source, sourceAttack),
+            opponent: conditionSubject(target, targetAttack),
+        },
+        selfAttack: sourceAttack,
+        opponentAttack: targetAttack,
+    };
+}
+
+const ATTACK_ROTATION: Record<AttackType, AttackType> = {
+    circle: "triangle",
+    triangle: "cross",
+    cross: "circle",
+};
 
 function effectPriority(effect: SupportEffectSchema | SupportEffectInput): number {
     const custom = Number((effect as SupportEffectInput).priority ?? 0);
@@ -298,35 +491,145 @@ function applyZeroAttacks(ctx: SupportBattleContext, sessionId: string, targetsC
     ctx.attackMultiplier.set(sessionId, mult);
 }
 
+/** Build a schema-shaped effect from an inferred clause for recursive application. */
+function inferredToEffect(step: {
+    type: string;
+    targetAttack?: string;
+    value?: number;
+    description?: string;
+}): SupportEffectSchema {
+    return {
+        type: step.type,
+        targetAttack: step.targetAttack ?? "",
+        value: step.value ?? 0,
+        description: step.description ?? "",
+        requireType: "",
+        requireOpponentType: "",
+        priority: 0,
+    } as unknown as SupportEffectSchema;
+}
+
+function pickIndex(rng: (() => number) | undefined, len: number): number {
+    if (len <= 0) return -1;
+    const r = rng ? rng() : 0;
+    return Math.min(len - 1, Math.max(0, Math.floor(r * len)));
+}
+
+/** Discard from a player's hand into trash. count<=0 discards the whole hand. */
+function discardFromHand(
+    player: PlayerSchema,
+    count: number,
+    random: boolean,
+    rng?: () => number
+): number {
+    const hand = player.hand;
+    if (!hand) return 0;
+    const n = count <= 0 ? hand.length : Math.min(count, hand.length);
+    let done = 0;
+    for (let i = 0; i < n; i++) {
+        const idx = random ? pickIndex(rng, hand.length) : 0;
+        if (idx < 0) break;
+        const card = hand.splice(idx, 1)[0];
+        if (card) player.trash?.push(card);
+        done++;
+    }
+    return done;
+}
+
+/** Discard top cards from a player's Online Deck into trash. count<=0 = all. */
+function discardFromDeck(player: PlayerSchema, count: number): number {
+    const deck = player.deck;
+    if (!deck) return 0;
+    const n = count <= 0 ? deck.length : Math.min(count, deck.length);
+    for (let i = 0; i < n; i++) {
+        const card = deck.shift();
+        if (card) player.trash?.push(card);
+    }
+    return n;
+}
+
+function shuffleDeck(player: PlayerSchema, rng?: () => number): void {
+    const deck = player.deck;
+    if (!deck || deck.length < 2) return;
+    const cards = deck.splice(0, deck.length);
+    for (let i = cards.length - 1; i > 0; i--) {
+        const j = Math.floor((rng ? rng() : 0) * (i + 1));
+        const tmp = cards[i]!;
+        cards[i] = cards[j]!;
+        cards[j] = tmp;
+    }
+    for (const c of cards) deck.push(c);
+}
+
+/** Move all of a player's hand back into the Online Deck, then shuffle it. */
+function returnHandToDeck(player: PlayerSchema, rng?: () => number): void {
+    const hand = player.hand;
+    if (!hand) return;
+    while (hand.length > 0) {
+        const card = hand.shift();
+        if (card) player.deck?.push(card);
+    }
+    shuffleDeck(player, rng);
+}
+
+/** Move up to `count` cards from a player's DP Slot to trash, reducing their DP gauge. */
+function discardDpCards(player: PlayerSchema, count: number): number {
+    const slot = player.dpSlot;
+    if (!slot) return 0;
+    const n = Math.min(Math.max(0, count), slot.length);
+    let removedDp = 0;
+    for (let i = 0; i < n; i++) {
+        const card = slot.shift();
+        if (!card) break;
+        removedDp += Number((card as { plusDp?: number }).plusDp ?? 0);
+        player.trash?.push(card);
+    }
+    player.dp = Math.max(0, player.dp - removedDp);
+    return n;
+}
+
+function multiplyAttack(ctx: SupportBattleContext, sessionId: string, factor: number, target: string) {
+    const mult = getMultipliers(ctx, sessionId);
+    if (target === "all" || !target) {
+        mult.circle *= factor;
+        mult.triangle *= factor;
+        mult.cross *= factor;
+    } else if (target === "circle" || target === "triangle" || target === "cross") {
+        mult[target] *= factor;
+    }
+    ctx.attackMultiplier.set(sessionId, mult);
+}
+
 function applySingleEffect(
     source: PlayerSchema,
     target: PlayerSchema,
     effect: SupportEffectSchema,
     ctx: SupportBattleContext,
-    hooks?: ResolveSupportHooks
+    hooks?: ResolveSupportHooks,
+    runtime?: EffectRuntime
 ): void {
     const type = String(effect.type ?? "");
 
     if (type === "compose") {
-        const clauses = splitEffectClauses(String(effect.description ?? ""));
+        const clauses = splitComposeClauses(String(effect.description ?? ""));
         for (const clause of clauses) {
+            const step = inferSupportEffectFromDescription(clause) ?? inferConditionalEffect(clause);
+            if (!step) continue;
+            applySingleEffect(source, target, inferredToEffect(step), ctx, hooks, runtime);
+        }
+        return;
+    }
+
+    if (type === "conditional") {
+        if (!runtime) return;
+        const split = splitConditional(String(effect.description ?? ""));
+        if (!split) return;
+        const cond = parseCondition(split.head);
+        if (!cond || !evaluateCondition(cond, runtime.condition)) return;
+        for (const clause of splitConsequentClauses(split.consequent)) {
             const step = inferSupportEffectFromDescription(clause);
             if (!step) continue;
-            applySingleEffect(
-                source,
-                target,
-                {
-                    type: step.type,
-                    targetAttack: step.targetAttack ?? "",
-                    value: step.value ?? 0,
-                    description: step.description,
-                    requireType: "",
-                    requireOpponentType: "",
-                    priority: 0,
-                } as SupportEffectSchema,
-                ctx,
-                hooks
-            );
+            applySingleEffect(source, target, inferredToEffect(step), ctx, hooks, runtime);
         }
         return;
     }
@@ -338,6 +641,15 @@ function applySingleEffect(
         case "first_strike":
             ctx.firstStrikePlayers.add(source.sessionId);
             break;
+        case "attack_second":
+            ctx.attackSecondPlayers.add(source.sessionId);
+            break;
+        case "grant_counter": {
+            const targetAttack = String(effect.targetAttack || "all");
+            const multiplier = effect.value > 0 ? effect.value : 2;
+            ctx.counterGrants.set(source.sessionId, { targetAttack, multiplier });
+            break;
+        }
         case "change_attack": {
             const forced = effect.targetAttack as AttackType;
             if (forced === "circle" || forced === "triangle" || forced === "cross") {
@@ -353,20 +665,49 @@ function applySingleEffect(
             }
             break;
         }
-        case "atk_mult": {
-            const mult = getMultipliers(ctx, source.sessionId);
-            const factor = effect.value > 0 ? effect.value : 2;
-            const t = effect.targetAttack;
-            if (t === "all" || !t) {
-                mult.circle *= factor;
-                mult.triangle *= factor;
-                mult.cross *= factor;
-            } else if (t === "circle" || t === "triangle" || t === "cross") {
-                mult[t] *= factor;
+        case "force_self_attack": {
+            const forced = effect.targetAttack as AttackType;
+            if (forced === "circle" || forced === "triangle" || forced === "cross") {
+                ctx.forcedAttack.set(source.sessionId, forced);
             }
-            ctx.attackMultiplier.set(source.sessionId, mult);
             break;
         }
+        case "rotate_enemy_attack": {
+            const current = runtime?.opponentAttack;
+            if (current) ctx.forcedAttack.set(target.sessionId, ATTACK_ROTATION[current]);
+            break;
+        }
+        case "atk_mult": {
+            const factor = effect.value > 0 ? effect.value : 2;
+            multiplyAttack(ctx, source.sessionId, factor, effect.targetAttack || "all");
+            break;
+        }
+        case "enemy_atk_mult": {
+            const factor = effect.value > 0 ? effect.value : 2;
+            multiplyAttack(ctx, target.sessionId, factor, effect.targetAttack || "all");
+            break;
+        }
+        case "enemy_atk_halve":
+            multiplyAttack(ctx, target.sessionId, 0.5, effect.targetAttack || "all");
+            break;
+        case "atk_set":
+            setAttackOverride(ctx, source.sessionId, effect.targetAttack || "all", effect.value ?? 0);
+            break;
+        case "enemy_atk_set":
+            setAttackOverride(ctx, target.sessionId, effect.targetAttack || "all", effect.value ?? 0);
+            break;
+        case "atk_set_to_hp":
+            setAttackOverride(ctx, source.sessionId, effect.targetAttack || "all", source.hp);
+            break;
+        case "atk_add_hp":
+            applyAtkBuff(ctx, source.sessionId, source.hp, "all");
+            break;
+        case "enemy_atk_lower":
+            applyAtkBuff(ctx, target.sessionId, -Math.abs(effect.value ?? 0), effect.targetAttack || "all");
+            break;
+        case "enemy_atk_zero":
+            applyZeroAttacks(ctx, target.sessionId, String(effect.targetAttack || "all"));
+            break;
         case "zero_attacks":
             applyZeroAttacks(ctx, source.sessionId, String(effect.targetAttack || "all"));
             break;
@@ -384,6 +725,30 @@ function applySingleEffect(
             source.hp = Math.floor(source.hp / 2);
             target.hp = Math.floor(target.hp / 2);
             break;
+        case "hp_set":
+            source.hp = Math.max(0, effect.value ?? 0);
+            break;
+        case "enemy_hp_set":
+            target.hp = Math.max(0, effect.value ?? 0);
+            break;
+        case "hp_double":
+            source.hp = Math.max(0, source.hp * 2);
+            break;
+        case "enemy_hp_double":
+            target.hp = Math.max(0, target.hp * 2);
+            break;
+        case "hp_swap": {
+            const tmp = source.hp;
+            source.hp = target.hp;
+            target.hp = tmp;
+            break;
+        }
+        case "hp_copy_from_opponent":
+            source.hp = target.hp;
+            break;
+        case "enemy_hp_copy_from_own":
+            target.hp = source.hp;
+            break;
         case "atk_buff":
             applyAtkBuff(ctx, source.sessionId, effect.value ?? 0, effect.targetAttack || "all");
             break;
@@ -396,9 +761,112 @@ function applySingleEffect(
             applyAtkBuff(ctx, source.sessionId, source.hand.length * per, "all");
             break;
         }
+        case "atk_add_dp_count": {
+            const per = effect.value > 0 ? effect.value : 100;
+            applyAtkBuff(ctx, source.sessionId, (source.dpSlot?.length ?? 0) * per, "all");
+            break;
+        }
+        case "hp_add_dp_count": {
+            const per = effect.value > 0 ? effect.value : 100;
+            const max = source.active?.maxHp ?? source.hp;
+            source.hp = Math.min(max, source.hp + (source.dpSlot?.length ?? 0) * per);
+            break;
+        }
+        case "discard_own_dp":
+            discardDpCards(source, effect.value > 0 ? effect.value : (source.dpSlot?.length ?? 0));
+            break;
+        case "discard_enemy_dp":
+            discardDpCards(target, effect.value > 0 ? effect.value : (target.dpSlot?.length ?? 0));
+            break;
+        case "atk_mult_by_dp_discards": {
+            const discarded = discardDpCards(source, source.dpSlot?.length ?? 0);
+            multiplyAttack(ctx, source.sessionId, Math.max(0, discarded), effect.targetAttack || "all");
+            break;
+        }
+        case "hp_add_dp_discards": {
+            const per = effect.value > 0 ? effect.value : 100;
+            const discarded = discardDpCards(source, source.dpSlot?.length ?? 0);
+            const max = source.active?.maxHp ?? source.hp;
+            source.hp = Math.min(max, source.hp + discarded * per);
+            break;
+        }
+        case "discard_both_dp_equal": {
+            const discarded = discardDpCards(source, source.dpSlot?.length ?? 0);
+            discardDpCards(target, discarded);
+            break;
+        }
+        case "discard_own_hand":
+            discardFromHand(source, effect.value ?? 0, false, hooks?.rng);
+            break;
+        case "discard_own_hand_random":
+            discardFromHand(source, effect.value > 0 ? effect.value : 1, true, hooks?.rng);
+            break;
+        case "discard_enemy_hand":
+            discardFromHand(target, effect.value ?? 0, false, hooks?.rng);
+            break;
+        case "discard_enemy_hand_random":
+            discardFromHand(target, effect.value > 0 ? effect.value : 1, true, hooks?.rng);
+            break;
+        case "discard_both_hands":
+            discardFromHand(source, 0, false);
+            discardFromHand(target, 0, false);
+            break;
+        case "discard_own_deck":
+            discardFromDeck(source, effect.value > 0 ? effect.value : 0);
+            break;
+        case "discard_enemy_deck":
+            discardFromDeck(target, effect.value > 0 ? effect.value : 0);
+            break;
+        case "discard_both_deck": {
+            const n = effect.value > 0 ? effect.value : 0;
+            discardFromDeck(source, n);
+            discardFromDeck(target, n);
+            break;
+        }
+        case "return_hand_to_deck_shuffle":
+            returnHandToDeck(source, hooks?.rng);
+            break;
+        case "offline_to_online": {
+            const n = effect.value > 0 ? effect.value : 1;
+            for (let i = 0; i < n; i++) {
+                const card = source.trash?.shift();
+                if (!card) break;
+                source.deck?.push(card);
+            }
+            break;
+        }
+        case "shuffle_deck":
+            shuffleDeck(source, hooks?.rng);
+            break;
+        case "mult_by_hand_discards": {
+            const count = source.hand?.length ?? 0;
+            discardFromHand(source, 0, false);
+            multiplyAttack(ctx, source.sessionId, Math.max(0, count), effect.targetAttack || "all");
+            break;
+        }
+        case "draw_until": {
+            const target2 = Math.max(0, effect.value ?? 0);
+            while ((source.hand?.length ?? 0) < target2 && (source.deck?.length ?? 0) > 0) {
+                const card = source.deck!.shift();
+                if (!card) break;
+                source.hand!.push(card);
+            }
+            break;
+        }
+        case "both_hp_set": {
+            const v = Math.max(0, effect.value ?? 0);
+            source.hp = v;
+            target.hp = v;
+            break;
+        }
         case "hp_heal": {
             const max = source.active?.maxHp ?? source.hp;
             source.hp = Math.min(max, source.hp + (effect.value ?? 0));
+            break;
+        }
+        case "enemy_hp_heal": {
+            const max = target.active?.maxHp ?? target.hp;
+            target.hp = Math.min(max, target.hp + (effect.value ?? 0));
             break;
         }
         case "change_own_specialty": {
@@ -408,8 +876,48 @@ function applySingleEffect(
             }
             break;
         }
+        case "change_enemy_specialty": {
+            if (target.active) {
+                const specialty = String(effect.targetAttack || "").trim();
+                if (specialty) target.active.type = specialty;
+            }
+            break;
+        }
+        case "both_change_specialty": {
+            const specialty = String(effect.targetAttack || "").trim();
+            if (specialty) {
+                if (source.active) source.active.type = specialty;
+                if (target.active) target.active.type = specialty;
+            }
+            break;
+        }
+        case "swap_specialty": {
+            if (source.active && target.active) {
+                const tmp = source.active.type;
+                source.active.type = target.active.type;
+                target.active.type = tmp;
+            }
+            break;
+        }
+        case "enemy_specialty_becomes_own": {
+            if (source.active && target.active) target.active.type = source.active.type;
+            break;
+        }
+        case "copy_opponent_stats": {
+            if (source.active && target.active) {
+                setAttackOverride(ctx, source.sessionId, "circle", target.active.circle.damage);
+                setAttackOverride(ctx, source.sessionId, "triangle", target.active.triangle.damage);
+                setAttackOverride(ctx, source.sessionId, "cross", target.active.cross.damage);
+                source.hp = target.hp;
+                source.active.type = target.active.type;
+            }
+            break;
+        }
         case "grant_eat_up_hp":
             ctx.eatUpHpPlayers.add(source.sessionId);
+            break;
+        case "revive":
+            if ((effect.value ?? 0) > 0) ctx.reviveHp.set(source.sessionId, effect.value);
             break;
         case "draw_cards":
             hooks?.drawCards?.(source, Math.max(0, effect.value ?? 0));
@@ -431,6 +939,8 @@ export type ResolveSupportHooks = {
     ) => void;
     /** Draw N cards from online deck into hand (FC-027 draw_cards). */
     drawCards?: (source: PlayerSchema, count: number) => void;
+    /** Deterministic RNG for random discards / shuffles (seeded for replay). */
+    rng?: () => number;
 };
 
 /**
@@ -517,8 +1027,23 @@ export function resolveSupportPhase(
         sessionOrder
     );
 
+    const attackOf = (p: PlayerSchema): AttackType | null => {
+        const forced = ctx.forcedAttack.get(p.sessionId);
+        if (forced) return forced;
+        if (!lockedAttacks) return null;
+        if (p.sessionId === active.sessionId) return lockedAttacks.activeAttack ?? null;
+        if (p.sessionId === defender.sessionId) return lockedAttacks.defenderAttack ?? null;
+        return null;
+    };
+
     for (const { effect: entry } of ordered) {
-        applySingleEffect(entry.source, entry.target, entry.effect, ctx, hooks);
+        const runtime = buildEffectRuntime(
+            entry.source,
+            entry.target,
+            attackOf(entry.source),
+            attackOf(entry.target)
+        );
+        applySingleEffect(entry.source, entry.target, entry.effect, ctx, hooks, runtime);
     }
 
     return nullify;
@@ -567,7 +1092,12 @@ export function getAttackDamageBreakdown(
         attack === "circle" ? bonus.circle : attack === "triangle" ? bonus.triangle : bonus.cross;
     const m =
         attack === "circle" ? mult.circle : attack === "triangle" ? mult.triangle : mult.cross;
-    const totalDamage = Math.floor((cardBase + bonusAdd) * m);
+    const override = getOverride(ctx, player.sessionId);
+    const overrideValue =
+        attack === "circle" ? override.circle : attack === "triangle" ? override.triangle : override.cross;
+    // Absolute set ("becomes 0/300", "= own HP") wins over additive/multiplicative mods.
+    const totalDamage =
+        overrideValue != null ? Math.max(0, overrideValue) : Math.floor((cardBase + bonusAdd) * m);
     return {
         baseDamage: cardBase,
         bonusDamage: totalDamage - cardBase,

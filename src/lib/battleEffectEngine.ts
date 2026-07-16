@@ -190,6 +190,34 @@ function applyCrossEffects(
         }
     }
 
+    // Support-granted counterattack (FC-027): reflect+nullify a matching incoming attack.
+    const attackerGrant = supportCtx.counterGrants?.get(attacker.sessionId);
+    if (
+        attackerGrant &&
+        (attackerGrant.targetAttack === "all" || attackerGrant.targetAttack === defenderAttack)
+    ) {
+        toDefender = Math.floor(toAttacker * attackerGrant.multiplier);
+        toAttacker = 0;
+        events.push({
+            type: "cross_counter",
+            sessionId: attacker.sessionId,
+            detail: { granted: true, counteredAttack: defenderAttack, damage: toDefender },
+        });
+    }
+    const defenderGrant = supportCtx.counterGrants?.get(defender.sessionId);
+    if (
+        defenderGrant &&
+        (defenderGrant.targetAttack === "all" || defenderGrant.targetAttack === attackerAttack)
+    ) {
+        toAttacker = Math.floor(toDefender * defenderGrant.multiplier);
+        toDefender = 0;
+        events.push({
+            type: "cross_counter",
+            sessionId: defender.sessionId,
+            detail: { granted: true, counteredAttack: attackerAttack, damage: toAttacker },
+        });
+    }
+
     // Crash must not re-apply damage that Counter already zeroed on that direction.
     const defenderCounteredIncoming = events.some(
         (e) => e.type === "cross_counter" && e.sessionId === defender.sessionId
@@ -324,14 +352,19 @@ export function resolveBattleExchange(input: BattleExchangeInput): BattleExchang
         events
     );
 
-    const attackerFirst =
+    const attackerFirstStrike =
         input.supportCtx.firstStrikePlayers.has(input.attacker.sessionId) ||
         getAttackEffect(input.attacker.active, input.attackerAttack)?.effectId ===
             "attack.first_strike";
-    const defenderFirst =
+    const defenderFirstStrike =
         input.supportCtx.firstStrikePlayers.has(input.defender.sessionId) ||
         getAttackEffect(input.defender.active, input.defenderAttack)?.effectId ===
             "attack.first_strike";
+    // "Attack second" (FC-027) mirrors first strike: the holder yields priority.
+    const attackerSecond = input.supportCtx.attackSecondPlayers?.has(input.attacker.sessionId) ?? false;
+    const defenderSecond = input.supportCtx.attackSecondPlayers?.has(input.defender.sessionId) ?? false;
+    const attackerFirst = (attackerFirstStrike || defenderSecond) && !attackerSecond;
+    const defenderFirst = (defenderFirstStrike || attackerSecond) && !defenderSecond;
 
     const applyHit = (
         from: BattleCombatant,

@@ -58,6 +58,8 @@ import {
     canVoidEnemySupport,
     createSupportBattleContext,
     evaluateSupportNullification,
+    getEffectiveAttackDamage,
+    resolveSupportPhase,
 } from "./supportResolver";
 import { attemptOnlineDeckSupportGamble } from "./supportGamble";
 import type { ScenarioRunResult } from "./battleReplay";
@@ -1027,6 +1029,198 @@ export const FIDELITY_SCENARIOS: FidelityScenario[] = [
             shuffleInPlace(arr2, createSeededRng(12345));
             if (arr1.join(",") !== arr2.join(",")) {
                 throw new Error("seeded shuffle not deterministic");
+            }
+        },
+    },
+    {
+        id: "support-conditional-gate",
+        fidelityIds: ["FC-027"],
+        description: "Conditional support fires its consequent only when the gate passes",
+        run() {
+            const mkPlayer = (sessionId: string, type: string) => ({
+                sessionId,
+                hp: 1000,
+                hand: [] as unknown[],
+                active: {
+                    type,
+                    maxHp: 1000,
+                    circle: { damage: 400 },
+                    triangle: { damage: 300 },
+                    cross: { damage: 200 },
+                },
+                supportCard: null,
+            });
+            const card = {
+                cardKind: "digimon",
+                supportEffect: {
+                    type: "conditional",
+                    description: "If both attacks are different, own Attack Power is doubled",
+                    requireType: "",
+                    requireOpponentType: "",
+                },
+            };
+
+            const passCtx = createSupportBattleContext();
+            const a1 = mkPlayer("a", "Fire");
+            resolveSupportPhase(a1 as never, mkPlayer("d", "Ice") as never, card as never, null, passCtx, undefined, undefined, {
+                activeAttack: "circle",
+                defenderAttack: "cross",
+            });
+            if (getEffectiveAttackDamage(a1 as never, "circle", passCtx) !== 800) {
+                throw new Error("different attacks must double own ATK");
+            }
+
+            const failCtx = createSupportBattleContext();
+            const a2 = mkPlayer("a", "Fire");
+            resolveSupportPhase(a2 as never, mkPlayer("d", "Ice") as never, card as never, null, failCtx, undefined, undefined, {
+                activeAttack: "circle",
+                defenderAttack: "circle",
+            });
+            if (getEffectiveAttackDamage(a2 as never, "circle", failCtx) !== 400) {
+                throw new Error("same attacks must leave ATK unchanged");
+            }
+        },
+    },
+    {
+        id: "support-attack-power-set",
+        fidelityIds: ["FC-027"],
+        description: "atk_set overrides own AP; enemy_atk_zero zeroes the opponent's AP",
+        run() {
+            const mk = (sessionId: string) => ({
+                sessionId,
+                hp: 1000,
+                hand: [] as unknown[],
+                active: {
+                    type: "Fire",
+                    maxHp: 1000,
+                    circle: { damage: 400 },
+                    triangle: { damage: 300 },
+                    cross: { damage: 200 },
+                },
+                supportCard: null,
+            });
+            const ctx = createSupportBattleContext();
+            const a = mk("a");
+            const d = mk("d");
+            const setCard = {
+                cardKind: "digimon",
+                supportEffect: { type: "atk_set", value: 900, targetAttack: "all", requireType: "", requireOpponentType: "" },
+            };
+            resolveSupportPhase(a as never, d as never, setCard as never, null, ctx);
+            if (getEffectiveAttackDamage(a as never, "circle", ctx) !== 900) {
+                throw new Error("atk_set must override own AP to 900");
+            }
+
+            const ctx2 = createSupportBattleContext();
+            const a2 = mk("a");
+            const d2 = mk("d");
+            const zeroCard = {
+                cardKind: "digimon",
+                supportEffect: { type: "enemy_atk_zero", targetAttack: "all", requireType: "", requireOpponentType: "" },
+            };
+            resolveSupportPhase(a2 as never, d2 as never, zeroCard as never, null, ctx2);
+            if (getEffectiveAttackDamage(d2 as never, "circle", ctx2) !== 0) {
+                throw new Error("enemy_atk_zero must zero opponent AP");
+            }
+        },
+    },
+    {
+        id: "support-hp-swap",
+        fidelityIds: ["FC-027"],
+        description: "hp_swap exchanges both players' current HP",
+        run() {
+            const a = { sessionId: "a", hp: 400, hand: [] as unknown[], active: { type: "Fire", maxHp: 1000 }, supportCard: null };
+            const d = { sessionId: "d", hp: 900, hand: [] as unknown[], active: { type: "Ice", maxHp: 1000 }, supportCard: null };
+            const card = {
+                cardKind: "digimon",
+                supportEffect: { type: "hp_swap", requireType: "", requireOpponentType: "" },
+            };
+            resolveSupportPhase(a as never, d as never, card as never, null, createSupportBattleContext());
+            if (a.hp !== 900 || d.hp !== 400) {
+                throw new Error(`hp_swap failed: a=${a.hp} d=${d.hp}`);
+            }
+        },
+    },
+    {
+        id: "support-attack-second-order",
+        fidelityIds: ["FC-027", "FC-018"],
+        description: "attack_second yields strike priority to the opponent",
+        run() {
+            const attacker = combatant("atk", 500);
+            const defender = combatant("def", 500);
+            defender.active!.circle.damage = 1000;
+
+            const base = resolveFullBattle(attacker, defender, "circle", "circle", "atk", createSupportBattleContext());
+            if (base.p2Hp !== 100) throw new Error(`take-turn: attacker should hit first, def=${base.p2Hp}`);
+
+            const ctx = createSupportBattleContext();
+            ctx.attackSecondPlayers.add("atk");
+            const second = resolveFullBattle(attacker, defender, "circle", "circle", "atk", ctx);
+            if (second.p1Hp !== 0 || second.p2Hp !== 500) {
+                throw new Error(`attack_second: defender should strike first, atk=${second.p1Hp} def=${second.p2Hp}`);
+            }
+        },
+    },
+    {
+        id: "catalog-effects-normalized",
+        fidelityIds: ["FC-027"],
+        description: "Most catalog support effects normalize to mechanical types (not catalog_text)",
+        run() {
+            let mechanical = 0;
+            let catalogOnly = 0;
+            for (const c of CATALOG) {
+                const se = c.supportEffect;
+                if (!se) continue;
+                if (se.type === "catalog_text") catalogOnly++;
+                else mechanical++;
+            }
+            // Phase-1 target: the large majority of support effects resolve mechanically.
+            if (mechanical < 150) {
+                throw new Error(`expected >=150 mechanical support effects, got ${mechanical} (catalog_only=${catalogOnly})`);
+            }
+        },
+    },
+    {
+        id: "support-dp-slot-effects",
+        fidelityIds: ["FC-027"],
+        description: "DP-slot count boosts attack; discarding DP cards shrinks slot and DP gauge",
+        run() {
+            const mk = (sessionId: string) => ({
+                sessionId,
+                hp: 1000,
+                dp: 30,
+                hand: [] as unknown[],
+                trash: [] as unknown[],
+                dpSlot: [{ plusDp: 10 }, { plusDp: 10 }, { plusDp: 10 }],
+                active: {
+                    type: "Fire",
+                    maxHp: 1000,
+                    circle: { damage: 400 },
+                    triangle: { damage: 300 },
+                    cross: { damage: 200 },
+                },
+                supportCard: null,
+            });
+
+            const a = mk("a");
+            const boost = {
+                cardKind: "digimon",
+                supportEffect: { type: "atk_add_dp_count", value: 100, requireType: "", requireOpponentType: "" },
+            };
+            const ctx = createSupportBattleContext();
+            resolveSupportPhase(a as never, mk("d") as never, boost as never, null, ctx);
+            if (getEffectiveAttackDamage(a as never, "circle", ctx) !== 700) {
+                throw new Error("3 DP cards ×100 must add +300 ATK");
+            }
+
+            const a2 = mk("a");
+            const discard = {
+                cardKind: "digimon",
+                supportEffect: { type: "discard_own_dp", value: 2, requireType: "", requireOpponentType: "" },
+            };
+            resolveSupportPhase(a2 as never, mk("d") as never, discard as never, null, createSupportBattleContext());
+            if (a2.dpSlot.length !== 1 || a2.dp !== 10) {
+                throw new Error(`discard 2 DP → slot=${a2.dpSlot.length} dp=${a2.dp}`);
             }
         },
     },

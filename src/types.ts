@@ -63,6 +63,8 @@ export interface PlayerState {
   hand: DigimonCardData[];
   deck: DigimonCardData[];
   trash: DigimonCardData[];
+  /** Cards discarded for DP (the DP Slot pile). */
+  dpSlot?: DigimonCardData[];
   dp: number;
   score: number;
   supportCard: DigimonCardData | null;

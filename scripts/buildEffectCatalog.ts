@@ -152,7 +152,20 @@ function classifyAndMap(sourceText: string): Omit<EffectCatalogEntry, "id" | "te
                 status: "partial",
             };
         }
+        if (/same level/i.test(text)) {
+            return { kind: "evolution", implementedEffectId: "evolution_option.mutant", implementedArgs: {}, status: "implemented" };
+        }
+        if (/regardless of own specialty, level/i.test(text)) {
+            return { kind: "evolution", implementedEffectId: "evolution_option.download", implementedArgs: {}, status: "implemented" };
+        }
+        if (/downgrade a level a digimon to level r/i.test(text)) {
+            return { kind: "evolution", implementedEffectId: "evolution_option.de_armor", implementedArgs: {}, status: "implemented" };
+        }
         return { kind: "evolution", status: "catalog_only" };
+    }
+    // ArmorCrush wording lacks the "can digivolve" prefix handled above.
+    if (/^digivolve a level a digimon to c or u/i.test(text)) {
+        return { kind: "evolution", implementedEffectId: "evolution_option.armor_crush", implementedArgs: {}, status: "implemented" };
     }
 
     // --- Support / option effects we implement ---
