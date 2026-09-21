@@ -32,24 +32,37 @@ export type EvolutionTargetLike = {
     cardKind?: string;
 };
 
-export type EvolutionCostModifiers = {
+/**
+ * The single evolution-modifier contract (FC-008 / FC-010).
+ *
+ * One declaration, two views: `parseEvolutionModifiers` produces a complete set,
+ * while the gate entry points (`evaluateEvolution`, `evaluateLevelPath`) accept a
+ * partial one so an option that sets a single field need not spell out the rest.
+ * Callers MUST NOT declare a second, parallel modifier shape.
+ */
+export type EvolutionModifiers = {
     /** Extra (or reduced) DP cost from evolution option cards. */
-    dpCostDelta?: number;
+    dpCostDelta: number;
     /** Allowed extra level jumps (warp evolve). 0 = adjacent only. */
-    warpSkipLevels?: number;
+    warpSkipLevels: number;
+    /** Restore full HP/AP after the evolve (PS1 manual C → U bonus). */
+    restoreFullStats: boolean;
     /** ArmorCrush Digivolve: Armor → Champion or Ultimate. */
-    armorCrush?: boolean;
+    armorCrush: boolean;
     /** De-Armor Digivolve: Armor → Rookie. */
-    deArmor?: boolean;
+    deArmor: boolean;
     /** Mutant Digivolve: digivolve onto a same-Level Digimon (FC-027). */
-    sameLevel?: boolean;
+    sameLevel: boolean;
     /** Download Digivolve: any level path allowed (FC-027). */
-    ignoreLevel?: boolean;
+    ignoreLevel: boolean;
     /** Skip the specialty match gate (Mutant / Download). */
-    ignoreSpecialty?: boolean;
+    ignoreSpecialty: boolean;
     /** Skip the DP cost gate (Download). */
-    ignoreDp?: boolean;
+    ignoreDp: boolean;
 };
+
+/** Gate input: any subset of {@link EvolutionModifiers}. */
+export type EvolutionCostModifiers = Partial<EvolutionModifiers>;
 
 /** Digimon targets only; empty/legacy cardKind treated as digimon for catalog compatibility. */
 export function isDigimonEvolveTarget(card: Pick<EvolutionTargetLike, "cardKind">): boolean {
@@ -75,6 +88,18 @@ export function matchesEvolutionType(activeType: string, targetType: string): bo
 
 export function adjustedEvolutionCost(evoCost: number, dpCostDelta = 0): number {
     return Math.max(0, evoCost + dpCostDelta);
+}
+
+/**
+ * Spend the adjusted evolution cost from the DP gauge (FC-007 / FC-008).
+ *
+ * The gauge is a resource, never a debt. `evolution_option.download` skips the
+ * DP *sufficiency* gate (`ignoreDp`), so a player with 0 DP may still evolve —
+ * but the deduction must not push the gauge below zero. Every evolution path
+ * MUST spend through here rather than subtracting inline.
+ */
+export function spendEvolutionDp(playerDp: number, adjustedCost: number): number {
+    return Math.max(0, playerDp - Math.max(0, adjustedCost));
 }
 
 function isValidNormalLevelPath(from: string, to: string, warpSkipLevels: number): boolean {

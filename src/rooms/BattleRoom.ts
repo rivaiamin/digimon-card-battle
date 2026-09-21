@@ -32,15 +32,18 @@ import {
     applyBattleOptionToContext,
     applyFullStatsFromCatalog,
     canEvolveWithOption,
+    classifyOptionEffect,
     parseEvolutionModifiers,
     resolvePrepOption,
     shouldRestoreFullStatsAfterEvolve,
     type OptionCardLike,
 } from "../lib/optionResolver";
+import { spendEvolutionDp } from "../lib/evolutionEligibility";
 import {
     createSupportBattleContext,
     resolveSupportPhase,
     type AttackType,
+    type ResolveSupportHooks,
     type SupportBattleContext,
 } from "../lib/supportResolver";
 import { attemptOnlineDeckSupportGamble } from "../lib/supportGamble";
@@ -791,6 +794,18 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             if (optionIdx === -1) return false;
             const optionCard = player.hand[optionIdx];
             const optionView = this.toOptionCardView(optionCard);
+            // Before the timing gate: a card no runtime implements is a
+            // different failure from one played at the wrong moment, and the
+            // audit must say which. Never evolve with a silently ignored option.
+            const verdict = classifyOptionEffect(optionView);
+            if (verdict.implemented === false) {
+                this.audit("EVOLVE", player, "rejected", verdict.reason, {
+                    cardId,
+                    evolutionOptionCardId,
+                    ...verdict.detail,
+                });
+                return false;
+            }
             if (
                 !canPlayEvolutionOption(
                     optionView,
@@ -798,6 +813,10 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
                     true
                 )
             ) {
+                this.audit("EVOLVE", player, "rejected", "illegal_timing", {
+                    cardId,
+                    evolutionOptionCardId,
+                });
                 return false;
             }
             modifiers = parseEvolutionModifiers(optionView);
@@ -816,7 +835,10 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         }
 
         const evoCard = player.hand.splice(digimonHandIdx, 1)[0];
-        player.dp -= adjustedCost;
+        // FC-007: the DP gauge is a resource, not a debt. `ignoreDp` (Download
+        // Digivolve) skips the sufficiency gate, so a 0-DP player may still
+        // evolve — the spend must floor at 0 rather than going negative.
+        player.dp = spendEvolutionDp(player.dp, adjustedCost);
         player.evolutionStack.push(evoCard);
         player.active = evoCard;
 
@@ -1172,6 +1194,47 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         };
         const ctxBefore = snapshotSupportCtx(this.supportCtx);
 
+        const resolveHooks: ResolveSupportHooks = {
+            applyBattleOption: (source, card, ctx) => {
+                const opponent = source.sessionId === active.sessionId ? defender : active;
+                const hpTarget = {
+                    hp: source.hp,
+                    maxHp: source.active?.maxHp ?? source.hp,
+                };
+                applyBattleOptionToContext(
+                    this.toOptionCardView(card),
+                    source.sessionId,
+                    ctx,
+                    hpTarget,
+                    {
+                        source,
+                        target: opponent,
+                        sourceAttack: this.attackChoices.get(source.sessionId) ?? null,
+                        targetAttack: this.attackChoices.get(opponent.sessionId) ?? null,
+                        hooks: resolveHooks,
+                        onUnresolved: (reason, detail) => {
+                            this.audit(
+                                "BATTLE_OPTION_UNRESOLVED",
+                                source,
+                                "rejected",
+                                reason,
+                                detail
+                            );
+                        },
+                    }
+                );
+                source.hp = hpTarget.hp;
+                source.trash.push(card);
+            },
+            drawCards: (source, count) => {
+                for (let i = 0; i < count; i++) {
+                    if (source.deck.length <= 0) break;
+                    source.hand.push(source.deck.shift()!);
+                }
+            },
+            rng: this.rng,
+        };
+
         const nullify = resolveSupportPhase(
             active,
             defender,
@@ -1182,29 +1245,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
                 activeSessionId: this.state.activePlayerSessionId,
                 sessionOrder: sessions,
             },
-            {
-                applyBattleOption: (source, card, ctx) => {
-                    const hpTarget = {
-                        hp: source.hp,
-                        maxHp: source.active?.maxHp ?? source.hp,
-                    };
-                    applyBattleOptionToContext(
-                        this.toOptionCardView(card),
-                        source.sessionId,
-                        ctx,
-                        hpTarget
-                    );
-                    source.hp = hpTarget.hp;
-                    source.trash.push(card);
-                },
-                drawCards: (source, count) => {
-                    for (let i = 0; i < count; i++) {
-                        if (source.deck.length <= 0) break;
-                        source.hand.push(source.deck.shift()!);
-                    }
-                },
-                rng: this.rng,
-            },
+            resolveHooks,
             this.ruleProfile.battle.attackLockBeforeSupport
                 ? {
                       activeAttack: this.attackChoices.get(active.sessionId) ?? null,
