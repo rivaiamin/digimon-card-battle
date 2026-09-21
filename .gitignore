@@ -10,3 +10,5 @@ coverage/
 !src/data/*.json
 fidelity-report.md
 tmp/
+.unlazy/
+.unlazy-hook-state.json
