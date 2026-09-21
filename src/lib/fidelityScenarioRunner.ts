@@ -45,7 +45,8 @@ import {
     loserSessionIdIfPointVictory,
     MATCH_POINTS_TO_WIN,
 } from "./matchOutcome";
-import { PHASE_TIMER_MS, phaseTimerDurationMs } from "./phaseTimer";
+import { PHASE_TIMER_MS, phaseTimerDurationMs, pickRandomAttack, resolveTimedPhaseKey } from "./phaseTimer";
+import { CardSchema, PlayerSchema, SupportEffectSchema } from "../schema/BattleState";
 import { getRuleProfile } from "./ruleProfile";
 import { createSeededRng, shuffleInPlace } from "./seededRng";
 import {
@@ -57,10 +58,16 @@ import {
 import {
     canVoidEnemySupport,
     createSupportBattleContext,
+    effectClassPriority,
+    effectPriority,
     evaluateSupportNullification,
     getEffectiveAttackDamage,
+    holdsFirstStrike,
     resolveSupportPhase,
+    type AttackType,
+    type SupportBattleContext,
 } from "./supportResolver";
+import { compareOrderedEffects, type OrderedEffect } from "./effectConflictResolver";
 import { attemptOnlineDeckSupportGamble } from "./supportGamble";
 import type { ScenarioRunResult } from "./battleReplay";
 import type { NormalizedCardCatalogEntry } from "./cardCatalogLoader";
@@ -102,6 +109,497 @@ function makeCard(level: string, id = `c_${level}`) {
         triangle: { damage: 300 },
         cross: { damage: 200 },
     };
+}
+
+/**
+ * Ordering probe toolkit (FC-014 / FC-020).
+ *
+ * The probes below are the *scenario* bodies, written against an injectable
+ * resolver so the exact same assertions can be replayed against a pre-fix copy
+ * of `supportResolver` (see `scripts/verify-scenario-coverage.ts` G2). A probe
+ * that cannot be replayed against the old code proves nothing about the fix.
+ */
+export type SupportPhaseResolver = typeof resolveSupportPhase;
+
+export type OrderingProbeHarness = {
+    /** Support-phase resolver under test: the shipped one, or a pre-fix copy. */
+    resolve: SupportPhaseResolver;
+    /** Fresh effect-state carrier. */
+    makeContext: () => SupportBattleContext;
+};
+
+export const SHIPPED_ORDERING_HARNESS: OrderingProbeHarness = {
+    resolve: resolveSupportPhase,
+    makeContext: createSupportBattleContext,
+};
+
+/**
+ * Shipped expectations for every ordering probe. The scenarios assert against
+ * this table and `scripts/verify-scenario-coverage.ts` G2 replays the same probes
+ * against a pre-fix resolver, so the two cannot drift apart.
+ */
+export const ORDERING_PROBE_EXPECTATIONS = {
+    declaredSpeedPrimary: { activeFasterHp: 450, defenderFasterHp: 700 },
+    equalSpeedClassFallbackHp: 700,
+    fullTieStability: { firstHp: 1000, secondHp: 1000, reversedOrderHp: 1000 },
+    priorityOverridesFirstStrikeHp: 1000,
+    classPrecedesFirstStrikeHp: 700,
+    firstStrikeTieBreak: { slotHp: 100, noFirstStrikeHp: 1000, supportGrantedHp: 100 },
+} as const;
+
+const ORDERING_TIE_BREAK = { activeSessionId: "a", sessionOrder: ["a", "d"] };
+const ORDERING_LOCKED = { activeAttack: "circle" as AttackType, defenderAttack: "circle" as AttackType };
+
+function orderingPlayer(sessionId: string, hp: number, slotEffectId = ""): PlayerSchema {
+    const player = new PlayerSchema();
+    player.sessionId = sessionId;
+    player.hp = hp;
+    const active = new CardSchema();
+    active.id = `${sessionId}-active`;
+    active.cardKind = "digimon";
+    active.type = "Fire";
+    active.maxHp = 1000;
+    active.hp = 1000;
+    active.circle.damage = 400;
+    active.triangle.damage = 300;
+    active.cross.damage = 200;
+    active.circle.effectId = slotEffectId;
+    player.active = active;
+    return player;
+}
+
+function orderingCard(type: string, value: number, priority: number): CardSchema {
+    const card = new CardSchema();
+    card.id = `ordering-${type}-${priority}`;
+    card.cardKind = "digimon";
+    const effect = new SupportEffectSchema();
+    effect.type = type;
+    effect.value = value;
+    effect.priority = priority;
+    card.supportEffect = effect;
+    return card;
+}
+
+/**
+ * Declared-speed primacy. `hp_heal` and `halve_hp` collide on the same player HP
+ * budget, so the surviving HP names which effect landed first:
+ *
+ *   active's heal first    -> 400 + 500 = 900, then halved -> 450
+ *   defender's halve first -> 400 / 2   = 200, then +500  -> 700
+ *
+ * The pair swaps only the declared speeds, so a result that follows the speeds
+ * and ignores the §2B class rank (heal 5, halve 3) proves speed is the primary key.
+ */
+export function probeDeclaredSpeedPrimary(harness: OrderingProbeHarness): {
+    activeFasterHp: number;
+    defenderFasterHp: number;
+} {
+    const activeFaster = orderingPlayer("a", 400);
+    harness.resolve(
+        activeFaster,
+        orderingPlayer("d", 1000),
+        orderingCard("hp_heal", 500, 1),
+        orderingCard("halve_hp", 0, 3),
+        harness.makeContext(),
+        ORDERING_TIE_BREAK,
+        undefined,
+        ORDERING_LOCKED
+    );
+    const defenderFaster = orderingPlayer("a", 400);
+    harness.resolve(
+        defenderFaster,
+        orderingPlayer("d", 1000),
+        orderingCard("hp_heal", 500, 3),
+        orderingCard("halve_hp", 0, 1),
+        harness.makeContext(),
+        ORDERING_TIE_BREAK,
+        undefined,
+        ORDERING_LOCKED
+    );
+    return { activeFasterHp: activeFaster.hp, defenderFasterHp: defenderFaster.hp };
+}
+
+/**
+ * Equal-speed class fallback. Both effects declare speed 2, so only the §2B class
+ * rank separates them: `halve_hp` (class 3) runs before `hp_heal` (class 5),
+ * yielding 700. Without the class step the active player wins the tie and the
+ * heal lands first, yielding 450 — the pre-fix result.
+ */
+export function probeEqualSpeedClassFallback(harness: OrderingProbeHarness): number {
+    const active = orderingPlayer("a", 400);
+    harness.resolve(
+        active,
+        orderingPlayer("d", 1000),
+        orderingCard("hp_heal", 500, 2),
+        orderingCard("halve_hp", 0, 2),
+        harness.makeContext(),
+        ORDERING_TIE_BREAK,
+        undefined,
+        ORDERING_LOCKED
+    );
+    return active.hp;
+}
+
+/**
+ * Full tie-break determinism. With speed, class, and first strike all equal,
+ * `hp_set 100` (active) against `enemy_hp_copy_from_own` (defender) still leaves
+ * a readable owner of the exchange:
+ *
+ *   defender's copy first -> active.hp = 1000, then set 100 -> 100
+ *   active's set first    -> active.hp = 100, then copy 1000 -> 1000
+ *
+ * `firstHp`/`secondHp` are two runs of the same input (determinism).
+ * `reversedOrderHp` runs the same effects with `sessionOrder` reversed, so the
+ * session-order fallback would name the defender first; the tie-break must still
+ * put the active player first, which keeps the explicit active-player step
+ * load-bearing instead of masked by a coincidentally agreeing session order.
+ */
+export function probeFullTieStability(harness: OrderingProbeHarness): {
+    firstHp: number;
+    secondHp: number;
+    reversedOrderHp: number;
+} {
+    const run = (sessionOrder: string[]) => {
+        const active = orderingPlayer("a", 1000);
+        harness.resolve(
+            active,
+            orderingPlayer("d", 1000),
+            orderingCard("hp_set", 100, 2),
+            orderingCard("enemy_hp_copy_from_own", 0, 2),
+            harness.makeContext(),
+            { activeSessionId: "a", sessionOrder },
+            undefined,
+            ORDERING_LOCKED
+        );
+        return active.hp;
+    };
+    return {
+        firstHp: run(["a", "d"]),
+        secondHp: run(["a", "d"]),
+        reversedOrderHp: run(["d", "a"]),
+    };
+}
+
+/**
+ * Conflict policy: declared priority outranks the first-strike owner. The active
+ * player declares speed 1 while the defender holds `attack.first_strike` on its
+ * locked slot, so speed must decide (active's set first -> 1000). If first strike
+ * outranked priority, the defender's copy would land first and yield 100.
+ */
+export function probePriorityOverridesFirstStrike(harness: OrderingProbeHarness): number {
+    const active = orderingPlayer("a", 1000);
+    harness.resolve(
+        active,
+        orderingPlayer("d", 1000, "attack.first_strike"),
+        orderingCard("hp_set", 100, 1),
+        orderingCard("enemy_hp_copy_from_own", 0, 2),
+        harness.makeContext(),
+        ORDERING_TIE_BREAK,
+        undefined,
+        ORDERING_LOCKED
+    );
+    return active.hp;
+}
+
+/**
+ * Conflict policy: the first-strike owner wins an otherwise exact tie, and both
+ * grant sources count. Speed and class are equal in all three arms, so only the
+ * tie-break decides: the defender's copy first -> 100; the active player's set
+ * first -> 1000.
+ *
+ * `slot` reads the attack slot's `attack.first_strike`; `supportGranted` reads a
+ * resolved support effect. They MUST agree — reading only the support-granted
+ * set is the pre-fix defect.
+ */
+export function probeFirstStrikeTieBreak(harness: OrderingProbeHarness): {
+    slotHp: number;
+    noFirstStrikeHp: number;
+    supportGrantedHp: number;
+} {
+    const play = (defenderSlotEffectId: string, grantSupportFirstStrike: boolean) => {
+        const active = orderingPlayer("a", 1000);
+        const ctx = harness.makeContext();
+        if (grantSupportFirstStrike) ctx.firstStrikePlayers.add("d");
+        harness.resolve(
+            active,
+            orderingPlayer("d", 1000, defenderSlotEffectId),
+            orderingCard("hp_set", 100, 2),
+            orderingCard("enemy_hp_copy_from_own", 0, 2),
+            ctx,
+            ORDERING_TIE_BREAK,
+            undefined,
+            ORDERING_LOCKED
+        );
+        return active.hp;
+    };
+    return {
+        slotHp: play("attack.first_strike", false),
+        noFirstStrikeHp: play("", false),
+        supportGrantedHp: play("", true),
+    };
+}
+
+/**
+ * Conflict policy: the equal-speed class step outranks the first-strike owner.
+ *
+ * The ACTIVE player holds `attack.first_strike` while both effects declare speed
+ * 2. The class rank puts the defender's `halve_hp` (class 3) before the active
+ * player's `hp_heal` (class 5), so the class step must win and yield 700. If the
+ * first-strike owner outranked the class step, the active player's heal would run
+ * first and yield 450 — the two keys must therefore disagree for this probe to
+ * measure anything, which is why the holder is the active player and not the
+ * defender (where class and first strike happen to agree).
+ */
+export function probeClassPrecedesFirstStrike(harness: OrderingProbeHarness): number {
+    const active = orderingPlayer("a", 400, "attack.first_strike");
+    harness.resolve(
+        active,
+        orderingPlayer("d", 1000),
+        orderingCard("hp_heal", 500, 2),
+        orderingCard("halve_hp", 0, 2),
+        harness.makeContext(),
+        ORDERING_TIE_BREAK,
+        undefined,
+        ORDERING_LOCKED
+    );
+    return active.hp;
+}
+
+/**
+ * FC-014 scenario body. Throws when the declared-speed ordering, the equal-speed
+ * class fallback, or the explicit tie-break is wrong.
+ *
+ * Exported so the verification script can run this exact body against a pre-fix
+ * resolver and require it to fail (negative control). A body that passes on both
+ * proves nothing about the fix.
+ */
+export function assertDeclaredSpeedOrdering(harness: OrderingProbeHarness): void {
+    const expected = ORDERING_PROBE_EXPECTATIONS;
+
+    // Primary key: swapping only the declared speeds swaps the outcome, even
+    // though the class rank (heal 5, halve 3) never changes.
+    const speeds = probeDeclaredSpeedPrimary(harness);
+    if (
+        speeds.activeFasterHp !== expected.declaredSpeedPrimary.activeFasterHp ||
+        speeds.defenderFasterHp !== expected.declaredSpeedPrimary.defenderFasterHp
+    ) {
+        throw new Error(
+            `declared speed is not the primary ordering key: active-faster=${speeds.activeFasterHp} ` +
+                `defender-faster=${speeds.defenderFasterHp} (expected ` +
+                `${expected.declaredSpeedPrimary.activeFasterHp}/${expected.declaredSpeedPrimary.defenderFasterHp})`
+        );
+    }
+
+    // Equal speed: the class fallback must run the class-3 effect before the
+    // class-5 effect. The shipped class table is the fallback's source.
+    if (effectClassPriority({ type: "halve_hp" }) >= effectClassPriority({ type: "hp_heal" })) {
+        throw new Error("the §2B class table no longer ranks halve_hp before hp_heal");
+    }
+    // A card's declared priority IS the ordering speed, and the class rank is the
+    // fallback used only when no speed is declared.
+    if (effectPriority({ type: "hp_heal", priority: 4 }) !== 4) {
+        throw new Error("a card's declared priority is no longer the ordering speed");
+    }
+    if (effectPriority({ type: "hp_heal" }) !== effectClassPriority({ type: "hp_heal" })) {
+        throw new Error("an undeclared speed no longer falls back to the §2B class rank");
+    }
+    const classOrderedHp = probeEqualSpeedClassFallback(harness);
+    if (classOrderedHp !== expected.equalSpeedClassFallbackHp) {
+        throw new Error(
+            `equal-speed class fallback did not order the lower class first: a.hp=${classOrderedHp} ` +
+                `(expected ${expected.equalSpeedClassFallbackHp}; the active-player fallback yields 450)`
+        );
+    }
+
+    // Explicit tie-break behaviour: a fully tied pair still resolves, repeated
+    // runs agree, and reversing the session order does not change the answer —
+    // the explicit active-player step must outrank that fallback.
+    const tie = probeFullTieStability(harness);
+    if (
+        tie.firstHp !== expected.fullTieStability.firstHp ||
+        tie.secondHp !== expected.fullTieStability.secondHp
+    ) {
+        throw new Error(
+            `a fully tied conflict did not resolve deterministically: run1=${tie.firstHp} run2=${tie.secondHp}`
+        );
+    }
+    if (tie.reversedOrderHp !== expected.fullTieStability.reversedOrderHp) {
+        throw new Error(
+            `reversing the session order changed a fully tied conflict: a.hp=${tie.reversedOrderHp} ` +
+                `(expected ${expected.fullTieStability.reversedOrderHp}; the session-order fallback ` +
+                `winning yields 100)`
+        );
+    }
+
+    // The comparator itself must expose the chain rather than hide it: declared
+    // speed, then class (equal speed only), then first strike.
+    const speedBeatsAll = compareOrderedEffects(
+        {
+            effect: "slow-class1-first-strike",
+            priority: 2,
+            classPriority: 1,
+            sessionId: "a",
+            isActivePlayer: true,
+            hasFirstStrike: true,
+        },
+        {
+            effect: "fast-class5",
+            priority: 1,
+            classPriority: 5,
+            sessionId: "d",
+            isActivePlayer: false,
+            hasFirstStrike: false,
+        },
+        ["a", "d"]
+    );
+    if (speedBeatsAll <= 0) {
+        throw new Error("declared speed did not outrank class and first strike in compareOrderedEffects");
+    }
+    const classTie = compareOrderedEffects(
+        {
+            effect: "class5",
+            priority: 2,
+            classPriority: 5,
+            sessionId: "a",
+            isActivePlayer: true,
+            hasFirstStrike: false,
+        },
+        {
+            effect: "class3",
+            priority: 2,
+            classPriority: 3,
+            sessionId: "d",
+            isActivePlayer: false,
+            hasFirstStrike: false,
+        },
+        ["a", "d"]
+    );
+    if (classTie <= 0) {
+        throw new Error("the equal-speed class step no longer outranks the active-player fallback");
+    }
+}
+
+/**
+ * FC-020 scenario body. Throws when the conflict policy's priority key, class
+ * step, first-strike tie-break, or override rule is wrong.
+ *
+ * Exported for the same negative-control reason as the FC-014 body.
+ */
+export function assertConflictPolicyTieBreak(harness: OrderingProbeHarness): void {
+    const expected = ORDERING_PROBE_EXPECTATIONS;
+
+    // Priority is authoritative and overrides the first-strike owner: the active
+    // player's faster effect lands first even though the defender holds
+    // attack.first_strike on its locked slot.
+    const priorityHp = probePriorityOverridesFirstStrike(harness);
+    if (priorityHp !== expected.priorityOverridesFirstStrikeHp) {
+        throw new Error(
+            `declared priority did not override the first-strike owner: a.hp=${priorityHp} ` +
+                `(expected ${expected.priorityOverridesFirstStrikeHp}; first strike winning yields 100)`
+        );
+    }
+
+    // At equal speed the class step is the next key, ahead of first strike. The
+    // active player holds first strike here, so the two keys disagree: only the
+    // class step can produce 700 (first strike winning would yield 450).
+    const classHp = probeClassPrecedesFirstStrike(harness);
+    if (classHp !== expected.classPrecedesFirstStrikeHp) {
+        throw new Error(
+            `the equal-speed class step did not outrank the first-strike owner: a.hp=${classHp} ` +
+                `(expected ${expected.classPrecedesFirstStrikeHp}; the first-strike owner winning yields 450)`
+        );
+    }
+
+    // Only once speed and class are equal does first strike decide, and both
+    // grant sources must count. The no-first-strike arm is the positive control
+    // proving the probe distinguishes the two.
+    const tie = probeFirstStrikeTieBreak(harness);
+    if (
+        tie.slotHp !== expected.firstStrikeTieBreak.slotHp ||
+        tie.supportGrantedHp !== expected.firstStrikeTieBreak.supportGrantedHp ||
+        tie.noFirstStrikeHp !== expected.firstStrikeTieBreak.noFirstStrikeHp
+    ) {
+        throw new Error(
+            `first-strike tie-break is wrong: slot=${tie.slotHp} support-granted=${tie.supportGrantedHp} ` +
+                `none=${tie.noFirstStrikeHp} (expected ${expected.firstStrikeTieBreak.slotHp}/` +
+                `${expected.firstStrikeTieBreak.supportGrantedHp}/${expected.firstStrikeTieBreak.noFirstStrikeHp})`
+        );
+    }
+
+    // `holdsFirstStrike` is the shared reader both sources feed; the attack slot
+    // alone must satisfy it without touching the set.
+    const slotPlayer = orderingPlayer("d", 1000, "attack.first_strike");
+    const emptyCtx = harness.makeContext();
+    if (!holdsFirstStrike(emptyCtx, "d", slotPlayer.active, "circle")) {
+        throw new Error("holdsFirstStrike ignores the attack slot's attack.first_strike");
+    }
+    if (emptyCtx.firstStrikePlayers.has("d")) {
+        throw new Error("holdsFirstStrike mutated ctx.firstStrikePlayers instead of reading it");
+    }
+    if (holdsFirstStrike(emptyCtx, "d", slotPlayer.active, "triangle")) {
+        throw new Error("holdsFirstStrike read a first strike from an unstruck attack slot");
+    }
+
+    // The complete documented chain, pinned step by step. A two-effect support
+    // stack can only ever reach the first four keys (there is exactly one active
+    // player), so the remaining tie-break steps are asserted through the
+    // comparator itself — otherwise a silently dropped step would be invisible.
+    const effect = (overrides: Partial<OrderedEffect<string>>): OrderedEffect<string> => ({
+        effect: "probe",
+        priority: 2,
+        sessionId: "a",
+        isActivePlayer: false,
+        hasFirstStrike: false,
+        ...overrides,
+    });
+    /** Assert which side the comparator puts first, naming the expected direction. */
+    const assertOrdersFirst = (
+        first: OrderedEffect<string>,
+        second: OrderedEffect<string>,
+        step: string,
+        expectedFirst: "first" | "second" | "tie"
+    ) => {
+        const result = compareOrderedEffects(first, second, ["a", "d"]);
+        const actual = result < 0 ? "first" : result > 0 ? "second" : "tie";
+        if (actual !== expectedFirst) {
+            throw new Error(
+                `tie-break ${step}: expected '${expectedFirst}' to order first, got '${actual}' (${result})`
+            );
+        }
+    };
+
+    assertOrdersFirst(effect({ priority: 1 }), effect({ priority: 2 }), "step 1 (declared speed)", "first");
+    assertOrdersFirst(
+        effect({ classPriority: 5, isActivePlayer: true }),
+        effect({ classPriority: 3, sessionId: "d" }),
+        "step 2 (equal-speed class rank)",
+        "second"
+    );
+    assertOrdersFirst(
+        effect({ priority: 1, classPriority: 5 }),
+        effect({ priority: 2, classPriority: 3 }),
+        "step 2 (class rank skipped when speeds differ)",
+        "first"
+    );
+    assertOrdersFirst(
+        effect({ sessionId: "d", hasFirstStrike: true }),
+        effect({ sessionId: "a", isActivePlayer: true }),
+        "step 3 (first-strike owner)",
+        "first"
+    );
+    assertOrdersFirst(
+        effect({ sessionId: "d", isActivePlayer: true }),
+        effect({ sessionId: "a" }),
+        "step 4 (active player)",
+        "first"
+    );
+    assertOrdersFirst(
+        effect({ sessionId: "d" }),
+        effect({ sessionId: "a" }),
+        "step 5 (session order)",
+        "second"
+    );
+    assertOrdersFirst(effect({}), effect({}), "terminal (identical effects)", "tie");
 }
 
 export const FIDELITY_SCENARIOS: FidelityScenario[] = [
@@ -1221,6 +1719,137 @@ export const FIDELITY_SCENARIOS: FidelityScenario[] = [
             resolveSupportPhase(a2 as never, mk("d") as never, discard as never, null, createSupportBattleContext());
             if (a2.dpSlot.length !== 1 || a2.dp !== 10) {
                 throw new Error(`discard 2 DP → slot=${a2.dpSlot.length} dp=${a2.dp}`);
+            }
+        },
+    },
+    {
+        id: "support-declared-speed-ordering",
+        fidelityIds: ["FC-014"],
+        description:
+            "Declared speed is the primary ordering key and the equal-speed §2B class step breaks the tie",
+        run() {
+            assertDeclaredSpeedOrdering(SHIPPED_ORDERING_HARNESS);
+        },
+    },
+    {
+        id: "support-conflict-policy-tie-break",
+        fidelityIds: ["FC-020"],
+        description:
+            "Conflicting effects resolve by priority, then class, then first-strike owner with an override rule",
+        run() {
+            assertConflictPolicyTieBreak(SHIPPED_ORDERING_HARNESS);
+        },
+    },
+    {
+        id: "match-turn-ownership-alternates",
+        fidelityIds: ["FC-004"],
+        description: "Turn ownership alternates to the defender after battle resolution",
+        run() {
+            const sessions = ["p1", "p2"] as const;
+            let owner: string = sessions[0];
+            const seen = [owner];
+            for (let turn = 0; turn < 4; turn++) {
+                owner = getDefenderSessionId(owner, sessions);
+                seen.push(owner);
+            }
+            if (seen.join(",") !== "p1,p2,p1,p2,p1") {
+                throw new Error(`turn ownership did not alternate: ${seen.join(",")}`);
+            }
+            if (!isLegalPhaseTransition("resolution", "draw", true)) {
+                throw new Error("resolution must hand the next turn back to draw");
+            }
+            if (isLegalPhaseTransition("victory", "draw", true)) {
+                throw new Error("a finished match must not hand ownership on");
+            }
+            if (loserSessionIdIfPointVictory({ p1: MATCH_POINTS_TO_WIN, p2: 1 }, "p1", "p2") !== "p2") {
+                throw new Error("hitting the point cap must end the match instead of alternating");
+            }
+        },
+    },
+    {
+        id: "attack-hidden-lock-and-reveal",
+        fidelityIds: ["FC-011"],
+        description: "Attack selection locks hidden before support, then reveals deterministically",
+        run() {
+            const chain = fidelityBattlePhaseChain(true);
+            const attackIndex = chain.indexOf("battle_attack");
+            const supportIndex = chain.indexOf("battle_support");
+            if (attackIndex < 0 || supportIndex < 0 || attackIndex > supportIndex) {
+                throw new Error(`attack must lock before support, got ${chain.join("→")}`);
+            }
+            if (!isLegalPhaseTransition("battle_attack", "battle_support", true)) {
+                throw new Error("attack lock must advance to the support phase");
+            }
+            if (isLegalPhaseTransition("battle_attack", "battle_reveal", true)) {
+                throw new Error("a locked attack must not skip support straight to reveal");
+            }
+            const locked = {
+                phase: "battle_attack" as const,
+                prepSubPhase: "" as const,
+                isYourTurn: true,
+                hasActive: true,
+                supportLocked: false,
+                attackLocked: false,
+            };
+            if (!isPlayerActionLegal("LOCK_ATTACK", locked)) {
+                throw new Error("LOCK_ATTACK must be legal while the attack is unlocked");
+            }
+            if (isPlayerActionLegal("LOCK_ATTACK", { ...locked, attackLocked: true })) {
+                throw new Error("a locked attack must not be re-lockable (hidden lock-in)");
+            }
+            for (const phase of ["battle_reveal", "battle_effects", "resolution"] as const) {
+                if (isPlayerActionLegal("LOCK_ATTACK", { ...locked, phase })) {
+                    throw new Error(`LOCK_ATTACK must be rejected during ${phase}`);
+                }
+            }
+            if (!getRuleProfile("fidelity_ps1").battle.attackLockBeforeSupport) {
+                throw new Error("the fidelity profile must lock attacks before support");
+            }
+        },
+    },
+    {
+        id: "timeout-auto-commit-defaults",
+        fidelityIds: ["FC-022"],
+        description: "Each interactive phase has a server timer and a deterministic auto-commit default",
+        run() {
+            const expected: Array<[string, string, string]> = [
+                ["draw", "", "draw"],
+                ["preparation", "mulligan", "prep_mulligan"],
+                ["preparation", "deploy", "prep_deploy"],
+                ["preparation", "discard", "prep_discard"],
+                ["preparation", "evolve", "prep_evolve"],
+                ["battle_support", "", "battle_support"],
+                ["battle_attack", "", "battle_attack"],
+            ];
+            for (const [phase, subPhase, key] of expected) {
+                if (resolveTimedPhaseKey(phase, subPhase) !== key) {
+                    throw new Error(`${phase}/${subPhase} did not map to timer ${key}`);
+                }
+                if (
+                    phaseTimerDurationMs(phase, subPhase) !==
+                    PHASE_TIMER_MS[key as keyof typeof PHASE_TIMER_MS]
+                ) {
+                    throw new Error(`${phase}/${subPhase} has no server-authoritative duration`);
+                }
+            }
+            for (const phase of ["battle_reveal", "battle_effects", "resolution", "victory"]) {
+                if (phaseTimerDurationMs(phase, "") !== null) {
+                    throw new Error(`${phase} must not run a timeout auto-commit`);
+                }
+            }
+            // Random-attack default is seeded and stays inside the attack set.
+            const first = createSeededRng(4242);
+            const second = createSeededRng(4242);
+            const picks = Array.from({ length: 12 }, () => pickRandomAttack(first));
+            const repeated = Array.from({ length: 12 }, () => pickRandomAttack(second));
+            if (picks.join(",") !== repeated.join(",")) {
+                throw new Error(`seeded auto-attack is not deterministic: ${picks.join(",")}`);
+            }
+            if (picks.some(p => p !== "circle" && p !== "triangle" && p !== "cross")) {
+                throw new Error(`auto-attack produced an illegal attack: ${picks.join(",")}`);
+            }
+            if (pickRandomAttack(() => 0) !== "circle" || pickRandomAttack(() => 0.999) !== "cross") {
+                throw new Error("auto-attack does not clamp to the legal attack range");
             }
         },
     },
