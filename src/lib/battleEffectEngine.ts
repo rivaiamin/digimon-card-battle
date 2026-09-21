@@ -9,6 +9,7 @@ import { applySpecialtyFoeMultiplier } from "./specialtyFoeMult";
 import {
     getAttackDamageBreakdown,
     getEffectiveAttackDamage,
+    holdsFirstStrike,
     type AttackType,
     type SupportBattleContext,
 } from "./supportResolver";
@@ -352,14 +353,21 @@ export function resolveBattleExchange(input: BattleExchangeInput): BattleExchang
         events
     );
 
-    const attackerFirstStrike =
-        input.supportCtx.firstStrikePlayers.has(input.attacker.sessionId) ||
-        getAttackEffect(input.attacker.active, input.attackerAttack)?.effectId ===
-            "attack.first_strike";
-    const defenderFirstStrike =
-        input.supportCtx.firstStrikePlayers.has(input.defender.sessionId) ||
-        getAttackEffect(input.defender.active, input.defenderAttack)?.effectId ===
-            "attack.first_strike";
+    // RA-006 step 2: both first-strike sources (support-granted and the attack
+    // slot itself) reach the tie-break through the same shared predicate, so the
+    // support ordering and this exchange can never disagree about who holds it.
+    const attackerFirstStrike = holdsFirstStrike(
+        input.supportCtx,
+        input.attacker.sessionId,
+        input.attacker.active,
+        input.attackerAttack
+    );
+    const defenderFirstStrike = holdsFirstStrike(
+        input.supportCtx,
+        input.defender.sessionId,
+        input.defender.active,
+        input.defenderAttack
+    );
     // "Attack second" (FC-027) mirrors first strike: the holder yields priority.
     const attackerSecond = input.supportCtx.attackSecondPlayers?.has(input.attacker.sessionId) ?? false;
     const defenderSecond = input.supportCtx.attackSecondPlayers?.has(input.defender.sessionId) ?? false;
