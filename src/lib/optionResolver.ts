@@ -5,12 +5,19 @@
 
 import type { EffectArgs } from "../types";
 import { readNumberArg } from "./effectArgs";
+import { CardSchema, PlayerSchema, SupportEffectSchema } from "../schema/BattleState";
+import { inferCompoundSupportEffect } from "./effectTextNormalize";
+import { evaluateEvolution, type EvolutionModifiers } from "./evolutionEligibility";
 import {
-    inferCompoundSupportEffect,
-    inferSupportEffectFromDescription,
-    splitEffectClauses,
-} from "./effectTextNormalize";
-import { evaluateEvolution } from "./evolutionEligibility";
+    SUPPORT_PRIORITY,
+    applySingleEffect,
+    buildEffectRuntime,
+    type AttackType,
+    type ResolveSupportHooks,
+    type SupportBattleContext,
+} from "./supportResolver";
+
+export type { EvolutionModifiers };
 
 export interface OptionCardLike {
     id: string;
@@ -47,24 +54,6 @@ export interface PrepOptionMutableState {
 export type PrepOptionResult =
     | { ok: true; effectId: string; detail?: Record<string, unknown> }
     | { ok: false; reason: string };
-
-export interface EvolutionModifiers {
-    warpSkipLevels: number;
-    dpCostDelta: number;
-    restoreFullStats: boolean;
-    /** ArmorCrush Digivolve: Armor → Champion or Ultimate. */
-    armorCrush: boolean;
-    /** De-Armor Digivolve: Armor → Rookie. */
-    deArmor: boolean;
-    /** Mutant Digivolve: onto a same-Level Digimon. */
-    sameLevel: boolean;
-    /** Download Digivolve: any level path allowed. */
-    ignoreLevel: boolean;
-    /** Skip the specialty gate (Mutant / Download). */
-    ignoreSpecialty: boolean;
-    /** Skip the DP cost gate (Download). */
-    ignoreDp: boolean;
-}
 
 const EMPTY_MODIFIERS: EvolutionModifiers = {
     warpSkipLevels: 0,
@@ -222,19 +211,18 @@ export function shouldRestoreFullStatsAfterEvolve(
     return from === "champion" && to === "ultimate";
 }
 
-export function getBattleOptionAttackBuff(args: EffectArgs): { targetAttack: string; value: number } | null {
-    const value = readNumberArg(args, "value", 0);
-    if (value === 0) return null;
-    const targetAttack = typeof args.targetAttack === "string" ? args.targetAttack : "all";
-    return { targetAttack, value };
-}
-
-export interface AttackBonusContext {
-    attackBonus: Map<string, { circle: number; triangle: number; cross: number }>;
-    firstStrikePlayers?: Set<string>;
-    eatUpHpPlayers?: Set<string>;
-    attackMultiplier?: Map<string, { circle: number; triangle: number; cross: number }>;
-}
+/**
+ * The battle context an option effect writes into.
+ *
+ * Structurally `SupportBattleContext` with only the bonus map required: legacy
+ * callers (and the option unit tests) pass a bare `{ attackBonus }`, and the
+ * missing carriers are created in place on first use. A card whose outcome needs
+ * a carrier the caller never reads is still reported rather than silently
+ * dropped — see {@link applyBattleOptionToContext}.
+ */
+export type AttackBonusContext = Partial<SupportBattleContext> & {
+    attackBonus: SupportBattleContext["attackBonus"];
+};
 
 /** Mutable HP snapshot for battle-option heals (caller writes back to player schema). */
 export interface BattleOptionHpTarget {
@@ -242,200 +230,281 @@ export interface BattleOptionHpTarget {
     maxHp: number;
 }
 
-function applyAtkBuffToContext(
-    ctx: AttackBonusContext,
-    sourceSessionId: string,
-    value: number,
-    targetAttack: string
-): boolean {
-    if (value === 0) return false;
-    const bonus = ctx.attackBonus.get(sourceSessionId) ?? { circle: 0, triangle: 0, cross: 0 };
-    if (targetAttack === "all" || !targetAttack) {
-        bonus.circle += value;
-        bonus.triangle += value;
-        bonus.cross += value;
-    } else if (
-        targetAttack === "circle" ||
-        targetAttack === "triangle" ||
-        targetAttack === "cross"
-    ) {
-        bonus[targetAttack] += value;
-    } else {
-        return false;
+/**
+ * The real battle state a card needs beyond the bonus maps.
+ *
+ * Without it the option path has no players to mutate, so a card that discards,
+ * draws, changes a specialty or revives cannot apply. The server always supplies
+ * this; the bonus-map-only form is kept for the legacy callers and the unit tests.
+ */
+export interface BattleOptionBattleState {
+    /** The player playing the option (the effect's source). */
+    source: PlayerSchema;
+    /** The opponent (the effect's target). */
+    target: PlayerSchema;
+    /** Locked attacks, when the profile locks attacks before support resolves. */
+    sourceAttack?: AttackType | null;
+    targetAttack?: AttackType | null;
+    /** Draw / seeded-RNG hooks the shared dispatcher needs. */
+    hooks?: ResolveSupportHooks;
+    /**
+     * Called when the card cannot be resolved. The caller records this, so an
+     * unsupported effect is never a silent no-op.
+     */
+    onUnresolved?: (reason: string, detail: Record<string, unknown>) => void;
+}
+
+/** Fill in the carriers a partial context lacks, so the dispatcher can run. */
+function normalizeContext(ctx: AttackBonusContext): SupportBattleContext {
+    ctx.attackMultiplier ??= new Map();
+    ctx.attackOverride ??= new Map();
+    ctx.firstStrikePlayers ??= new Set();
+    ctx.attackSecondPlayers ??= new Set();
+    ctx.forcedAttack ??= new Map();
+    ctx.eatUpHpPlayers ??= new Set();
+    ctx.counterGrants ??= new Map();
+    ctx.reviveHp ??= new Map();
+    // Every optional carrier now holds a value; the compiler cannot see that.
+    return ctx as SupportBattleContext;
+}
+
+/** The normalized effect a card carries, or null when it carries none. */
+function toSupportEffect(card: OptionCardLike): SupportEffectSchema | null {
+    const args = card.effectArgs ?? {};
+    const se = card.supportEffect;
+    let type = String(se?.type ?? "").trim();
+    let description = String(se?.description ?? "");
+
+    // `catalog_text` is the loader's marker for "text not yet inferred"; a card
+    // built by hand (tests, fixtures) still carries it, so infer here too.
+    if (type === "catalog_text") {
+        const inferred = inferCompoundSupportEffect(description);
+        if (!inferred) return null;
+        type = inferred.type;
+        description = inferred.description ?? description;
     }
-    ctx.attackBonus.set(sourceSessionId, bonus);
-    return true;
+    if (!type) {
+        const idType = String(card.effectId ?? "").trim().split(".").pop() ?? "";
+        if (!idType) return null;
+        type = idType;
+    }
+
+    const effect = new SupportEffectSchema();
+    effect.type = type;
+    effect.value = se?.value || readNumberArg(args, "value", 0);
+    effect.targetAttack =
+        String(se?.targetAttack ?? "").trim() ||
+        (typeof args.targetAttack === "string" ? args.targetAttack : "");
+    effect.description = description;
+    return effect;
 }
 
-function applyHpHealToTarget(target: BattleOptionHpTarget | undefined, value: number): boolean {
-    if (!target || value <= 0 || target.maxHp <= 0) return false;
-    const before = target.hp;
-    target.hp = Math.min(target.maxHp, target.hp + value);
-    return target.hp !== before || value > 0;
+/** Why an option card's effect could not be applied. */
+export type OptionEffectRejection =
+    | "unknown_card_kind"
+    | "no_effect_text"
+    | "unsupported_effect_text"
+    | "unsupported_effect_id";
+
+export type OptionEffectVerdict =
+    | { implemented: true; effectType: string }
+    | { implemented: false; reason: OptionEffectRejection; detail: Record<string, unknown> };
+
+/** Prep effect ids `resolvePrepOption` implements. */
+const PREP_EFFECT_IDS: Record<string, true> = {
+    "option.prep.gain_dp": true,
+    "option.prep.draw": true,
+    "option.prep.heal_active": true,
+    "option.prep.fetch_trash_digimon": true,
+};
+
+/** Evolution effect ids `parseEvolutionModifiers` implements. */
+const EVOLUTION_EFFECT_IDS: Record<string, true> = {
+    "evolution_option.warp_evolve": true,
+    "evolution_option.dp_adjust": true,
+    "evolution_option.restore_full_stats": true,
+    "evolution_option.armor_crush": true,
+    "evolution_option.de_armor": true,
+    "evolution_option.mutant": true,
+    "evolution_option.download": true,
+};
+
+/**
+ * Decide whether an option card's effect reaches a runtime at all.
+ *
+ * The single verdict every option path consults, so a card cannot be
+ * "implemented" in one place and a silent no-op in another. A card that fails
+ * this test MUST be reported by its caller — the whole point is that the answer
+ * is never simply "nothing happened".
+ */
+export function classifyOptionEffect(card: OptionCardLike): OptionEffectVerdict {
+    const effectId = String(card.effectId ?? "").trim();
+    const cardKind = String(card.cardKind ?? "").trim();
+
+    if (cardKind === "evolution_option") {
+        if (EVOLUTION_EFFECT_IDS[effectId]) return { implemented: true, effectType: effectId };
+        return {
+            implemented: false,
+            reason: "unsupported_effect_id",
+            detail: {
+                cardId: card.id,
+                effectId,
+                description: String(card.supportEffect?.description ?? ""),
+            },
+        };
+    }
+
+    if (cardKind !== "option") {
+        return {
+            implemented: false,
+            reason: "unknown_card_kind",
+            detail: { cardId: card.id, cardKind },
+        };
+    }
+
+    if (PREP_EFFECT_IDS[effectId]) return { implemented: true, effectType: effectId };
+
+    const effect = toSupportEffect(card);
+    if (!effect) {
+        return {
+            implemented: false,
+            reason: "no_effect_text",
+            detail: {
+                cardId: card.id,
+                effectId,
+                description: String(card.supportEffect?.description ?? ""),
+            },
+        };
+    }
+    if (!isResolvableType(effect.type)) {
+        return {
+            implemented: false,
+            reason: "unsupported_effect_text",
+            detail: { cardId: card.id, effectType: effect.type, description: effect.description },
+        };
+    }
+    return { implemented: true, effectType: effect.type };
 }
 
-function applyBattleOptionPrimitive(
-    type: string,
-    args: EffectArgs,
+/**
+ * True when the shared dispatcher can resolve this type. `SUPPORT_PRIORITY` is
+ * the dispatcher's own vocabulary (it covers the primitives plus compose and
+ * conditional), so membership here is what keeps a card off `default: break`.
+ */
+function isResolvableType(type: string): boolean {
+    return type in SUPPORT_PRIORITY;
+}
+
+/** Observable battle state, used to tell an applied effect from a no-op. */
+function battleStateFingerprint(
+    ctx: SupportBattleContext,
+    players: readonly PlayerSchema[]
+): string {
+    return JSON.stringify({
+        bonus: [...ctx.attackBonus],
+        mult: [...ctx.attackMultiplier],
+        override: [...ctx.attackOverride],
+        forced: [...ctx.forcedAttack],
+        counter: [...ctx.counterGrants],
+        revive: [...ctx.reviveHp],
+        firstStrike: [...ctx.firstStrikePlayers],
+        attackSecond: [...ctx.attackSecondPlayers],
+        eatUpHp: [...ctx.eatUpHpPlayers],
+        players: players.map(p => [
+            p.hp,
+            p.dp,
+            p.hand.length,
+            p.deck.length,
+            p.trash.length,
+            p.dpSlot.length,
+            p.active?.type ?? "",
+            p.active?.hp ?? -1,
+            p.supportCard ? 1 : 0,
+        ]),
+    });
+}
+
+/**
+ * Player pair for callers that supply no real battle state (the option unit
+ * tests, and any legacy bonus-map caller). The HP shim is carried on the source
+ * so an HP heal still lands somewhere the caller can read back.
+ */
+function shimPlayers(
     sourceSessionId: string,
-    ctx: AttackBonusContext,
     hpTarget?: BattleOptionHpTarget
-): boolean {
-    switch (type) {
-        case "option.battle.atk_buff":
-        case "support.atk_buff":
-        case "atk_buff": {
-            const buff = getBattleOptionAttackBuff(args);
-            if (!buff) return false;
-            return applyAtkBuffToContext(ctx, sourceSessionId, buff.value, buff.targetAttack);
-        }
-        case "option.battle.hp_heal":
-        case "support.hp_heal":
-        case "hp_heal": {
-            const value = readNumberArg(args, "value", 0);
-            return applyHpHealToTarget(hpTarget, value);
-        }
-        case "support.first_strike":
-        case "first_strike": {
-            ctx.firstStrikePlayers?.add(sourceSessionId);
-            return !!ctx.firstStrikePlayers;
-        }
-        case "support.grant_eat_up_hp":
-        case "grant_eat_up_hp": {
-            ctx.eatUpHpPlayers?.add(sourceSessionId);
-            return !!ctx.eatUpHpPlayers;
-        }
-        case "support.atk_mult":
-        case "atk_mult": {
-            const multMap = ctx.attackMultiplier;
-            if (!multMap) return false;
-            const factor = readNumberArg(args, "value", 2);
-            const t = typeof args.targetAttack === "string" ? args.targetAttack : "all";
-            const mult = multMap.get(sourceSessionId) ?? { circle: 1, triangle: 1, cross: 1 };
-            if (t === "all" || !t) {
-                mult.circle *= factor;
-                mult.triangle *= factor;
-                mult.cross *= factor;
-            } else if (t === "circle" || t === "triangle" || t === "cross") {
-                mult[t] *= factor;
-            } else {
-                return false;
-            }
-            multMap.set(sourceSessionId, mult);
-            return true;
-        }
-        default:
-            return false;
-    }
+): { source: PlayerSchema; target: PlayerSchema } {
+    const source = new PlayerSchema();
+    source.sessionId = sourceSessionId;
+    source.hp = hpTarget?.hp ?? 0;
+    const active = new CardSchema();
+    active.id = `${sourceSessionId}-active`;
+    active.cardKind = "digimon";
+    active.maxHp = hpTarget?.maxHp ?? 0;
+    active.hp = source.hp;
+    source.active = active;
+
+    const target = new PlayerSchema();
+    target.sessionId = `${sourceSessionId}-opponent`;
+    return { source, target };
 }
 
 /**
  * Apply a surviving battle option (after void checks).
- * Covers normalized option.battle.* ids, support.* aliases, and legacy supportEffect text.
+ *
+ * Routes the card's effect through the single primitive dispatcher in
+ * `supportResolver` — the same one Digimon support uses — so the option path and
+ * the support path cannot disagree about which primitive applies.
+ *
+ * Pass `battle` for the real runtime: it supplies the players an effect mutates
+ * and the locked attacks a conditional gate needs. Without it the call still
+ * runs, against a throwaway player pair, which is enough for effects whose whole
+ * outcome lives in the bonus maps.
+ *
+ * An effect the dispatcher cannot apply is reported through `battle.onUnresolved`
+ * rather than silently doing nothing.
+ *
+ * @returns true when observable battle state changed.
  */
 export function applyBattleOptionToContext(
     card: OptionCardLike,
     sourceSessionId: string,
     ctx: AttackBonusContext,
-    hpTarget?: BattleOptionHpTarget
+    hpTarget?: BattleOptionHpTarget,
+    battle?: BattleOptionBattleState
 ): boolean {
-    const args = card.effectArgs ?? {};
-    const effectId = String(card.effectId ?? "").trim();
+    const full = normalizeContext(ctx);
+    const players = battle ?? shimPlayers(sourceSessionId, hpTarget);
+    const unresolved = battle?.onUnresolved;
 
-    if (effectId === "option.battle.atk_buff" || effectId === "option.battle.hp_heal") {
-        return applyBattleOptionPrimitive(effectId, args, sourceSessionId, ctx, hpTarget);
+    const effect = toSupportEffect(card);
+    if (!effect) {
+        unresolved?.("no_effect_text", {
+            cardId: card.id,
+            effectId: card.effectId,
+            description: String(card.supportEffect?.description ?? ""),
+        });
+        return false;
+    }
+    if (!isResolvableType(effect.type)) {
+        unresolved?.("unsupported_effect_text", {
+            cardId: card.id,
+            effectType: effect.type,
+            description: effect.description,
+        });
+        return false;
     }
 
-    if (
-        effectId === "support.hp_heal" ||
-        effectId === "support.atk_buff" ||
-        effectId === "support.first_strike" ||
-        effectId === "support.grant_eat_up_hp" ||
-        effectId === "support.atk_mult"
-    ) {
-        return applyBattleOptionPrimitive(effectId, args, sourceSessionId, ctx, hpTarget);
-    }
-
-    // Compose / catalog_text: route clauses through the same primitives as digimon support.
-    const supportType = String(card.supportEffect?.type ?? "").trim();
-    const description = String(card.supportEffect?.description ?? "").trim();
-
-    if (supportType === "compose" || supportType === "catalog_text" || (!effectId && description)) {
-        const inferred =
-            supportType === "compose" && description
-                ? { type: "compose" as const, description }
-                : inferCompoundSupportEffect(description) ??
-                  (supportType && supportType !== "catalog_text"
-                      ? {
-                            type: supportType,
-                            value:
-                                card.supportEffect?.value ??
-                                readNumberArg(args, "value", 0),
-                            targetAttack:
-                                card.supportEffect?.targetAttack ||
-                                (typeof args.targetAttack === "string"
-                                    ? args.targetAttack
-                                    : undefined),
-                            description,
-                        }
-                      : null);
-
-        if (!inferred) return false;
-
-        if (inferred.type === "compose") {
-            const clauses = splitEffectClauses(inferred.description ?? description);
-            let any = false;
-            for (const clause of clauses) {
-                const step = inferSupportEffectFromDescription(clause);
-                if (!step) continue;
-                const stepArgs: EffectArgs = {
-                    ...(step.value != null ? { value: step.value } : {}),
-                    ...(step.targetAttack ? { targetAttack: step.targetAttack } : {}),
-                };
-                if (
-                    applyBattleOptionPrimitive(
-                        step.type,
-                        stepArgs,
-                        sourceSessionId,
-                        ctx,
-                        hpTarget
-                    )
-                ) {
-                    any = true;
-                }
-            }
-            return any;
-        }
-
-        const stepArgs: EffectArgs = {
-            ...args,
-            ...(inferred.value != null ? { value: inferred.value } : {}),
-            ...(inferred.targetAttack ? { targetAttack: inferred.targetAttack } : {}),
-        };
-        return applyBattleOptionPrimitive(
-            inferred.type,
-            stepArgs,
-            sourceSessionId,
-            ctx,
-            hpTarget
-        );
-    }
-
-    if (
-        supportType === "hp_heal" ||
-        supportType === "atk_buff" ||
-        supportType === "first_strike" ||
-        supportType === "grant_eat_up_hp"
-    ) {
-        const stepArgs: EffectArgs = {
-            ...args,
-            ...(card.supportEffect?.value != null ? { value: card.supportEffect.value } : {}),
-            ...(card.supportEffect?.targetAttack
-                ? { targetAttack: card.supportEffect.targetAttack }
-                : {}),
-        };
-        return applyBattleOptionPrimitive(supportType, stepArgs, sourceSessionId, ctx, hpTarget);
-    }
-
-    return false;
+    const pair = [players.source, players.target];
+    const before = battleStateFingerprint(full, pair);
+    const runtime = battle
+        ? buildEffectRuntime(
+              players.source,
+              players.target,
+              battle.sourceAttack ?? null,
+              battle.targetAttack ?? null
+          )
+        : undefined;
+    applySingleEffect(players.source, players.target, effect, full, battle?.hooks, runtime);
+    if (hpTarget) hpTarget.hp = players.source.hp;
+    return battleStateFingerprint(full, pair) !== before;
 }

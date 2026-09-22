@@ -306,6 +306,17 @@ function mapSupportEffect(support: string, speed: number): SupportOut | null {
 
     const base = { description: text, value: 0, priority: speed };
 
+    // KNOWN DEFECT, recorded not fixed (leaf-1.2.1 / PLAN.md generator constraint):
+    // these void branches return no specialty gate, so a text like "If own
+    // Specialty is Ice, opponent's Support Effect is voided." regenerates as an
+    // UNCONDITIONAL void. Commit 7657c41 dropped `requireType:"Ice"` from card 036
+    // and `requireOpponentType:"Dark"` from card 152 this way while both kept their
+    // gating text. This generator cannot be re-run on a fresh clone (its inputs
+    // `scripts/data/asyrafkz/{cards,result}.json` are git-ignored and absent), so
+    // `src/data/cards.json` is edited as the artifact and guarded by
+    // `scripts/verify-specialty-gates.ts` G1/G2 + `src/lib/specialtyGate.test.ts`.
+    // A future regeneration must re-apply those two gates (and add the missing
+    // gate plumbing here) before committing the artifact.
     if (/support effect is voided|opponent'?s support effect is voided|jamming/i.test(text) &&
         /void/i.test(text)) {
         return { ...base, type: "void_enemy_support" };

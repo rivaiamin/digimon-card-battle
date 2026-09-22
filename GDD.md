@@ -41,7 +41,7 @@ Spell-like cards played from the hand to alter the game state.
 
 ### 4. Resource Management: The DP System
 **Digivolve Points (DP)** are the core economy. Unlike other card games, resources do not accumulate automatically each turn.
-* **Gaining DP:** During the Preparation Phase, a player can discard cards from their hand to the Trash. Each discarded card adds its "+DP" value to the player's DP gauge.
+* **Gaining DP:** During the Preparation Phase, a player can discard cards from their hand to the **DP Slot**. Each discarded card adds its "+DP" value to the player's DP gauge. The DP Slot is its own pile, separate from the Trash.
 * **Spending DP:** DP is spent exclusively to Digivolve into higher-level Digimon. 
 
 ---
@@ -59,7 +59,7 @@ The Draw Phase focuses purely on hand replenishment and enforces the game's stri
 #### Phase 2: Preparation Phase
 The Preparation Phase is the tactical setup phase. The active player manages resources, plays items, and evolves their Digimon. Actions can be performed in any order, multiple times, until the player chooses to end the phase.
 * **Play Option Cards:** The player may play any Option cards marked specifically for the "Prep" phase from their hand. 
-* **Generate DP (Discard):** The player selects any number of cards from their hand and sends them to the Trash. The combined "+DP" values of the discarded cards are permanently added to the player's DP gauge.
+* **Generate DP (Discard):** The player selects any number of cards from their hand and sends them to the **DP Slot**. The combined "+DP" values of the discarded cards are permanently added to the player's DP gauge. Cards in the DP Slot are not in the Trash: the prep option `option.prep.fetch_trash_digimon` searches the Trash only, so it cannot retrieve a card discarded for DP.
 * **Digivolve:** If the active Digimon is eligible, the player may play a higher-level Digimon card directly onto it.
     * *Standard Evolution:* Rookie to Champion, or Champion to Ultimate. The player must subtract the exact DP cost listed on the new card from their DP gauge.
     * *Armor Evolution:* A Rookie Digimon merges with a "Digi-Egg" Option card from the hand. This costs 0 DP but usually locks the Digimon from further standard evolution.

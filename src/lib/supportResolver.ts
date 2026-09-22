@@ -271,7 +271,12 @@ function conditionSubject(player: PlayerSchema, attack: AttackType | null): Cond
     };
 }
 
-function buildEffectRuntime(
+/**
+ * Build the runtime facts a conditional / dynamic effect needs. Exported so a
+ * caller applying a primitive outside the ordered stack (battle options) can
+ * supply a real {@link EffectRuntime} instead of a second implementation.
+ */
+export function buildEffectRuntime(
     source: PlayerSchema,
     target: PlayerSchema,
     sourceAttack: AttackType | null,
@@ -293,11 +298,53 @@ const ATTACK_ROTATION: Record<AttackType, AttackType> = {
     cross: "circle",
 };
 
-function effectPriority(effect: SupportEffectSchema | SupportEffectInput): number {
+/**
+ * The single source of an effect's ordering speed (RA-006 step 1).
+ * A card's declared `priority` — the canonical per-card `support_speed` datum —
+ * is authoritative whenever it is set; `docs/2.3` §2B's class rank in
+ * {@link SUPPORT_PRIORITY} is only the equal-speed fallback for effects that
+ * declare none. Callers MUST NOT derive a second speed for the same effect.
+ */
+export function effectPriority(effect: SupportEffectSchema | SupportEffectInput): number {
     const custom = Number((effect as SupportEffectInput).priority ?? 0);
     if (custom > 0) return custom;
+    return effectClassPriority(effect);
+}
+
+/** `docs/2.3` §2B class rank (1 rule override … 5 recovery/utility); the equal-speed fallback key. */
+export function effectClassPriority(effect: SupportEffectSchema | SupportEffectInput): number {
     const t = effect.type as SupportEffectType;
     return SUPPORT_PRIORITY[t] ?? 99;
+}
+
+/** The attack slot shape shared by `PlayerSchema.active` and `BattleCombatant.active`. */
+export type AttackSlotSource =
+    | {
+          circle: { effectId?: string };
+          triangle: { effectId?: string };
+          cross: { effectId?: string };
+      }
+    | null
+    | undefined;
+
+/**
+ * RA-006 step 2 — the "1st-attack owner". Two independent sources grant it: a
+ * resolved support/option effect (`ctx.firstStrikePlayers`) and the attack slot
+ * selected on the Digimon itself (`attack.first_strike`). Both MUST feed the
+ * tie-break; reading only one makes the support ordering and the battle engine
+ * disagree about who attacks first.
+ */
+export function holdsFirstStrike(
+    ctx: SupportBattleContext,
+    sessionId: string,
+    active: AttackSlotSource,
+    attack: AttackType | null | undefined
+): boolean {
+    if (ctx.firstStrikePlayers.has(sessionId)) return true;
+    if (!active || !attack) return false;
+    const slot =
+        attack === "circle" ? active.circle : attack === "triangle" ? active.triangle : active.cross;
+    return String(slot.effectId ?? "").trim() === "attack.first_strike";
 }
 
 /** Normalize specialty labels (Darkness → Dark). */
@@ -399,6 +446,7 @@ type QueuedEffect = {
     target: PlayerSchema;
     effect: SupportEffectSchema;
     priority: number;
+    classPriority: number;
     isActivePlayer: boolean;
 };
 
@@ -600,7 +648,14 @@ function multiplyAttack(ctx: SupportBattleContext, sessionId: string, factor: nu
     ctx.attackMultiplier.set(sessionId, mult);
 }
 
-function applySingleEffect(
+/**
+ * Apply ONE support/battle primitive to the shared context. This is the single
+ * dispatcher for every effect type — `resolveSupportPhase` runs the ordered
+ * stack through it, and other resolution paths (battle options) MUST route here
+ * rather than keeping a second table that can disagree about which primitive
+ * applies to a card.
+ */
+export function applySingleEffect(
     source: PlayerSchema,
     target: PlayerSchema,
     effect: SupportEffectSchema,
@@ -1008,24 +1063,13 @@ export function resolveSupportPhase(
             target,
             effect: card.supportEffect,
             priority: effectPriority(card.supportEffect),
+            classPriority: effectClassPriority(card.supportEffect),
             isActivePlayer,
         });
     };
 
     enqueue(active, defender, digimonActive, true);
     enqueue(defender, active, digimonDefender, false);
-
-    const sessionOrder = tieBreak?.sessionOrder ?? [];
-    const ordered = sortEffectsByConflictPolicy(
-        queue.map(entry => ({
-            effect: entry,
-            priority: entry.priority,
-            sessionId: entry.source.sessionId,
-            isActivePlayer: entry.isActivePlayer,
-            hasFirstStrike: ctx.firstStrikePlayers.has(entry.source.sessionId),
-        })),
-        sessionOrder
-    );
 
     const attackOf = (p: PlayerSchema): AttackType | null => {
         const forced = ctx.forcedAttack.get(p.sessionId);
@@ -1036,6 +1080,26 @@ export function resolveSupportPhase(
         return null;
     };
 
+    const sessionOrder = tieBreak?.sessionOrder ?? [];
+    const ordered = sortEffectsByConflictPolicy(
+        queue.map(entry => ({
+            effect: entry,
+            priority: entry.priority,
+            classPriority: entry.classPriority,
+            sessionId: entry.source.sessionId,
+            isActivePlayer: entry.isActivePlayer,
+            // RA-006 step 2 reads both first-strike sources; reading only the
+            // support-granted set makes this ordering disagree with the engine.
+            hasFirstStrike: holdsFirstStrike(
+                ctx,
+                entry.source.sessionId,
+                entry.source.active,
+                attackOf(entry.source)
+            ),
+        })),
+        sessionOrder
+    );
+
     for (const { effect: entry } of ordered) {
         const runtime = buildEffectRuntime(
             entry.source,
@@ -1044,6 +1108,29 @@ export function resolveSupportPhase(
             attackOf(entry.target)
         );
         applySingleEffect(entry.source, entry.target, entry.effect, ctx, hooks, runtime);
+    }
+
+    // RA-006 step 2 — the "1st-attack owner" has two independent sources: a
+    // resolved support/option effect and the attack slot selected on the Digimon
+    // itself. Registering the second source makes `firstStrikePlayers` the
+    // complete carrier of that fact, so the engine, the support badge and the
+    // ordering above cannot disagree about who attacks first.
+    //
+    // Time point: this runs after the stack has applied, so a support-forced
+    // attack change is already reflected and the set matches the attack the
+    // engine will actually use. The ordering above necessarily ran earlier and
+    // therefore reads the reveal-time (locked) attack. The two differ only when
+    // a support effect in this reveal changes the attack away from a slot that
+    // carried `attack.first_strike`; RA-006 does not order that case, and the
+    // engine's post-force answer is the one that decides the exchange.
+    //
+    // `attackOf` yields null in the legacy simultaneous profile, which has no
+    // locked attack at support time. The slot source is then unobservable here;
+    // the engine still reads it directly via `holdsFirstStrike`.
+    for (const player of [active, defender]) {
+        if (holdsFirstStrike(ctx, player.sessionId, player.active, attackOf(player))) {
+            ctx.firstStrikePlayers.add(player.sessionId);
+        }
     }
 
     return nullify;
