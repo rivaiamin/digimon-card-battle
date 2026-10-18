@@ -537,6 +537,12 @@ export function inferSupportEffectFromDescription(
     if (enemyDiscAtRandom) {
         return { type: "discard_enemy_hand_random", value: Number(enemyDiscAtRandom[1]), description: text };
     }
+    const enemyHandN = text.match(/^discard (\d+) cards? from opponent'?s hand$/i);
+    if (enemyHandN) return { type: "discard_enemy_hand", value: Number(enemyHandN[1]), description: text };
+    if (/^opponent discards (?:opponent'?s )?hand$/i.test(text)) {
+        return { type: "discard_enemy_hand", value: 0, description: text };
+    }
+
     if (/^discard all cards? in opponent'?s hand$/i.test(text) || /^opponent discards all cards?$/i.test(text)) {
         return { type: "discard_enemy_hand", value: 0, description: text };
     }
@@ -614,9 +620,29 @@ function clauseParses(clause: string): boolean {
  * fully parse.
  */
 export function splitComposeClauses(text: string): string[] {
-    const byPeriod = splitEffectClauses(text);
+    const byPeriod = inheritOpponentSubject(splitEffectClauses(text));
     if (byPeriod.length >= 2 && byPeriod.every(clauseParses)) return byPeriod;
-    return splitConsequentClauses(text);
+    return inheritOpponentSubject(splitConsequentClauses(text));
+}
+
+function inheritOpponentSubject(clauses: string[]): string[] {
+    if (clauses.length < 2) return clauses;
+    const first = canonicalizeEffectText(clauses[0]!).replace(/\.\s*$/, "");
+    if (/^opponent discards \d+ cards? from opponent'?s online deck$/i.test(first)) {
+        return clauses.map((clause, index) => {
+            if (index === 0) return clause;
+            const hand = canonicalizeEffectText(clause).match(/^(\d+) cards? from hand$/i);
+            return hand ? `discard ${hand[1]} cards from opponent's hand` : clause;
+        });
+    }
+    if (/^opponent discards (?:opponent'?s )?hand$/i.test(first)) {
+        return clauses.map((clause, index) => {
+            if (index === 0) return clause;
+            const dp = canonicalizeEffectText(clause).match(/^(all|\d+) cards? in opponent'?s dp slot$/i);
+            return dp ? `discard ${dp[1]} opponent's cards in opponent's dp slot` : clause;
+        });
+    }
+    return clauses;
 }
 
 /**

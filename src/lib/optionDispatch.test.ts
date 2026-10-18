@@ -206,13 +206,37 @@ describe("battle option dispatch (FC-008)", () => {
         expect(result.opp.active!.type).toBe("Fire");
     });
 
-    it("reports an unsupported effect instead of silently doing nothing", () => {
-        // 225 Heap of Junk's text has no primitive; pre-fix it reached
-        // `default: break` with no signal at all.
+    it("discards the opponent's Online Deck and Hand using Heap of Junk", () => {
         const result = play("225");
-        expect(result.mutated).toBe(false);
-        expect(result.unresolved).toHaveLength(1);
-        expect(result.unresolved[0]).toMatch(/^no_effect_text:/);
+        expect(result.mutated).toBe(true);
+        expect(result.opp.deck).toHaveLength(1);
+        expect(result.opp.hand).toHaveLength(2);
+        expect(result.opp.trash).toHaveLength(3);
+        expect(result.self.hand).toHaveLength(3);
+        expect(result.self.deck).toHaveLength(3);
+        expect(result.self.trash).toHaveLength(0);
+        expect(result.unresolved).toHaveLength(0);
+    });
+
+    it("discards the opponent's Hand and DP Slot using Rosemon's Lure", () => {
+        const self = makePlayer("a", "Fire", "Champion", 400);
+        const opp = makePlayer("d", "Nature", "Champion", 400);
+        for (let i = 0; i < 3; i++) {
+            const c = new CardSchema();
+            c.id = `d-slot-${i}`;
+            c.cardKind = "digimon";
+            opp.dpSlot.push(c);
+        }
+        const ctx = createSupportBattleContext();
+        applyBattleOptionToContext(optionLike(card("292")), self.sessionId, ctx, undefined, {
+            source: self,
+            target: opp,
+        });
+        expect(opp.hand).toHaveLength(0);
+        expect(opp.dpSlot).toHaveLength(0);
+        expect(opp.trash).toHaveLength(6);
+        expect(self.hand).toHaveLength(3);
+        expect(self.trash).toHaveLength(0);
     });
 
     it("still applies the plain primitives the option path always supported", () => {
@@ -239,12 +263,12 @@ describe("option effect classification", () => {
         });
     });
 
-    it("classifies an unparseable card with a reason and the card id", () => {
-        const verdict = classifyOptionEffect(optionLike(card("225")));
+    it("classifies a card with unsupported partner inventory behavior and its id", () => {
+        const verdict = classifyOptionEffect(optionLike(card("257")));
         expect(verdict.implemented).toBe(false);
         if (verdict.implemented !== false) throw new Error("unreachable");
         expect(verdict.reason).toBe("no_effect_text");
-        expect(verdict.detail.cardId).toBe("225");
+        expect(verdict.detail.cardId).toBe("257");
     });
 
     it("classifies an evolution option by its effectId, not its prose", () => {

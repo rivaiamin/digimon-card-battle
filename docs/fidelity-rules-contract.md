@@ -65,7 +65,7 @@ Primary objective for E0 / T0-1:
 | FC-024 | Disconnect/reconnect policy MUST be explicit, fair, and deterministic for ranked multiplayer outcomes. | `NET_SPEC` L5, L15-L22 | `reconnectPolicy.ts` + `BattleRoom.onDrop`/`onReconnect`/`onLeave` (30s grace; consented/expired → disconnect forfeit) |
 | FC-025 | Hidden information MUST remain private until reveal gates are satisfied (support/attack anti-leak guarantees). | `NET_SPEC` L19-L22 | `ROOM` L19-L23, L482-L493, L520-L527; `STATE` L51-L60 |
 | FC-026 | Card taxonomy MUST represent Digimon, Option, and Evolution card categories in schema/runtime. | `MANUAL` L269-L271; `WIKIMON` L36; `GFQ_CARDLIST` L180-L184, L1883, L2080, L2724, L2772 | `cardCatalogLoader.ts` (`cardKind` on all cards); scenario `catalog-taxonomy-effect-normalize` |
-| FC-027 | Effect modeling MUST be normalized into stable effect IDs + arguments (data-driven, not one-off hardcoding). | `BACKLOG` L88; `MANUAL` L413-L417 | `effectTextNormalize.ts` + `KNOWN_EFFECT_IDS`; of the 257 lines in `effects.json`, 252 are `implemented`, 1 is `partial`, and 4 are `catalog_only` |
+| FC-027 | Effect modeling MUST be normalized into stable effect IDs + arguments (data-driven, not one-off hardcoding). | `BACKLOG` L88; `MANUAL` L413-L417 | `effectTextNormalize.ts` + `KNOWN_EFFECT_IDS`; of the 257 lines in `effects.json`, 254 are `implemented`, 1 is `partial`, and 2 are `catalog_only`; see §5.2 for remaining gaps |
 | FC-028 | Deck legality MUST enforce canonical constraints (30 cards, duplicate limits, special constraints). | `MANUAL` L427; `WIKIMON` L40 | `ROOM` L290-L313 (auto-generated deck, no player deck validation API) |
 | FC-029 | Rule variants (special arenas / mode rules) MUST be configurable as explicit profiles, not hidden ad-hoc code branches. | `BACKLOG` L90; `NET_SPEC` L5-L6 | `ROOM` L27-L31, L290-L313 (single rule path) |
 | FC-030 | Fidelity verification MUST include deterministic regression scenarios mapped to FC IDs in CI/replay tooling. | `BACKLOG` L91, L270-L273 | `BACKLOG` L264-L282 (planned only; no implemented scenario harness yet) |
@@ -117,6 +117,15 @@ If future primary evidence contradicts a decision, update this section and link 
      - impacted FC IDs,
      - migration implications,
      - test scenario IDs to update.
+
+
+### 5.2 Option and Cross effect coverage
+
+- Compound discard clauses retain their opponent target across omitted subjects. Heap of Junk (#225) discards two opponent Online Deck cards and one opponent Hand card; Rosemon's Lure (#292) discards the opponent's entire Hand and DP Slot.
+- Crash reads the user's remaining HP when their strike executes, after any earlier hit, and self-KOs immediately after that strike. A canceled Crash never executes or self-KOs.
+- Eat-Up HP recovers the actual HP removed by each landed strike, capped at the user's maximum HP, before a surviving opponent's return hit. It cannot revive a user killed by that return hit. Support-granted Eat-Up HP uses the same timing.
+- Remaining unsupported effects: Partner Finder (#257) requires partner-card identification/inventory behavior; Digi-devolve (#300) has no executable evolution effect. Fake Sevens (#200) explicitly says “None” and is not a missing battle effect.
+- Speed Digivolve (#299) remains `partial`: its DP bypass is modeled, but its abnormal-state restriction is not implemented. An `implemented` catalog classification identifies a resolver mapping, not proof of every possible effect interaction.
 
 ---
 
