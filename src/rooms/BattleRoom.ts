@@ -1253,6 +1253,8 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
                   }
                 : undefined
         );
+        this.syncActiveHp(active);
+        this.syncActiveHp(defender);
 
         // Digimon supports (and voided options) must reach trash; surviving options
         // are already trashed by applyBattleOption.
@@ -1324,6 +1326,10 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         this.beginSupportPlacement();
     }
 
+    private syncActiveHp(player: PlayerSchema): void {
+        if (player.active) player.active.hp = player.hp;
+    }
+
     private toBattleCombatant(player: PlayerSchema): BattleCombatant {
         const active = player.active;
         return {
@@ -1386,6 +1392,8 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
 
         p1.hp = battle.p1Hp;
         p2.hp = battle.p2Hp;
+        this.syncActiveHp(p1);
+        this.syncActiveHp(p2);
         this.state.combatStrikesJson = serializeCombatStrikes(battle.strikes);
         this.state.lastBattleAttackerSessionId = this.state.activePlayerSessionId;
 

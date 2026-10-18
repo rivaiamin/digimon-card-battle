@@ -124,6 +124,7 @@ If future primary evidence contradicts a decision, update this section and link 
 - Compound discard clauses retain their opponent target across omitted subjects. Heap of Junk (#225) discards two opponent Online Deck cards and one opponent Hand card; Rosemon's Lure (#292) discards the opponent's entire Hand and DP Slot.
 - Crash reads the user's remaining HP when their strike executes, after any earlier hit, and self-KOs immediately after that strike. A canceled Crash never executes or self-KOs.
 - Eat-Up HP recovers the actual HP removed by each landed strike, capped at the user's maximum HP, before a surviving opponent's return hit. It cannot revive a user killed by that return hit. Support-granted Eat-Up HP uses the same timing.
+- HP recovery adds to current HP, capped at the active Digimon's maximum HP; support and battle resolution keep `PlayerSchema.hp` and the active Digimon's `hp` synchronized.
 - Remaining unsupported effects: Partner Finder (#257) requires partner-card identification/inventory behavior; Digi-devolve (#300) has no executable evolution effect. Fake Sevens (#200) explicitly says “None” and is not a missing battle effect.
 - Speed Digivolve (#299) remains `partial`: its DP bypass is modeled, but its abnormal-state restriction is not implemented. An `implemented` catalog classification identifies a resolver mapping, not proof of every possible effect interaction.
 
