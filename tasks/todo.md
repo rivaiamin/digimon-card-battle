@@ -17,16 +17,17 @@ Linked plan: `tasks/plan.md`
 - [x] **Task A4:** Migrate UI/VFX consumers
 
 #### Checkpoint A
-- [ ] `pnpm lint` passes
-- [ ] `pnpm test` passes
-- [ ] No new imports from `constants.ts` for pure types
+- [x] `pnpm lint` passes
+- [x] `pnpm test` passes
+- [x] No new imports from `constants.ts` for pure types
 
 ### Phase A3: Named card vocabularies
 
 - [x] **Task A5:** Add `Specialty` and `DigimonLevel` unions on `DigimonCardData` only
+- [x] **Task A6:** Migrate remaining test/script consumers and remove the compatibility re-export
 
 #### Checkpoint A complete
-- [ ] A1–A4 verified; human OK to start #02 implementation
+- [x] A1–A6 verified; user approved starting #02 implementation
 
 ---
 
@@ -93,13 +94,13 @@ Linked plan: `tasks/plan.md`
 **Description:** Add shared `AttackType` and `AttackTarget` types to `src/types.ts`; update the card model fields to use them. Keep `phaseTimer.ATTACK_TYPES` as the single runtime value list, checked against the shared type.
 
 **Acceptance criteria:**
-- [ ] One shared `AttackType` union in `src/types.ts`
-- [ ] `phaseTimer.ATTACK_TYPES` remains the sole runtime enumeration
-- [ ] Resolver/parser-local unions are removed or re-exported only for compatibility
+- [x] One shared `AttackType` union in `src/types.ts`
+- [x] `phaseTimer.ATTACK_TYPES` remains the sole runtime enumeration
+- [x] Resolver/parser-local unions are removed or re-exported only for compatibility
 
 **Verification:**
-- [ ] `pnpm lint`
-- [ ] `pnpm test`
+- [x] `pnpm lint`
+- [x] `pnpm test`
 
 **Dependencies:** None  
 **Files likely touched:** `src/types.ts`, `src/lib/phaseTimer.ts`, `src/lib/effectTextNormalize.ts`, `src/lib/supportResolver.ts`  
@@ -112,12 +113,12 @@ Linked plan: `tasks/plan.md`
 **Description:** Import the shared attack type in `supportResolver`, `effectTextNormalize`, `effectCondition`, `battleEffectEngine`, and `optionResolver`; remove local aliases and avoid accidental runtime-value imports.
 
 **Acceptance criteria:**
-- [ ] These five modules have no private `AttackType` union
-- [ ] Existing `letterToAttack` and resolver behavior is unchanged
+- [x] These five modules have no private `AttackType` union
+- [x] Existing `letterToAttack` and resolver behavior is unchanged
 
 **Verification:**
-- [ ] `pnpm lint`
-- [ ] `pnpm test`
+- [x] `pnpm lint`
+- [x] `pnpm test`
 
 **Dependencies:** A1  
 **Files likely touched:** five listed `src/lib/*.ts` modules  
@@ -130,12 +131,12 @@ Linked plan: `tasks/plan.md`
 **Description:** Point `BattleRoom`, `combatStrikePlan`, and `fidelityScenarioRunner` to the canonical type; migrate affected test imports without changing behavior.
 
 **Acceptance criteria:**
-- [ ] Room and scenario types resolve from `src/types.ts`
-- [ ] `combatStrikePlan` no longer imports the type indirectly from `supportResolver`
+- [x] Room and scenario types resolve from `src/types.ts`
+- [x] `combatStrikePlan` no longer imports the type indirectly from `supportResolver`
 
 **Verification:**
-- [ ] `pnpm lint`
-- [ ] `pnpm test`
+- [x] `pnpm lint`
+- [x] `pnpm test`
 
 **Dependencies:** A1  
 **Files likely touched:** `src/rooms/BattleRoom.ts`, `src/lib/combatStrikePlan.ts`, `src/lib/fidelityScenarioRunner.ts`  
@@ -148,12 +149,12 @@ Linked plan: `tasks/plan.md`
 **Description:** Replace inline attack unions in Arena, BattleHUD, attack panels/overlay, and the VFX hook with the shared type; remove the hook's duplicate public alias.
 
 **Acceptance criteria:**
-- [ ] UI attack consumers import `AttackType` from `src/types.ts`
-- [ ] No behavior change in attack selection or VFX mapping
+- [x] UI attack consumers import `AttackType` from `src/types.ts`
+- [x] No behavior change in attack selection or VFX mapping
 
 **Verification:**
-- [ ] `pnpm lint`
-- [ ] `pnpm build`
+- [x] `pnpm lint`
+- [x] `pnpm build`
 
 **Dependencies:** A1  
 **Files likely touched:** `src/components/Arena.tsx`, `src/components/BattleHUD.tsx`, `src/components/battle/AttackRevealOverlay.tsx`, `src/components/battle/AttackStrikePanel.tsx`, `src/hooks/useBattleVfx.ts`
@@ -166,17 +167,34 @@ Linked plan: `tasks/plan.md`
 **Description:** Add named `Specialty` and `DigimonLevel` unions for `DigimonCardData` only; do not narrow `CardSchema` or loader inputs.
 
 **Acceptance criteria:**
-- [ ] `DigimonCardData.level` uses `DigimonLevel`, preserving `Armor`
-- [ ] `DigimonCardData.type` uses `Specialty`
-- [ ] Catalog loader still accepts empty `level` for Options
+- [x] `DigimonCardData.level` uses `DigimonLevel`, preserving `Armor`
+- [x] `DigimonCardData.type` uses `Specialty`
+- [x] Catalog loader still accepts empty `level` for Options
 
 **Verification:**
-- [ ] `pnpm lint`
-- [ ] `src/lib/evolutionEligibility.test.ts`
+- [x] `pnpm lint`
+- [x] `src/lib/evolutionEligibility.test.ts`
 
 **Dependencies:** A1–A4  
 **Files likely touched:** `src/types.ts`, and casts only if compile errors require them  
 **Estimated scope:** Small
+
+### Task A6: Remove attack type compatibility re-export
+
+**Description:** Import `AttackType` directly in the remaining support tests, room test, and resolution verifier; remove the re-export from `supportResolver`.
+
+**Acceptance criteria:**
+- [x] No internal consumer imports `AttackType` from `supportResolver`
+- [x] `supportResolver` does not re-export the shared type
+
+**Verification:**
+- [x] `pnpm lint`
+- [x] Focused support and resolution tests/verifier
+
+**Dependencies:** A2–A5  
+**Files likely touched:** `src/lib/supportOrdering.test.ts`, `src/lib/supportPrimitives.test.ts`, `src/rooms/BattleRoom.test.ts`, `src/lib/supportResolver.ts`, `scripts/verify-resolution-order.ts`  
+**Estimated scope:** Medium (5 files)
+
 
 ---
 

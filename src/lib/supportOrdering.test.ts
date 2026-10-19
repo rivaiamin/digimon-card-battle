@@ -7,6 +7,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
+import type { AttackType } from "../types";
 import { CardSchema, PlayerSchema, SupportEffectSchema } from "../schema/BattleState";
 import { resolveFullBattle, type BattleCombatant } from "./battleEffectEngine";
 import {
@@ -15,7 +16,6 @@ import {
     effectPriority,
     getAttackDamageBreakdown,
     resolveSupportPhase,
-    type AttackType,
     type SupportBattleContext,
 } from "./supportResolver";
 

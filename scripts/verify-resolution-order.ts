@@ -14,6 +14,7 @@
  */
 
 import { readFileSync } from "node:fs";
+import type { AttackType } from "../src/types";
 
 import { resolveFullBattle, type BattleCombatant } from "../src/lib/battleEffectEngine";
 import { compareOrderedEffects, sortEffectsByConflictPolicy } from "../src/lib/effectConflictResolver";
@@ -23,7 +24,6 @@ import {
     effectPriority,
     getAttackDamageBreakdown,
     resolveSupportPhase,
-    type AttackType,
     type SupportBattleContext,
 } from "../src/lib/supportResolver";
 import { CardSchema, PlayerSchema, SupportEffectSchema } from "../src/schema/BattleState";

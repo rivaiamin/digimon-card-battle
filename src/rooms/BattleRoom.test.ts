@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
+import type { AttackType } from "../types";
 
 import cardsData from "../data/cards.json";
 import { loadCardCatalog } from "../lib/cardCatalogLoader";
@@ -17,7 +18,7 @@ type TestRoom = {
         players: { set(sessionId: string, player: PlayerSchema): void };
         activePlayerSessionId: string;
     };
-    attackChoices: Map<string, "circle" | "triangle" | "cross">;
+    attackChoices: Map<string, AttackType | null>;
     revealTimer: { clear(): void } | null;
     effectsTimer: { clear(): void } | null;
     resolutionTimer: { clear(): void } | null;

@@ -21,7 +21,6 @@ import {
     type ConditionSubject,
 } from "./effectCondition";
 
-export type { AttackType } from "../types";
 
 export type SupportEffectType =
     | "void_enemy_support"

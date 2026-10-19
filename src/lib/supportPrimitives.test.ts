@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
+import type { AttackType } from "../types";
 import { CardSchema, PlayerSchema, SupportEffectSchema } from "../schema/BattleState";
 import {
     createSupportBattleContext,
     getEffectiveAttackDamage,
     resolveSupportPhase,
-    type AttackType,
 } from "./supportResolver";
 import { resolveFullBattle, type BattleCombatant } from "./battleEffectEngine";
 import { createSeededRng } from "./seededRng";
