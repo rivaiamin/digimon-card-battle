@@ -49,9 +49,11 @@ Gameplay semantics stay frozen unless explicitly called out: pre-Cross damage re
 
 **Current catalog baseline (measured):** 301 cards total; 102 Options; 110 `catalog_text`; 47 `compose`; 46 `conditional` support effects.
 
-**Inventory run:** `pnpm exec tsx scripts/inventory-effect-plans.ts` reported 301 cards, 102 Options, 110 `catalog_text`, 47 `compose`, and 46 `conditional` effects. Of 203 candidates, 193 parse into a recognized effect and currently lack an attached plan; 10 remain parser-unresolved: `200`, `257`, and `293`–`300` (all `catalog_text`). The report lists each candidate's type/status and exact missing/invalid/unresolved IDs. Parser recognition is not proof of complete execution.
+**Pre-migration inventory:** `pnpm exec tsx scripts/inventory-effect-plans.ts` reported 301 cards, 102 Options, 110 `catalog_text`, 47 `compose`, and 46 `conditional` effects. Of 203 candidates, 193 parse into a recognized effect; 10 remain parser-unresolved: `200`, `257`, and `293`–`300` (all `catalog_text`).
 
-**Materializer coverage:** A catalog sweep compared the parser's 193 recognized candidates with `materializeEffectPlan`; all 193 produced plans and no IDs failed. Unparseable cards remain the explicit 10-ID list above.
+**Plan materialization result:** All 193 parser-recognized candidates produced plans; a second deterministic pass matched all 193 serialized plans. Post-backfill inventory reports 193 valid, zero missing, zero invalid, and the same 10 unresolved IDs. Parser recognition is not proof of complete execution.
+
+**Catalog build limitation:** `scripts/data/asyrafkz/cards.json` is absent, so `pnpm cards:build` cannot run in this checkout. `buildCardCatalog.ts` now emits plans when sources are available; the checked-in `src/data/cards.json` artifact was backfilled from its existing descriptions without rebuilding other card fields.
 
 - Runtime prose interpretation remains in `supportResolver.applySingleEffect` for `compose` / `conditional`, and `optionResolver.toSupportEffect` for `catalog_text`.
 - `scripts/verify-specialty-gates.ts` currently treats compose/conditional descriptions as executable input; `optionDispatch.test.ts` exercises real `PlayerSchema` options.

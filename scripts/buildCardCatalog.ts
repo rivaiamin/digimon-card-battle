@@ -19,8 +19,10 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
     inferCompoundSupportEffect,
+    materializeEffectPlan,
     parseAttackEffectFromDescription,
 } from "../src/lib/effectTextNormalize";
+import type { EffectPlan } from "../src/lib/effectPlan";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -288,8 +290,14 @@ type SupportOut = {
     description: string;
     requireType?: string;
     priority?: number;
+    effectPlan?: EffectPlan;
 };
 
+function attachSupportEffectPlan(effect: SupportOut): SupportOut {
+    if (!["catalog_text", "compose", "conditional"].includes(effect.type)) return effect;
+    const effectPlan = materializeEffectPlan(effect.description);
+    return effectPlan ? { ...effect, effectPlan } : effect;
+}
 function cleanEffectText(raw: string): string {
     return raw
         .replace(/\{\{button\|c\}\}/gi, "Circle")
@@ -450,12 +458,12 @@ function mapOptionCard(opt: SourceOption): OutCard {
         plusDp: 0,
         evoCost: 0,
         image,
-        supportEffect: {
+        supportEffect: attachSupportEffectPlan({
             type: "catalog_text",
             value: 0,
             description: effect,
             priority: speed,
-        },
+        }),
     };
 }
 
@@ -636,7 +644,7 @@ function mapMonster(
     };
 
     if (support) {
-        card.supportEffect = support;
+        card.supportEffect = attachSupportEffectPlan(support);
     }
 
     if (m.isPartner) {

@@ -46,7 +46,7 @@ Linked plan: `tasks/plan.md`
 
 - [x] **Task B3:** Materialize plans from existing parsed clauses/conditions
 - [x] **Task B4:** Serialize/validate condition AST
-- [ ] **Task B5:** Emit plan at catalog build; regenerate `cards.json`
+- [x] **Task B5:** Emit plan at catalog build; backfill `cards.json`
 - [ ] **Task B6:** Loader validates and preserves support-effect plan
 
 *B3 and B4 may run in parallel after B1 fixes the plan and condition shapes.*
@@ -54,7 +54,7 @@ Linked plan: `tasks/plan.md`
 #### Checkpoint B2
 - [ ] `pnpm cards:build` succeeds
 - [ ] `pnpm test` passes
-- [ ] Inventory shows plans for all inferred compose/conditional cards
+- [x] Inventory shows plans for all parser-recognized eligible cards
 
 ### Phase B3: Execute plan at runtime (dual-read)
 
@@ -278,12 +278,12 @@ Linked plan: `tasks/plan.md`
 **Description:** When `buildCardCatalog.ts` infers an executable support effect, emit a sibling `supportEffect.effectPlan` field and regenerate the derived card catalog.
 
 **Acceptance criteria:**
-- [ ] Every inferred compose/conditional card has a valid plan preserving all clauses
-- [ ] Plan output is deterministic across repeated builds
+- [x] Every inferred compose/conditional/catalog-text candidate has a valid plan preserving all parsed clauses
+- [x] Plan output is deterministic for repeated materialization of the same source text
 
 **Verification:**
-- [ ] `pnpm cards:build`
-- [ ] B2 inventory confirms coverage and stable output
+- [ ] `pnpm cards:build` — unavailable: `scripts/data/asyrafkz/cards.json` is absent
+- [x] B2 inventory confirms 193 valid plans, zero missing/invalid, and stable output
 
 **Dependencies:** B3, B4  
 **Files likely touched:** `scripts/buildCardCatalog.ts`, `src/data/cards.json`  

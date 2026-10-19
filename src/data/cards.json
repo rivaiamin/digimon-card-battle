@@ -88,7 +88,30 @@
       "description": "Changes own Specialty to Fire. Boost own Attack Power +100.",
       "value": 0,
       "priority": 1,
-      "type": "compose"
+      "type": "compose",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "change_own_specialty",
+              "targetAttack": "Fire"
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_buff",
+              "targetAttack": "all",
+              "value": 100
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -224,7 +247,26 @@
       "description": "If own Specialty is Fire, boost own Attack Power +300.",
       "value": 0,
       "priority": 1,
-      "type": "conditional"
+      "type": "conditional",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "own_specialty_is",
+          "specialty": "Fire"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_buff",
+              "targetAttack": "all",
+              "value": 300
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -349,7 +391,24 @@
       "description": "If own Attack is Circle, attack first.",
       "value": 0,
       "priority": 1,
-      "type": "conditional"
+      "type": "conditional",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "own_attack_is",
+          "attack": "circle"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "first_strike"
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -443,7 +502,26 @@
       "description": "If own Level is U, boost own Attack Power +500.",
       "value": 0,
       "priority": 1,
-      "type": "conditional"
+      "type": "conditional",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "own_level_is",
+          "level": "U"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_buff",
+              "targetAttack": "all",
+              "value": 500
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -575,7 +653,26 @@
       "description": "If own Level is A, boost own Attack Power +300.",
       "value": 0,
       "priority": 1,
-      "type": "conditional"
+      "type": "conditional",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "own_level_is",
+          "level": "A"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_buff",
+              "targetAttack": "all",
+              "value": 300
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -619,7 +716,24 @@
       "description": "If own attack is Triangle, attack first.",
       "value": 0,
       "priority": 2,
-      "type": "conditional"
+      "type": "conditional",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "own_attack_is",
+          "attack": "triangle"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "first_strike"
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -665,7 +779,26 @@
       "description": "If own Level is C, boost own Attack Power +300.",
       "value": 0,
       "priority": 1,
-      "type": "conditional"
+      "type": "conditional",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "own_level_is",
+          "level": "C"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_buff",
+              "targetAttack": "all",
+              "value": 300
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -711,7 +844,30 @@
       "description": "Change own Specialty to Fire. Boost own Attack Power +200.",
       "value": 0,
       "priority": 2,
-      "type": "compose"
+      "type": "compose",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "change_own_specialty",
+              "targetAttack": "Fire"
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_buff",
+              "targetAttack": "all",
+              "value": 200
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -836,7 +992,26 @@
       "description": "If opponent's Specialty is Ice, own Attack Power is tripled.",
       "value": 0,
       "priority": 1,
-      "type": "conditional"
+      "type": "conditional",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "opponent_specialty_is",
+          "specialty": "Ice"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_mult",
+              "targetAttack": "all",
+              "value": 3
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -882,7 +1057,30 @@
       "description": "Use Circle and Boost own Circle Attack Power +400.",
       "value": 0,
       "priority": 2,
-      "type": "compose"
+      "type": "compose",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "force_self_attack",
+              "targetAttack": "circle"
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_buff",
+              "targetAttack": "circle",
+              "value": 400
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -970,7 +1168,30 @@
       "description": "Own HP become 10. Boost own Attack Power +500.",
       "value": 0,
       "priority": 2,
-      "type": "compose"
+      "type": "compose",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "hp_set",
+              "value": 10
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_buff",
+              "targetAttack": "all",
+              "value": 500
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -1010,7 +1231,30 @@
       "description": "Discard all own DP Cards in DP Slot, boost own Attack Power +300.",
       "value": 0,
       "priority": 2,
-      "type": "compose"
+      "type": "compose",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "discard_own_dp",
+              "value": 0
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_buff",
+              "targetAttack": "all",
+              "value": 300
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -1146,7 +1390,26 @@
       "description": "If both Levels are C, boost own Attack Power +400.",
       "value": 0,
       "priority": 1,
-      "type": "conditional"
+      "type": "conditional",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "both_levels_are",
+          "level": "C"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_buff",
+              "targetAttack": "all",
+              "value": 400
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -1456,7 +1719,26 @@
       "description": "If opponent's Specialty is Ice, own Attack Power is doubled.",
       "value": 0,
       "priority": 1,
-      "type": "conditional"
+      "type": "conditional",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "opponent_specialty_is",
+          "specialty": "Ice"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_mult",
+              "targetAttack": "all",
+              "value": 2
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -1575,7 +1857,29 @@
       "description": "Change own Specialty to Ice. Recover own HP by +100.",
       "value": 0,
       "priority": 2,
-      "type": "compose"
+      "type": "compose",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "change_own_specialty",
+              "targetAttack": "Ice"
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "hp_heal",
+              "value": 100
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -1668,7 +1972,25 @@
       "description": "If own Cards in Hand 3 or more, opponent's Attack Power becomes 0.",
       "value": 0,
       "priority": 1,
-      "type": "conditional"
+      "type": "conditional",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "own_hand_gte",
+          "value": 3
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "enemy_atk_set",
+              "value": 0
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -1804,7 +2126,24 @@
       "description": "If own Specialty is Ice, opponent's Attack Power is halved.",
       "value": 0,
       "priority": 1,
-      "type": "conditional"
+      "type": "conditional",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "own_specialty_is",
+          "specialty": "Ice"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "enemy_atk_halve"
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -1850,7 +2189,28 @@
       "description": "Triangle Counterattack. Attack second.",
       "value": 0,
       "priority": 1,
-      "type": "compose"
+      "type": "compose",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "grant_counter",
+              "targetAttack": "triangle"
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "attack_second"
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -1896,7 +2256,28 @@
       "description": "Circle Counterattack. Attack second.",
       "value": 0,
       "priority": 1,
-      "type": "compose"
+      "type": "compose",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "grant_counter",
+              "targetAttack": "circle"
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "attack_second"
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -2125,7 +2506,26 @@
       "description": "If opponent's Specialty is Fire, own Attack Power is tripled.",
       "value": 0,
       "priority": 2,
-      "type": "conditional"
+      "type": "conditional",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "opponent_specialty_is",
+          "specialty": "Fire"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_mult",
+              "targetAttack": "all",
+              "value": 3
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -2170,7 +2570,25 @@
       "description": "If own Attack is not Circle, recover own HP by +300.",
       "value": 0,
       "priority": 2,
-      "type": "conditional"
+      "type": "conditional",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "own_attack_not",
+          "attack": "circle"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "hp_heal",
+              "value": 300
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -2522,7 +2940,25 @@
       "description": "If opponent used Circle, change it to Cross.",
       "value": 0,
       "priority": 2,
-      "type": "conditional"
+      "type": "conditional",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "opponent_used",
+          "attack": "circle"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "change_attack",
+              "targetAttack": "cross"
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -2613,7 +3049,26 @@
       "description": "If opponent's Specialty is fire, own Attack Power is tripled.",
       "value": 0,
       "priority": 1,
-      "type": "conditional"
+      "type": "conditional",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "opponent_specialty_is",
+          "specialty": "fire"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_mult",
+              "targetAttack": "all",
+              "value": 3
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -2823,7 +3278,25 @@
       "description": "If own HP are less then 200, reduce opponent's Attack Power to 0.",
       "value": 0,
       "priority": 1,
-      "type": "conditional"
+      "type": "conditional",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "own_hp_lt",
+          "value": 200
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "enemy_atk_zero",
+              "targetAttack": "all"
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -2868,7 +3341,25 @@
       "description": "If opponent's Specialty is Fire, reduce opponent's Attack Power to 0.",
       "value": 0,
       "priority": 1,
-      "type": "conditional"
+      "type": "conditional",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "opponent_specialty_is",
+          "specialty": "Fire"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "enemy_atk_zero",
+              "targetAttack": "all"
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -2914,7 +3405,26 @@
       "description": "If opponent's Specialty is Fire, own Attack Power is doubled.",
       "value": 0,
       "priority": 1,
-      "type": "conditional"
+      "type": "conditional",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "opponent_specialty_is",
+          "specialty": "Fire"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_mult",
+              "targetAttack": "all",
+              "value": 2
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -3132,7 +3642,34 @@
       "description": "If opponent's Specialty is Darkness, own Attack Power is +200 & HP +200.",
       "value": 0,
       "priority": 2,
-      "type": "conditional"
+      "type": "conditional",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "opponent_specialty_is",
+          "specialty": "Darkness"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_buff",
+              "targetAttack": "all",
+              "value": 200
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "hp_heal",
+              "value": 200
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -3177,7 +3714,28 @@
       "description": "Cross Counterattack. Attack second.",
       "value": 0,
       "priority": 2,
-      "type": "compose"
+      "type": "compose",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "grant_counter",
+              "targetAttack": "cross"
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "attack_second"
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -3221,7 +3779,26 @@
       "description": "If own level is U, own Attack Power is doubled.",
       "value": 0,
       "priority": 1,
-      "type": "conditional"
+      "type": "conditional",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "own_level_is",
+          "level": "U"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_mult",
+              "targetAttack": "all",
+              "value": 2
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -3265,7 +3842,24 @@
       "description": "If opponent's HP are 1000+, own attack becomes \"Eat-up HP.\"",
       "value": 0,
       "priority": 2,
-      "type": "conditional"
+      "type": "conditional",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "opponent_hp_gt",
+          "value": 999
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "grant_eat_up_hp"
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -3349,7 +3943,26 @@
       "description": "If opponent's Specialty is Darkness, boost own Attack Power +500.",
       "value": 0,
       "priority": 1,
-      "type": "conditional"
+      "type": "conditional",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "opponent_specialty_is",
+          "specialty": "Darkness"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_buff",
+              "targetAttack": "all",
+              "value": 500
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -3394,7 +4007,24 @@
       "description": "If opponent's Specialty is not Nature, attack second.",
       "value": 0,
       "priority": 2,
-      "type": "conditional"
+      "type": "conditional",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "opponent_specialty_not",
+          "specialty": "Nature"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "attack_second"
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -3440,7 +4070,25 @@
       "description": "If opponent's Specialty is Darkness, recover own HP by +500.",
       "value": 0,
       "priority": 2,
-      "type": "conditional"
+      "type": "conditional",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "opponent_specialty_is",
+          "specialty": "Darkness"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "hp_heal",
+              "value": 500
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -3608,7 +4256,26 @@
       "description": "If own level is U, own Attack Power is doubled.",
       "value": 0,
       "priority": 1,
-      "type": "conditional"
+      "type": "conditional",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "own_level_is",
+          "level": "U"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_mult",
+              "targetAttack": "all",
+              "value": 2
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -3654,7 +4321,26 @@
       "description": "If opponent's Specialty is Darkness, own Attack Power is tripled.",
       "value": 0,
       "priority": 1,
-      "type": "conditional"
+      "type": "conditional",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "opponent_specialty_is",
+          "specialty": "Darkness"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_mult",
+              "targetAttack": "all",
+              "value": 3
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -3699,7 +4385,26 @@
       "description": "If own HP are less than 500, boost own Attack Power +300.",
       "value": 0,
       "priority": 1,
-      "type": "conditional"
+      "type": "conditional",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "own_hp_lt",
+          "value": 500
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_buff",
+              "targetAttack": "all",
+              "value": 300
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -3785,7 +4490,25 @@
       "description": "If own level is lower, boost own Attack Power +500.",
       "value": 0,
       "priority": 1,
-      "type": "conditional"
+      "type": "conditional",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "own_level_lower"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_buff",
+              "targetAttack": "all",
+              "value": 500
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -3870,7 +4593,30 @@
       "description": "Recover own HP by +100. Boost own Attack Power by +100.",
       "value": 0,
       "priority": 2,
-      "type": "compose"
+      "type": "compose",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "hp_heal",
+              "value": 100
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_buff",
+              "targetAttack": "all",
+              "value": 100
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -3915,7 +4661,25 @@
       "description": "If opponent's Specialty is Darkness, lower opponent's Attack Power to 0.",
       "value": 0,
       "priority": 1,
-      "type": "conditional"
+      "type": "conditional",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "opponent_specialty_is",
+          "specialty": "Darkness"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "enemy_atk_zero",
+              "targetAttack": "all"
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -4130,7 +4894,28 @@
       "description": "Lower opponent's Attack Power to 0. Opponent's HP are doubled.",
       "value": 0,
       "priority": 2,
-      "type": "compose"
+      "type": "compose",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "enemy_atk_zero",
+              "targetAttack": "all"
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "enemy_hp_double"
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -4208,7 +4993,26 @@
       "description": "If own Level is R, boost own Attack Power +300.",
       "value": 0,
       "priority": 1,
-      "type": "conditional"
+      "type": "conditional",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "own_level_is",
+          "level": "R"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_buff",
+              "targetAttack": "all",
+              "value": 300
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -4253,7 +5057,25 @@
       "description": "If opponent's Specialty is Darkness, lower opponent's Attack Power -200.",
       "value": 0,
       "priority": 1,
-      "type": "conditional"
+      "type": "conditional",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "opponent_specialty_is",
+          "specialty": "Darkness"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "enemy_atk_lower",
+              "value": 200
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -4376,7 +5198,29 @@
       "description": "Changes own Specialty to Nature. Draw 1 Card.",
       "value": 0,
       "priority": 2,
-      "type": "compose"
+      "type": "compose",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "change_own_specialty",
+              "targetAttack": "Nature"
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "draw_cards",
+              "value": 1
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -4422,7 +5266,26 @@
       "description": "If opponent's Specialty is Ice, boost own Attack Power +300.",
       "value": 0,
       "priority": 1,
-      "type": "conditional"
+      "type": "conditional",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "opponent_specialty_is",
+          "specialty": "Ice"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_buff",
+              "targetAttack": "all",
+              "value": 300
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -4467,7 +5330,25 @@
       "description": "If own HP are more than opponent's HP, own Attack Power is doubled.",
       "value": 0,
       "priority": 1,
-      "type": "conditional"
+      "type": "conditional",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "own_hp_gt_opponent"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_mult",
+              "targetAttack": "all",
+              "value": 2
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -4556,7 +5437,28 @@
       "description": "Own HP are halved. Change own Specialty to Darkness.",
       "value": 0,
       "priority": 2,
-      "type": "compose"
+      "type": "compose",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "self_halve_hp"
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "change_own_specialty",
+              "targetAttack": "Dark"
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -4596,7 +5498,28 @@
       "description": "Discard 7 Cards from own Online Deck. Opponent's HP are halved.",
       "value": 0,
       "priority": 2,
-      "type": "compose"
+      "type": "compose",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "discard_own_deck",
+              "value": 7
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "halve_hp"
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -4640,7 +5563,29 @@
       "description": "Own HP become 10. Changes opponent's Specialty to Darkness.",
       "value": 0,
       "priority": 2,
-      "type": "compose"
+      "type": "compose",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "hp_set",
+              "value": 10
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "change_enemy_specialty",
+              "targetAttack": "Dark"
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -4806,7 +5751,30 @@
       "description": "Discard 5 Cards from own Online Deck. Boost own Attack Power +400.",
       "value": 0,
       "priority": 2,
-      "type": "compose"
+      "type": "compose",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "discard_own_deck",
+              "value": 5
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_buff",
+              "targetAttack": "all",
+              "value": 400
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -4985,7 +5953,25 @@
       "description": "If opponent's Specialty is Nature, opponent discards all Cards.",
       "value": 0,
       "priority": 2,
-      "type": "conditional"
+      "type": "conditional",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "opponent_specialty_is",
+          "specialty": "Nature"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "discard_enemy_hand",
+              "value": 0
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -5029,7 +6015,28 @@
       "description": "Discard 7 Cards from own Online Deck, own Attack is \"Eat-up HP.\"",
       "value": 0,
       "priority": 2,
-      "type": "compose"
+      "type": "compose",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "discard_own_deck",
+              "value": 7
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "grant_eat_up_hp"
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -5073,7 +6080,30 @@
       "description": "Own HP become 10. Own Attack Power is doubled.",
       "value": 0,
       "priority": 2,
-      "type": "compose"
+      "type": "compose",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "hp_set",
+              "value": 10
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_mult",
+              "targetAttack": "all",
+              "value": 2
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -5113,7 +6143,29 @@
       "description": "Own HP are halved. Boost own Attack Power +400.",
       "value": 0,
       "priority": 2,
-      "type": "compose"
+      "type": "compose",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "self_halve_hp"
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_buff",
+              "targetAttack": "all",
+              "value": 400
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -5157,7 +6209,30 @@
       "description": "Discard 1 DP Card from own DP Slot. Boost own Attack Power +200.",
       "value": 0,
       "priority": 2,
-      "type": "compose"
+      "type": "compose",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "discard_own_dp",
+              "value": 1
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_buff",
+              "targetAttack": "all",
+              "value": 200
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -5201,7 +6276,29 @@
       "description": "Discard all Cards in own Hand, then draw 2 Cards.",
       "value": 0,
       "priority": 2,
-      "type": "compose"
+      "type": "compose",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "discard_own_hand",
+              "value": 0
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "draw_cards",
+              "value": 2
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -5288,7 +6385,26 @@
       "description": "If opponent's Specialty is Nature, own Attack Power is tripled.",
       "value": 0,
       "priority": 1,
-      "type": "conditional"
+      "type": "conditional",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "opponent_specialty_is",
+          "specialty": "Nature"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_mult",
+              "targetAttack": "all",
+              "value": 3
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -5465,7 +6581,29 @@
       "description": "Own HP are halved. Boost own Attack Power +300.",
       "value": 0,
       "priority": 2,
-      "type": "compose"
+      "type": "compose",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "self_halve_hp"
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_buff",
+              "targetAttack": "all",
+              "value": 300
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -5600,7 +6738,29 @@
       "description": "Discard 1 Card in DP Slot. change opponent's Specialty to Darkness.",
       "value": 0,
       "priority": 2,
-      "type": "compose"
+      "type": "compose",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "discard_own_dp",
+              "value": 1
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "change_enemy_specialty",
+              "targetAttack": "Dark"
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -5818,7 +6978,26 @@
       "description": "If opponent's Specialty is Nature, own Attack Power is doubled.",
       "value": 0,
       "priority": 1,
-      "type": "conditional"
+      "type": "conditional",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "opponent_specialty_is",
+          "specialty": "Nature"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_mult",
+              "targetAttack": "all",
+              "value": 2
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -5863,7 +7042,24 @@
       "description": "If opponent's Level is A, opponent's HP are halved.",
       "value": 0,
       "priority": 1,
-      "type": "conditional"
+      "type": "conditional",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "opponent_level_is",
+          "level": "A"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "halve_hp"
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -5908,7 +7104,30 @@
       "description": "Reduce own Attack Power by -100. Recover own HP by +200.",
       "value": 0,
       "priority": 2,
-      "type": "compose"
+      "type": "compose",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_buff",
+              "targetAttack": "all",
+              "value": -100
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "hp_heal",
+              "value": 200
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -5953,7 +7172,30 @@
       "description": "Boost own Cross Attack Power +200. Circle & Triangle Attack Power are 0.",
       "value": 0,
       "priority": 1,
-      "type": "compose"
+      "type": "compose",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_buff",
+              "targetAttack": "cross",
+              "value": 200
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "zero_attacks",
+              "targetAttack": "circle,triangle"
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -5999,7 +7241,25 @@
       "description": "If opponent's Specialty is Rare, opponent's HP become 100.",
       "value": 0,
       "priority": 2,
-      "type": "conditional"
+      "type": "conditional",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "opponent_specialty_is",
+          "specialty": "Rare"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "enemy_hp_set",
+              "value": 100
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -6043,7 +7303,29 @@
       "description": "Own Attack becomes \"Eat-up HP.\" Own Attack Power is halved.",
       "value": 0,
       "priority": 2,
-      "type": "compose"
+      "type": "compose",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "grant_eat_up_hp"
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_mult",
+              "targetAttack": "all",
+              "value": 0.5
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -6087,7 +7369,28 @@
       "description": "Opponent's HP are halved. opponent's Attack Power is doubled.",
       "value": 0,
       "priority": 2,
-      "type": "compose"
+      "type": "compose",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "halve_hp"
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "enemy_atk_mult",
+              "value": 2
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -6131,7 +7434,29 @@
       "description": "Discard 1 of opponent's Cards in DP Slot. Draw 1 Card.",
       "value": 0,
       "priority": 2,
-      "type": "compose"
+      "type": "compose",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "discard_enemy_dp",
+              "value": 1
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "draw_cards",
+              "value": 1
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -6177,7 +7502,25 @@
       "description": "If opponent's Specialty is Rare, lower opponent's Attack Power to 0.",
       "value": 0,
       "priority": 1,
-      "type": "conditional"
+      "type": "conditional",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "opponent_specialty_is",
+          "specialty": "Rare"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "enemy_atk_zero",
+              "targetAttack": "all"
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -6223,7 +7566,28 @@
       "description": "Circle Counterattack. Attack second.",
       "value": 0,
       "priority": 1,
-      "type": "compose"
+      "type": "compose",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "grant_counter",
+              "targetAttack": "circle"
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "attack_second"
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -6267,7 +7631,30 @@
       "description": "Recover own HP by +100. Boost own Cross Attack Power by +100.",
       "value": 0,
       "priority": 2,
-      "type": "compose"
+      "type": "compose",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "hp_heal",
+              "value": 100
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_buff",
+              "targetAttack": "cross",
+              "value": 100
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -6312,7 +7699,25 @@
       "description": "If opponent's Specialty is Darkness, lower opponent's Attack Power to 0.",
       "value": 0,
       "priority": 1,
-      "type": "conditional"
+      "type": "conditional",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "opponent_specialty_is",
+          "specialty": "Darkness"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "enemy_atk_zero",
+              "targetAttack": "all"
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -6492,7 +7897,30 @@
       "description": "Recover own HP by +200. Boost own Attack Power by +100.",
       "value": 0,
       "priority": 2,
-      "type": "compose"
+      "type": "compose",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "hp_heal",
+              "value": 200
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_buff",
+              "targetAttack": "all",
+              "value": 100
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -6660,7 +8088,25 @@
       "description": "If opponent has more than 2 Cards in DP Slot, his Attack Power is 0.",
       "value": 0,
       "priority": 1,
-      "type": "conditional"
+      "type": "conditional",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "opponent_dp_slot_gt",
+          "value": 2
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "enemy_atk_zero",
+              "targetAttack": "all"
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -6753,7 +8199,25 @@
       "description": "If opponent used Cross, discard all Cards in opponent's Hand.",
       "value": 0,
       "priority": 2,
-      "type": "conditional"
+      "type": "conditional",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "opponent_used",
+          "attack": "cross"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "discard_enemy_hand",
+              "value": 0
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -7229,7 +8693,29 @@
       "description": "Opponent uses Circle. Lower opponent's Attack Power -100.",
       "value": 0,
       "priority": 2,
-      "type": "compose"
+      "type": "compose",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "change_attack",
+              "targetAttack": "circle"
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "enemy_atk_lower",
+              "value": 100
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -7269,7 +8755,25 @@
       "description": "If 1 or less Cards left in own Hand, opponent's Attack Power goes to 0.",
       "value": 0,
       "priority": 1,
-      "type": "conditional"
+      "type": "conditional",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "own_hand_lte",
+          "value": 1
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "enemy_atk_zero",
+              "targetAttack": "all"
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -7359,7 +8863,29 @@
       "description": "Discard 1 Card at random from own Hand. HP of both Players are 200.",
       "value": 0,
       "priority": 2,
-      "type": "compose"
+      "type": "compose",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "discard_own_hand_random",
+              "value": 1
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "both_hp_set",
+              "value": 200
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -7533,7 +9059,29 @@
       "description": "Opponent's HP become same as own. Own Attack Power becomes 0.",
       "value": 0,
       "priority": 2,
-      "type": "compose"
+      "type": "compose",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "enemy_hp_copy_from_own"
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_set",
+              "targetAttack": "all",
+              "value": 0
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -7579,7 +9127,30 @@
       "description": "Boost own Attack Power +100. Draw 1 Card.",
       "value": 0,
       "priority": 1,
-      "type": "compose"
+      "type": "compose",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_buff",
+              "targetAttack": "all",
+              "value": 100
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "draw_cards",
+              "value": 1
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -7624,7 +9195,30 @@
       "description": "Boost own Attack Power by +100. Draw 1 Card.",
       "value": 0,
       "priority": 1,
-      "type": "compose"
+      "type": "compose",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_buff",
+              "targetAttack": "all",
+              "value": 100
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "draw_cards",
+              "value": 1
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -7669,7 +9263,34 @@
       "description": "If foe's Specialty is Darkness, own Attack Power is Doubled. Draw 1 Card.",
       "value": 0,
       "priority": 1,
-      "type": "conditional"
+      "type": "conditional",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "opponent_specialty_is",
+          "specialty": "Darkness"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_mult",
+              "targetAttack": "all",
+              "value": 2
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "draw_cards",
+              "value": 1
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -7709,7 +9330,30 @@
       "description": "Boost own Attack Power +100. Draw 1 Card.",
       "value": 0,
       "priority": 1,
-      "type": "compose"
+      "type": "compose",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_buff",
+              "targetAttack": "all",
+              "value": 100
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "draw_cards",
+              "value": 1
+            }
+          }
+        ]
+      }
     },
     "isPartner": true
   },
@@ -7755,7 +9399,29 @@
       "description": "Discard 2 Cards from opponent's Online Deck. Draw 1 Card.",
       "value": 0,
       "priority": 2,
-      "type": "compose"
+      "type": "compose",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "discard_enemy_deck",
+              "value": 2
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "draw_cards",
+              "value": 1
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -7801,7 +9467,29 @@
       "description": "Lower Opponent's Attack Power -100. Draw 1 Card.",
       "value": 0,
       "priority": 1,
-      "type": "compose"
+      "type": "compose",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "enemy_atk_lower",
+              "value": 100
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "draw_cards",
+              "value": 1
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -7847,7 +9535,29 @@
       "description": "Change own Specialty to Nature. Draw 1 Card.",
       "value": 0,
       "priority": 2,
-      "type": "compose"
+      "type": "compose",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "change_own_specialty",
+              "targetAttack": "Nature"
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "draw_cards",
+              "value": 1
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -7936,7 +9646,34 @@
       "description": "If foe's Specialty is Nature, own Attack Power is doubled. Draw 1 Card.",
       "value": 0,
       "priority": 1,
-      "type": "conditional"
+      "type": "conditional",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "opponent_specialty_is",
+          "specialty": "Nature"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_mult",
+              "targetAttack": "all",
+              "value": 2
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "draw_cards",
+              "value": 1
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -7981,7 +9718,29 @@
       "description": "Change own Specialty to Nature. Draw 1 card.",
       "value": 0,
       "priority": 2,
-      "type": "compose"
+      "type": "compose",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "change_own_specialty",
+              "targetAttack": "Nature"
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "draw_cards",
+              "value": 1
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -8074,7 +9833,34 @@
       "description": "If foe's Specialty is Darkness, own Attack Power is doubled. Draw 1 Card.",
       "value": 0,
       "priority": 1,
-      "type": "conditional"
+      "type": "conditional",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "opponent_specialty_is",
+          "specialty": "Darkness"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_mult",
+              "targetAttack": "all",
+              "value": 2
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "draw_cards",
+              "value": 1
+            }
+          }
+        ]
+      }
     },
     "isPartner": true
   },
@@ -8121,7 +9907,29 @@
       "description": "Change own Specialty to Nature. Draw 1 Card.",
       "value": 0,
       "priority": 2,
-      "type": "compose"
+      "type": "compose",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "change_own_specialty",
+              "targetAttack": "Nature"
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "draw_cards",
+              "value": 1
+            }
+          }
+        ]
+      }
     },
     "isPartner": true
   },
@@ -8167,7 +9975,30 @@
       "description": "Boost own Attack Power by +100. Draw 1 Card.",
       "value": 0,
       "priority": 1,
-      "type": "compose"
+      "type": "compose",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_buff",
+              "targetAttack": "all",
+              "value": 100
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "draw_cards",
+              "value": 1
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -8211,7 +10042,29 @@
       "description": "Lower Opponent's Attack Power -100. Draw 1 Card.",
       "value": 0,
       "priority": 1,
-      "type": "compose"
+      "type": "compose",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "enemy_atk_lower",
+              "value": 100
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "draw_cards",
+              "value": 1
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -8256,7 +10109,29 @@
       "description": "Lower Opponent's Attack Power -100. Draw 1 Card.",
       "value": 0,
       "priority": 1,
-      "type": "compose"
+      "type": "compose",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "enemy_atk_lower",
+              "value": 100
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "draw_cards",
+              "value": 1
+            }
+          }
+        ]
+      }
     },
     "isPartner": true
   },
@@ -8342,7 +10217,29 @@
       "description": "Discard 2 Cards from opponent's Online Deck. Draw 1 Card.",
       "value": 0,
       "priority": 2,
-      "type": "compose"
+      "type": "compose",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "discard_enemy_deck",
+              "value": 2
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "draw_cards",
+              "value": 1
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -8387,7 +10284,29 @@
       "description": "Discard 2 Cards from opponent's Online Deck. Draw 1 Card.",
       "value": 0,
       "priority": 2,
-      "type": "compose"
+      "type": "compose",
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "discard_enemy_deck",
+              "value": 2
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "draw_cards",
+              "value": 1
+            }
+          }
+        ]
+      }
     },
     "isPartner": true
   },
@@ -8406,7 +10325,35 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Own HP are halved. Counterattack. Attack second.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "self_halve_hp"
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "grant_counter",
+              "targetAttack": "all"
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "attack_second"
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -8424,7 +10371,30 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Discard 1 Card from own Hand. Boost both players' Attack Power +600.",
-      "priority": 1
+      "priority": 1,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "discard_own_hand",
+              "value": 1
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "both_atk_buff",
+              "targetAttack": "all",
+              "value": 600
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -8442,7 +10412,24 @@
       "type": "catalog_text",
       "value": 0,
       "description": "If own Level is below opponent's, opponent's Attack Power becomes 0.",
-      "priority": 1
+      "priority": 1,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "own_level_lower"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "enemy_atk_set",
+              "value": 0
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -8460,7 +10447,29 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Discard 7 Cards from Online Deck. Own Attack Power is same as own HP.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "discard_own_deck",
+              "value": 7
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_set_to_hp",
+              "targetAttack": "all"
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -8478,7 +10487,28 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Own HP are halved. Opponent's Attack Power becomes 0.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "self_halve_hp"
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "enemy_atk_set",
+              "value": 0
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -8496,7 +10526,24 @@
       "type": "catalog_text",
       "value": 0,
       "description": "If opponent's HP are more than 1000, opponent's HP are halved.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "opponent_hp_gt",
+          "value": 1000
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "halve_hp"
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -8514,7 +10561,29 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Discard 7 Cards from own Online Deck. Recover own HP by +1000.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "discard_own_deck",
+              "value": 7
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "hp_heal",
+              "value": 1000
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -8532,7 +10601,30 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Discard 7 Cards from own Online Deck. Boost own Attack Power +500.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "discard_own_deck",
+              "value": 7
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_buff",
+              "targetAttack": "all",
+              "value": 500
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -8550,7 +10642,25 @@
       "type": "catalog_text",
       "value": 0,
       "description": "If opponent's HP is less than own, boost own Attack Power +400.",
-      "priority": 1
+      "priority": 1,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "opponent_hp_lt_own"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_buff",
+              "targetAttack": "all",
+              "value": 400
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -8586,7 +10696,24 @@
       "type": "catalog_text",
       "value": 0,
       "description": "If both players use same Attack, discard all Cards in foe's Hand.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "attacks_same"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "discard_enemy_hand",
+              "value": 0
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -8604,7 +10731,30 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Discard all Cards in own Hand. Own Attack Power is doubled.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "discard_own_hand",
+              "value": 0
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_mult",
+              "targetAttack": "all",
+              "value": 2
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -8622,7 +10772,14 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Both players' Attack Power becomes 0.",
-      "priority": 1
+      "priority": 1,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "effect",
+        "effect": {
+          "type": "both_atk_zero"
+        }
+      }
     }
   },
   {
@@ -8640,7 +10797,29 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Attack first. Boost own Attack Power +100.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "first_strike"
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_buff",
+              "targetAttack": "all",
+              "value": 100
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -8658,7 +10837,14 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Own attack becomes \"Eat-up HP.\"",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "effect",
+        "effect": {
+          "type": "grant_eat_up_hp"
+        }
+      }
     }
   },
   {
@@ -8676,7 +10862,34 @@
       "type": "catalog_text",
       "value": 0,
       "description": "If own Specialty is Fire, boost own Attack Power +100, recover HP +200.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "own_specialty_is",
+          "specialty": "Fire"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_buff",
+              "targetAttack": "all",
+              "value": 100
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "hp_heal",
+              "value": 200
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -8694,7 +10907,34 @@
       "type": "catalog_text",
       "value": 0,
       "description": "If own Specialty is Ice, boost own Attack Power +100, recover HP +200.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "own_specialty_is",
+          "specialty": "Ice"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_buff",
+              "targetAttack": "all",
+              "value": 100
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "hp_heal",
+              "value": 200
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -8712,7 +10952,34 @@
       "type": "catalog_text",
       "value": 0,
       "description": "If own Specialty is Nature, boost own Attack Power +100, recover HP +200.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "own_specialty_is",
+          "specialty": "Nature"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_buff",
+              "targetAttack": "all",
+              "value": 100
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "hp_heal",
+              "value": 200
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -8730,7 +10997,34 @@
       "type": "catalog_text",
       "value": 0,
       "description": "If own Specialty is Darkness, boost own Attack Power +100, recover HP +200.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "own_specialty_is",
+          "specialty": "Darkness"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_buff",
+              "targetAttack": "all",
+              "value": 100
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "hp_heal",
+              "value": 200
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -8748,7 +11042,34 @@
       "type": "catalog_text",
       "value": 0,
       "description": "If own Specialty is Rare, boost own Attack Power +100, recover HP +200.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "own_specialty_is",
+          "specialty": "Rare"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_buff",
+              "targetAttack": "all",
+              "value": 100
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "hp_heal",
+              "value": 200
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -8766,7 +11087,33 @@
       "type": "catalog_text",
       "value": 0,
       "description": "If Specialties are same, boost own Attack Power +200, recover HP +400.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "specialties_same"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_buff",
+              "targetAttack": "all",
+              "value": 200
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "hp_heal",
+              "value": 400
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -8784,7 +11131,15 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Discard 7 Cards from both players' Online Decks.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "effect",
+        "effect": {
+          "type": "discard_both_deck",
+          "value": 7
+        }
+      }
     }
   },
   {
@@ -8802,7 +11157,24 @@
       "type": "catalog_text",
       "value": 0,
       "description": "If both Attacks are same, discard 7 Cards from foe's Online Deck.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "attacks_same"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "discard_enemy_deck",
+              "value": 7
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -8820,7 +11192,29 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Discard 1 Card in own DP Slot. Discard all foe's Cards in DP Slot.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "discard_own_dp",
+              "value": 1
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "discard_enemy_dp",
+              "value": 0
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -8838,7 +11232,30 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Both players' attacks become Circle. Boost own Circle Attack Power +100.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "both_change_attack",
+              "targetAttack": "circle"
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_buff",
+              "targetAttack": "circle",
+              "value": 100
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -8856,7 +11273,29 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Changes opponent's Specialty to Fire. Draw 1 Card from own Online Deck.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "change_enemy_specialty",
+              "targetAttack": "Fire"
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "draw_cards",
+              "value": 1
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -8874,7 +11313,29 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Changes opponent's Specialty to Ice. Draw 1 Card from own Online Deck.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "change_enemy_specialty",
+              "targetAttack": "Ice"
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "draw_cards",
+              "value": 1
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -8892,7 +11353,29 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Changes opponent's Specialty to Nature. Draw 1 Card from own Online Deck.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "change_enemy_specialty",
+              "targetAttack": "Nature"
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "draw_cards",
+              "value": 1
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -8910,7 +11393,29 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Changes opponent's Specialty to Darkness. Draw 1 Card from own Online Deck.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "change_enemy_specialty",
+              "targetAttack": "Dark"
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "draw_cards",
+              "value": 1
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -8928,7 +11433,29 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Changes opponent's Specialty to Rare. Draw 1 Card from own Online Deck.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "change_enemy_specialty",
+              "targetAttack": "Rare"
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "draw_cards",
+              "value": 1
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -8946,7 +11473,24 @@
       "type": "catalog_text",
       "value": 0,
       "description": "If own HP are less than foe's HP, recovcer own HP by +700.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "own_hp_lt_opponent"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "hp_heal",
+              "value": 700
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -8964,7 +11508,29 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Opponent's Circle Attack Power goes to 0. Recover own HP by +100.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "enemy_atk_zero",
+              "targetAttack": "circle"
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "hp_heal",
+              "value": 100
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -8982,7 +11548,29 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Opponent's Triangle Attack Power goes to 0. Recover own HP by +100.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "enemy_atk_zero",
+              "targetAttack": "triangle"
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "hp_heal",
+              "value": 100
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -9000,7 +11588,29 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Opponent's Cross Attack Power goes to 0. Recover own HP by +100.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "enemy_atk_zero",
+              "targetAttack": "cross"
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "hp_heal",
+              "value": 100
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -9018,7 +11628,29 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Opponent discards 2 Cards from his Online Deck and 1 Card from Hand.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "discard_enemy_deck",
+              "value": 2
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "discard_enemy_hand",
+              "value": 1
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -9036,7 +11668,29 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Own Attack Power becomes 0. Opponent's HP are halved.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_set",
+              "targetAttack": "all",
+              "value": 0
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "halve_hp"
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -9054,7 +11708,30 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Make own HP 10. Own Attack Power is tripled.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "hp_set",
+              "value": 10
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_mult",
+              "targetAttack": "all",
+              "value": 3
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -9072,7 +11749,15 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Discard own Hand. Multiply own Attack Power by number of discarded Cards.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "effect",
+        "effect": {
+          "type": "mult_by_hand_discards",
+          "targetAttack": "all"
+        }
+      }
     }
   },
   {
@@ -9090,7 +11775,15 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Discard own DP Slot Cards. Multiply own Attack Power by number of discards.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "effect",
+        "effect": {
+          "type": "atk_mult_by_dp_discards",
+          "targetAttack": "all"
+        }
+      }
     }
   },
   {
@@ -9108,7 +11801,28 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Own Attack Power matches own HP, then own HP are halved.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_set_to_hp",
+              "targetAttack": "all"
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "self_halve_hp"
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -9126,7 +11840,26 @@
       "type": "catalog_text",
       "value": 0,
       "description": "If own Level is R, boost own Attack Power +400.",
-      "priority": 1
+      "priority": 1,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "own_level_is",
+          "level": "R"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_buff",
+              "targetAttack": "all",
+              "value": 400
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -9144,7 +11877,26 @@
       "type": "catalog_text",
       "value": 0,
       "description": "If own Level is C, boost own Attack Power +400.",
-      "priority": 1
+      "priority": 1,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "own_level_is",
+          "level": "C"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_buff",
+              "targetAttack": "all",
+              "value": 400
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -9162,7 +11914,26 @@
       "type": "catalog_text",
       "value": 0,
       "description": "If own Level is U, boost own Attack Power +400.",
-      "priority": 1
+      "priority": 1,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "own_level_is",
+          "level": "U"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_buff",
+              "targetAttack": "all",
+              "value": 400
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -9180,7 +11951,34 @@
       "type": "catalog_text",
       "value": 0,
       "description": "If opponent is Level A, his Atk Pwr becomes 0 and own Atk Pwr is doubled.",
-      "priority": 1
+      "priority": 1,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "opponent_level_is",
+          "level": "A"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "enemy_atk_set",
+              "value": 0
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_mult",
+              "targetAttack": "all",
+              "value": 2
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -9198,7 +11996,34 @@
       "type": "catalog_text",
       "value": 0,
       "description": "If opponent is Level U, his Atk Pwr becomes 0 and own Atk Pwr is doubled.",
-      "priority": 1
+      "priority": 1,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "opponent_level_is",
+          "level": "U"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "enemy_atk_set",
+              "value": 0
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_mult",
+              "targetAttack": "all",
+              "value": 2
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -9216,7 +12041,28 @@
       "type": "catalog_text",
       "value": 0,
       "description": "If foe's Specialty is Fire or Ice, his Attack Power goes to 0.",
-      "priority": 1
+      "priority": 1,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "opponent_specialty_in",
+          "specialties": [
+            "Fire",
+            "Ice"
+          ]
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "enemy_atk_zero",
+              "targetAttack": "all"
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -9234,7 +12080,28 @@
       "type": "catalog_text",
       "value": 0,
       "description": "If foe's Specialty is Nature or Darkness, his Attack Power goes to 0.",
-      "priority": 1
+      "priority": 1,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "opponent_specialty_in",
+          "specialties": [
+            "Nature",
+            "Darkness"
+          ]
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "enemy_atk_zero",
+              "targetAttack": "all"
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -9252,7 +12119,15 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Changes both players' Specialties to Rare.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "effect",
+        "effect": {
+          "type": "both_change_specialty",
+          "targetAttack": "Rare"
+        }
+      }
     }
   },
   {
@@ -9270,7 +12145,15 @@
       "type": "catalog_text",
       "value": 0,
       "description": "KO'd Digimon revives with 1000. Battle is still lost.",
-      "priority": 1
+      "priority": 1,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "effect",
+        "effect": {
+          "type": "revive",
+          "value": 1000
+        }
+      }
     }
   },
   {
@@ -9288,7 +12171,25 @@
       "type": "catalog_text",
       "value": 0,
       "description": "If both Attacks are same, own Attack Power is tripled.",
-      "priority": 1
+      "priority": 1,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "attacks_same"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_mult",
+              "targetAttack": "all",
+              "value": 3
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -9306,7 +12207,24 @@
       "type": "catalog_text",
       "value": 0,
       "description": "If both players use same attack, opponent's Attack Power becomes 0.",
-      "priority": 1
+      "priority": 1,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "attacks_same"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "enemy_atk_set",
+              "value": 0
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -9324,7 +12242,24 @@
       "type": "catalog_text",
       "value": 0,
       "description": "If both players use same Attack, recover own HP +700.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "attacks_same"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "hp_heal",
+              "value": 700
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -9342,7 +12277,24 @@
       "type": "catalog_text",
       "value": 0,
       "description": "If both Attacks are different, recover own HP by +500.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "attacks_different"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "hp_heal",
+              "value": 500
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -9360,7 +12312,29 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Recover own HP by +500. Recover foe's HP by +200.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "hp_heal",
+              "value": 500
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "enemy_hp_heal",
+              "value": 200
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -9378,7 +12352,25 @@
       "type": "catalog_text",
       "value": 0,
       "description": "If both attacks are different, own Attack Power is doubled.",
-      "priority": 1
+      "priority": 1,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "attacks_different"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_mult",
+              "targetAttack": "all",
+              "value": 2
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -9396,7 +12388,30 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Own Attack Power is halved. Recover own HP by +500.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_mult",
+              "targetAttack": "all",
+              "value": 0.5
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "hp_heal",
+              "value": 500
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -9414,7 +12429,28 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Move top 3 Cards from Offline Pile to Online Deck and shuffle.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "offline_to_online",
+              "value": 3
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "shuffle_deck"
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -9432,7 +12468,29 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Draw until there are 4 Cards in own Hand. Recover own HP by +100.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "draw_until",
+              "value": 4
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "hp_heal",
+              "value": 100
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -9450,7 +12508,33 @@
       "type": "catalog_text",
       "value": 0,
       "description": "If opponent uses Circle, attack first and boost own Attack Power +500.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "opponent_used",
+          "attack": "circle"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "first_strike"
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_buff",
+              "targetAttack": "all",
+              "value": 500
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -9468,7 +12552,33 @@
       "type": "catalog_text",
       "value": 0,
       "description": "If opponent uses Triangle, attack first and boost own Attack Power +500.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "opponent_used",
+          "attack": "triangle"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "first_strike"
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_buff",
+              "targetAttack": "all",
+              "value": 500
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -9486,7 +12596,33 @@
       "type": "catalog_text",
       "value": 0,
       "description": "If opponent uses Cross, attack first and boost own Attack Power +500.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "opponent_used",
+          "attack": "cross"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "first_strike"
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_buff",
+              "targetAttack": "all",
+              "value": 500
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -9504,7 +12640,15 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Opponent discards 2 Cards at random from his Hand.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "effect",
+        "effect": {
+          "type": "discard_enemy_hand_random",
+          "value": 2
+        }
+      }
     }
   },
   {
@@ -9522,7 +12666,14 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Opponent's Support and Option Effects are voided.",
-      "priority": 3
+      "priority": 3,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "effect",
+        "effect": {
+          "type": "void_enemy_support"
+        }
+      }
     }
   },
   {
@@ -9540,7 +12691,23 @@
       "type": "catalog_text",
       "value": 0,
       "description": "If own Level is lower, switch HP with opponent.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "own_level_lower"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "hp_swap"
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -9558,7 +12725,15 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Opponent discards 4 top Cards from Online Deck.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "effect",
+        "effect": {
+          "type": "discard_enemy_deck",
+          "value": 4
+        }
+      }
     }
   },
   {
@@ -9576,7 +12751,14 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Own Attack Power, HP, and Specialty become same as the opponent's.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "effect",
+        "effect": {
+          "type": "copy_opponent_stats"
+        }
+      }
     }
   },
   {
@@ -9612,7 +12794,30 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Change own Specialty to Fire. Boost own Attack Power +200.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "change_own_specialty",
+              "targetAttack": "Fire"
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_buff",
+              "targetAttack": "all",
+              "value": 200
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -9630,7 +12835,29 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Change own Specialty to Ice. Recover own HP by +200.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "change_own_specialty",
+              "targetAttack": "Ice"
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "hp_heal",
+              "value": 200
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -9648,7 +12875,28 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Change own Specialty to Nature. Attack first.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "change_own_specialty",
+              "targetAttack": "Nature"
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "first_strike"
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -9666,7 +12914,28 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Change own Specialty to Darkness. Both players' HP are halved.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "change_own_specialty",
+              "targetAttack": "Dark"
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "both_halve_hp"
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -9684,7 +12953,29 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Change own Specialty to Rare. Opponent discards 1 Card at random.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "change_own_specialty",
+              "targetAttack": "Rare"
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "discard_enemy_hand_random",
+              "value": 1
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -9702,7 +12993,14 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Opponent's attack changes from Circle to Triangle, Triangle to Cross, or Cross to Circle.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "effect",
+        "effect": {
+          "type": "rotate_enemy_attack"
+        }
+      }
     }
   },
   {
@@ -9725,7 +13023,16 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Boost own Attack Power +300.",
-      "priority": 1
+      "priority": 1,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "effect",
+        "effect": {
+          "type": "atk_buff",
+          "targetAttack": "all",
+          "value": 300
+        }
+      }
     }
   },
   {
@@ -9743,7 +13050,29 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Randomly discard 1 Card from own Hand. Opponent's Attack Power is 0.",
-      "priority": 1
+      "priority": 1,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "discard_own_hand_random",
+              "value": 1
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "enemy_atk_zero",
+              "targetAttack": "all"
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -9765,7 +13094,15 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Recover own HP by +300.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "effect",
+        "effect": {
+          "type": "hp_heal",
+          "value": 300
+        }
+      }
     }
   },
   {
@@ -9783,7 +13120,16 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Own Circle Attack Power is doubled.",
-      "priority": 1
+      "priority": 1,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "effect",
+        "effect": {
+          "type": "atk_mult",
+          "targetAttack": "circle",
+          "value": 2
+        }
+      }
     }
   },
   {
@@ -9801,7 +13147,16 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Own Triangle Attack Power is doubled.",
-      "priority": 1
+      "priority": 1,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "effect",
+        "effect": {
+          "type": "atk_mult",
+          "targetAttack": "triangle",
+          "value": 2
+        }
+      }
     }
   },
   {
@@ -9819,7 +13174,16 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Own Cross Attack Power is doubled.",
-      "priority": 1
+      "priority": 1,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "effect",
+        "effect": {
+          "type": "atk_mult",
+          "targetAttack": "cross",
+          "value": 2
+        }
+      }
     }
   },
   {
@@ -9837,7 +13201,15 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Opponent's Circle Attack Power is 0.",
-      "priority": 1
+      "priority": 1,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "effect",
+        "effect": {
+          "type": "enemy_atk_zero",
+          "targetAttack": "circle"
+        }
+      }
     }
   },
   {
@@ -9855,7 +13227,15 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Opponent's Triangle Attack Power is 0.",
-      "priority": 1
+      "priority": 1,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "effect",
+        "effect": {
+          "type": "enemy_atk_zero",
+          "targetAttack": "triangle"
+        }
+      }
     }
   },
   {
@@ -9873,7 +13253,15 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Opponent's Cross Attack Power is 0.",
-      "priority": 1
+      "priority": 1,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "effect",
+        "effect": {
+          "type": "enemy_atk_zero",
+          "targetAttack": "cross"
+        }
+      }
     }
   },
   {
@@ -9896,7 +13284,16 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Boost own Attack Power +100.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "effect",
+        "effect": {
+          "type": "atk_buff",
+          "targetAttack": "all",
+          "value": 100
+        }
+      }
     }
   },
   {
@@ -9918,7 +13315,15 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Recover own HP by +100.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "effect",
+        "effect": {
+          "type": "hp_heal",
+          "value": 100
+        }
+      }
     }
   },
   {
@@ -9936,7 +13341,15 @@
       "type": "catalog_text",
       "value": 0,
       "description": "KO'd Digimon revives with 100 HP. Battle is still lost.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "effect",
+        "effect": {
+          "type": "revive",
+          "value": 100
+        }
+      }
     }
   },
   {
@@ -9958,7 +13371,15 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Draw 2 Cards from Online Deck.",
-      "priority": 1
+      "priority": 1,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "effect",
+        "effect": {
+          "type": "draw_cards",
+          "value": 2
+        }
+      }
     }
   },
   {
@@ -9976,7 +13397,15 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Change own Specialty to Nature.",
-      "priority": 1
+      "priority": 1,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "effect",
+        "effect": {
+          "type": "change_own_specialty",
+          "targetAttack": "Nature"
+        }
+      }
     }
   },
   {
@@ -9994,7 +13423,15 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Changes own Specialty to Rare.",
-      "priority": 1
+      "priority": 1,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "effect",
+        "effect": {
+          "type": "change_own_specialty",
+          "targetAttack": "Rare"
+        }
+      }
     }
   },
   {
@@ -10012,7 +13449,15 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Changes own Specialty to Fire.",
-      "priority": 1
+      "priority": 1,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "effect",
+        "effect": {
+          "type": "change_own_specialty",
+          "targetAttack": "Fire"
+        }
+      }
     }
   },
   {
@@ -10030,7 +13475,15 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Change own Specialty to Darkness.",
-      "priority": 1
+      "priority": 1,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "effect",
+        "effect": {
+          "type": "change_own_specialty",
+          "targetAttack": "Dark"
+        }
+      }
     }
   },
   {
@@ -10048,7 +13501,15 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Change own Specialty to Ice.",
-      "priority": 1
+      "priority": 1,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "effect",
+        "effect": {
+          "type": "change_own_specialty",
+          "targetAttack": "Ice"
+        }
+      }
     }
   },
   {
@@ -10066,7 +13527,15 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Own attack becomes Circle.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "effect",
+        "effect": {
+          "type": "force_self_attack",
+          "targetAttack": "circle"
+        }
+      }
     }
   },
   {
@@ -10084,7 +13553,15 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Own attack becomes Triangle.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "effect",
+        "effect": {
+          "type": "force_self_attack",
+          "targetAttack": "triangle"
+        }
+      }
     }
   },
   {
@@ -10102,7 +13579,15 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Own attack becomes Cross.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "effect",
+        "effect": {
+          "type": "force_self_attack",
+          "targetAttack": "cross"
+        }
+      }
     }
   },
   {
@@ -10120,7 +13605,16 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Own Attack Power is tripled.",
-      "priority": 1
+      "priority": 1,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "effect",
+        "effect": {
+          "type": "atk_mult",
+          "targetAttack": "all",
+          "value": 3
+        }
+      }
     }
   },
   {
@@ -10142,7 +13636,15 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Recover own HP by +1000.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "effect",
+        "effect": {
+          "type": "hp_heal",
+          "value": 1000
+        }
+      }
     }
   },
   {
@@ -10160,7 +13662,24 @@
       "type": "catalog_text",
       "value": 0,
       "description": "If opponent's HP are lower then own, opponent's HP become 10.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "conditional",
+        "when": {
+          "kind": "opponent_hp_lt_own"
+        },
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "enemy_hp_set",
+              "value": 10
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -10178,7 +13697,14 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Own Attack Power is boosted by the number of own HP.",
-      "priority": 1
+      "priority": 1,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "effect",
+        "effect": {
+          "type": "atk_add_hp"
+        }
+      }
     }
   },
   {
@@ -10196,7 +13722,28 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Opponent's Support and Option Effects are voided. His Attack Power is 0.",
-      "priority": 3
+      "priority": 3,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "void_enemy_support"
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "enemy_atk_zero",
+              "targetAttack": "all"
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -10214,7 +13761,36 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Attack first. Own attack becomes \"Eat-up HP.\" Boost Attack Power +200.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "first_strike"
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "grant_eat_up_hp"
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "atk_buff",
+              "targetAttack": "all",
+              "value": 200
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -10232,7 +13808,28 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Move top 10 Cards from Offline Pile to Online Deck, then shuffle.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "offline_to_online",
+              "value": 10
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "shuffle_deck"
+            }
+          }
+        ]
+      }
     }
   },
   {
@@ -10250,7 +13847,29 @@
       "type": "catalog_text",
       "value": 0,
       "description": "Opponent discards his Hand and all Cards in his DP Slot.",
-      "priority": 2
+      "priority": 2,
+      "effectPlan": {
+        "planVersion": 1,
+        "op": "compose",
+        "steps": [
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "discard_enemy_hand",
+              "value": 0
+            }
+          },
+          {
+            "planVersion": 1,
+            "op": "effect",
+            "effect": {
+              "type": "discard_enemy_dp",
+              "value": 0
+            }
+          }
+        ]
+      }
     }
   },
   {
