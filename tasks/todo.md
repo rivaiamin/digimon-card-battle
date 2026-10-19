@@ -21,9 +21,9 @@ Linked plan: `tasks/plan.md`
 - [ ] `pnpm test` passes
 - [ ] No new imports from `constants.ts` for pure types
 
-### Phase A3: Optional names (defer unless needed)
+### Phase A3: Named card vocabularies
 
-- [ ] **Task A5:** Add `Specialty` and `DigimonLevel` unions on `DigimonCardData` only
+- [x] **Task A5:** Add `Specialty` and `DigimonLevel` unions on `DigimonCardData` only
 
 #### Checkpoint A complete
 - [ ] A1–A4 verified; human OK to start #02 implementation
@@ -161,19 +161,20 @@ Linked plan: `tasks/plan.md`
 
 ---
 
-### Task A5: Specialty and level unions (optional)
+### Task A5: Specialty and level unions
 
-**Description:** Add named `Specialty` and `DigimonLevel` unions for `DigimonCardData` only if a consumer needs them; do not narrow `CardSchema` or loader inputs.
+**Description:** Add named `Specialty` and `DigimonLevel` unions for `DigimonCardData` only; do not narrow `CardSchema` or loader inputs.
 
 **Acceptance criteria:**
-- [ ] `Armor` remains outside `EVOLUTION_LEVEL_ORDER`
+- [ ] `DigimonCardData.level` uses `DigimonLevel`, preserving `Armor`
+- [ ] `DigimonCardData.type` uses `Specialty`
 - [ ] Catalog loader still accepts empty `level` for Options
 
 **Verification:**
 - [ ] `pnpm lint`
 - [ ] `src/lib/evolutionEligibility.test.ts`
 
-**Dependencies:** A1; defer until A2–A4 finish to avoid simultaneous edits to `src/types.ts`  
+**Dependencies:** A1–A4  
 **Files likely touched:** `src/types.ts`, and casts only if compile errors require them  
 **Estimated scope:** Small
 

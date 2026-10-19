@@ -10,6 +10,8 @@ export interface Attack {
 }
 
 export type CardKind = 'digimon' | 'option' | 'evolution_option';
+export type Specialty = 'Fire' | 'Ice' | 'Nature' | 'Dark' | 'Rare';
+export type DigimonLevel = 'Rookie' | 'Champion' | 'Ultimate' | 'Mega' | 'Armor';
 export type EffectArgValue = string | number | boolean;
 export type EffectArgs = Record<string, EffectArgValue>;
 
@@ -25,8 +27,8 @@ export interface DigimonCardData {
   effectId?: string;
   /** Effect arguments for `effectId`. */
   effectArgs?: EffectArgs;
-  level: 'Rookie' | 'Champion' | 'Ultimate' | 'Mega' | 'Armor';
-  type: 'Fire' | 'Ice' | 'Nature' | 'Dark' | 'Rare';
+  level: DigimonLevel;
+  type: Specialty;
   hp: number;
   maxHp: number;
   dp: number; // Current DP if on field (rarely used this way but kept)
