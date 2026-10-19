@@ -1,4 +1,4 @@
-import type { EffectCondition } from "./effectCondition";
+import { isEffectCondition, type EffectCondition } from "./effectCondition";
 
 export type EffectPlanEffect = {
     type: string;
@@ -26,53 +26,6 @@ function isNonEmptyString(value: unknown): value is string {
     return typeof value === "string" && value.trim().length > 0;
 }
 
-function isEffectCondition(value: unknown): value is EffectCondition {
-    if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
-    const condition = value as Record<string, unknown>;
-    if (typeof condition.kind !== "string") return false;
-
-    const exact = (...keys: string[]) => hasOnlyKeys(condition, ["kind", ...keys]);
-    const attack = condition.attack;
-    const validAttack = attack === "circle" || attack === "triangle" || attack === "cross";
-
-    switch (condition.kind) {
-        case "attacks_same":
-        case "attacks_different":
-        case "own_hp_lt_opponent":
-        case "own_hp_gt_opponent":
-        case "opponent_hp_lt_own":
-        case "own_level_lower":
-        case "specialties_same":
-            return exact();
-        case "own_attack_is":
-        case "own_attack_not":
-        case "opponent_used":
-            return exact("attack") && validAttack;
-        case "own_hp_lt":
-        case "opponent_hp_gt":
-        case "own_hand_gte":
-        case "own_hand_lte":
-        case "opponent_dp_slot_gt":
-            return exact("value") && isFiniteNumber(condition.value);
-        case "own_level_is":
-        case "opponent_level_is":
-        case "both_levels_are":
-            return exact("level") && isNonEmptyString(condition.level);
-        case "own_specialty_is":
-        case "opponent_specialty_is":
-        case "opponent_specialty_not":
-            return exact("specialty") && isNonEmptyString(condition.specialty);
-        case "opponent_specialty_in":
-            return (
-                exact("specialties") &&
-                Array.isArray(condition.specialties) &&
-                condition.specialties.length > 0 &&
-                condition.specialties.every(isNonEmptyString)
-            );
-        default:
-            return false;
-    }
-}
 
 function isPlanEffect(value: unknown): value is EffectPlanEffect {
     if (typeof value !== "object" || value === null || Array.isArray(value)) return false;

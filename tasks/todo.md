@@ -45,7 +45,7 @@ Linked plan: `tasks/plan.md`
 ### Phase B2: Materialize at build time
 
 - [x] **Task B3:** Materialize plans from existing parsed clauses/conditions
-- [ ] **Task B4:** Serialize/validate condition AST
+- [x] **Task B4:** Serialize/validate condition AST
 - [ ] **Task B5:** Emit plan at catalog build; regenerate `cards.json`
 - [ ] **Task B6:** Loader validates and preserves support-effect plan
 
@@ -260,11 +260,12 @@ Linked plan: `tasks/plan.md`
 **Description:** Add a JSON-safe codec for the existing `Condition` union so materialized conditions evaluate with the existing condition evaluator.
 
 **Acceptance criteria:**
-- [ ] Round-trip each `parseCondition` kind in deterministic tests
-- [ ] Invalid serialized condition is rejected before execution
+- [x] Round-trip each `parseCondition` kind in deterministic tests
+- [x] Invalid serialized condition is rejected before execution
 
 **Verification:**
-- [ ] `src/lib/effectCondition.test.ts`
+- [x] `pnpm lint`
+- [x] `src/lib/effectCondition.test.ts` covers all 22 condition kinds and invalid shapes
 
 **Dependencies:** B1; can run parallel with B3 against the agreed condition shape  
 **Files likely touched:** `src/lib/effectCondition.ts`, tests  
