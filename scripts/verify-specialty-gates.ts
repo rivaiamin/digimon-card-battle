@@ -18,7 +18,8 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 
 import cardsData from "../src/data/cards.json";
 import { loadCardCatalog, type NormalizedCardCatalogEntry } from "../src/lib/cardCatalogLoader";
-import { parseCondition, splitConditional } from "../src/lib/effectCondition";
+import { parseCondition, splitConditional, type EffectCondition } from "../src/lib/effectCondition";
+import type { EffectPlan } from "../src/lib/effectPlan";
 import { normalizeSpecialtyLabel } from "../src/lib/effectTextNormalize";
 import {
     canVoidEnemySupport,
@@ -397,12 +398,21 @@ function endToEndVoid(
 // ---------------------------------------------------------------------------
 
 /**
- * Effect types the resolver re-parses `description` for at resolution time
- * (`applySingleEffect` handles `compose` and `conditional` before its primitive
- * switch). Every other type ignores the "If <specialty>, …" head entirely, so
- * the head is enforced only when a gate field carries it.
+ * A plan condition is the runtime gate. Verify it matches card text instead of
+ * exempting compose/conditional effects merely because their type reparsed prose.
  */
-const EVALUATES_DESCRIPTION: Record<string, true> = { conditional: true, compose: true };
+function effectPlanContainsCondition(plan: EffectPlan | undefined, expected: EffectCondition): boolean {
+    if (!plan) return false;
+    if (plan.op === "effect") return false;
+    if (plan.op === "conditional" && JSON.stringify(plan.when) === JSON.stringify(expected)) return true;
+    return plan.steps.some(step => effectPlanContainsCondition(step, expected));
+}
+
+function planMatchesDescription(effect: NonNullable<NormalizedCardCatalogEntry["supportEffect"]>): boolean {
+    const split = splitConditional(effect.description);
+    const expected = split ? parseCondition(split.head) : null;
+    return expected !== null && effectPlanContainsCondition(effect.effectPlan, expected);
+}
 
 type SpecialtyGate = { field: "requireType" | "requireOpponentType"; expected: string };
 
@@ -480,7 +490,7 @@ function gateViolations(catalog: readonly NormalizedCardCatalogEntry[]): string[
         if (!effect?.description) continue;
         const gate = specialtyGateFromText(effect.description);
         if (!gate) continue;
-        if (EVALUATES_DESCRIPTION[effect.type] === true) continue;
+        if (planMatchesDescription(effect)) continue;
         const actual = effect[gate.field];
         if (normalizeSpecialtyLabel(actual) !== gate.expected) {
             violations.push(
@@ -497,7 +507,7 @@ function ungateableSpecialtyHeads(catalog: readonly NormalizedCardCatalogEntry[]
     for (const entry of catalog) {
         const effect = entry.supportEffect;
         if (!effect?.description) continue;
-        if (EVALUATES_DESCRIPTION[effect.type] === true) continue;
+        if (planMatchesDescription(effect)) continue;
         if (specialtyHeadIsUngateable(effect.description)) out.push(`${entry.id}: ${effect.description}`);
     }
     return out;
@@ -552,29 +562,44 @@ function modeG2(): string[] {
     // text plainly states, or the absence assertion below is vacuous.
     crossCheckGateDetection(LOADED);
 
-    // Positive control 2: the violation probe must distinguish present from
-    // absent. Mutate a known-good gated card in memory and require detection.
-    const gatedNonConditional = LOADED.filter(c => {
+    // The structural probe checks explicit gate fields for cards without a
+    // matching plan condition, and proves plan conditions are compared to text.
+    const gatedOutsidePlan = LOADED.filter(c => {
         const effect = c.supportEffect;
         if (!effect?.description) return false;
-        if (EVALUATES_DESCRIPTION[effect.type] === true) return false;
+        if (planMatchesDescription(effect)) return false;
         return specialtyGateFromText(effect.description) !== null;
     });
     assert(
-        gatedNonConditional.length > 0,
-        "no specialty-gated card resolves outside the conditional path — the guard has nothing to check"
+        gatedOutsidePlan.length > 0,
+        "no specialty-gated card depends on an explicit gate field — the guard has nothing to check"
     );
     assert(
-        gatedNonConditional.some(c => c.id === "008"),
+        gatedOutsidePlan.some(c => c.id === "008"),
         "card 008 (requireType Fire, atk_mult) must be in scope of the structural guard"
     );
     assert(
-        LOADED.some(
-            c => EVALUATES_DESCRIPTION[c.supportEffect?.type ?? ""] === true && c.id === "018"
-        ),
-        "card 018 (conditional) must resolve through the description-evaluating path, or the exemption is wrong"
+        LOADED.some(c => c.id === "018" && planMatchesDescription(c.supportEffect!)),
+        "card 018 must carry a plan condition equivalent to its specialty gate text"
     );
-
+    const mismatchedPlan = LOADED.map(c => {
+        const effect = c.supportEffect;
+        if (c.id !== "018" || effect?.effectPlan?.op !== "conditional") return c;
+        return {
+            ...c,
+            supportEffect: {
+                ...effect,
+                effectPlan: {
+                    ...effect.effectPlan,
+                    when: { kind: "opponent_specialty_is" as const, specialty: "Fire" },
+                },
+            },
+        };
+    });
+    assert(
+        gateViolations(mismatchedPlan).some(v => v.includes("card 018")),
+        "changing card 018's plan condition away from its text must be detected"
+    );
     const mutated = LOADED.map(c =>
         c.id === "008"
             ? {
@@ -626,19 +651,14 @@ function modeG2(): string[] {
     }
 
     return [
-        `  specialty-gated cards outside the conditional path: ${gatedNonConditional
+        `  specialty-gated cards outside the matching plan: ${gatedOutsidePlan
             .map(c => `${c.id}:${c.supportEffect!.requireType || c.supportEffect!.requireOpponentType}`)
             .join(", ")}`,
-        `  conditional-path specialty cards exempted: ${
-            LOADED.filter(
-                c =>
-                    EVALUATES_DESCRIPTION[c.supportEffect?.type ?? ""] === true &&
-                    c.supportEffect?.description &&
-                    specialtyGateFromText(c.supportEffect.description) !== null
-            ).length
+        `  conditional plan conditions matched to descriptions: ${
+            LOADED.filter(c => c.supportEffect && planMatchesDescription(c.supportEffect)).length
         }`,
         `  controls: parser cross-checked against an independent text scan; stripping 008's gate is detected; ` +
-            `adding an unjustified gate to 043 is detected`,
+            `mismatching card 018's plan condition and adding an unjustified gate to 043 are detected`,
     ];
 }
 

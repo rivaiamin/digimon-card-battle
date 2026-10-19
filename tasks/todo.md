@@ -60,17 +60,18 @@ Linked plan: `tasks/plan.md`
 
 - [x] **Task B7:** Execute plan in shared dispatcher (dual-read)
 - [x] **Task B8:** Route Options through validated plans; retain migration fallback only
-- [ ] **Task B9:** Forward `effectPlanJson` through room state
+- [x] **Task B9:** Forward `effectPlanJson` through room state
 
 #### Checkpoint B3
-- [ ] `pnpm exec tsx scripts/verify-option-dispatch.ts` passes
-- [ ] `pnpm exec tsx scripts/verify-specialty-gates.ts` passes
-- [ ] `src/lib/optionDispatch.test.ts` passes
+- [x] `pnpm exec tsx scripts/verify-option-dispatch.ts G1` through `G4`
+- [x] `pnpm exec tsx scripts/verify-specialty-gates.ts G1` through `G3`
+- [x] `src/lib/optionDispatch.test.ts` and `src/rooms/BattleRoom.test.ts` pass
+- [x] Typecheck (`pnpm lint`) passes
 
 ### Phase B4: Shrink prose dependency
 
 - [ ] **Task B10:** Extend parser for highest-impact remaining `catalog_text` gaps (tracked IDs)
-- [ ] **Task B11:** Update specialty-gate verifier to consume plan semantics
+- [x] **Task B11:** Update specialty-gate verifier to consume plan semantics
 
 #### Checkpoint B4
 - [ ] Inventory contains no unsupported “implemented” effect hidden behind prose
@@ -383,14 +384,14 @@ Linked plan: `tasks/plan.md`
 
 ### Task B11: Update specialty-gate verifier
 
-**Description:** If plans materialize gates (`requireType`), adjust `verify-specialty-gates.ts` so it does not require description re-parse for gated compose/conditional.
+**Description:** Compare nested plan conditions to specialty conditions in text; retain explicit gate-field checks for effects without a matching plan condition.
 
 **Acceptance criteria:**
-- [ ] Verifier passes with plan-first cards
-- [ ] Exemptions for `EVALUATES_DESCRIPTION` shrink or are documented
+- [x] Verifier passes with plan-first cards
+- [x] Replacing a card's plan condition with a mismatched specialty is detected
 
 **Verification:**
-- [ ] `pnpm exec tsx scripts/verify-specialty-gates.ts`
+- [x] `pnpm exec tsx scripts/verify-specialty-gates.ts G1` through `G3`
 
 **Dependencies:** B7  
 **Files likely touched:** `scripts/verify-specialty-gates.ts`  
