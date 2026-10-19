@@ -44,7 +44,7 @@ Linked plan: `tasks/plan.md`
 
 ### Phase B2: Materialize at build time
 
-- [ ] **Task B3:** Materialize plans from existing parsed clauses/conditions
+- [x] **Task B3:** Materialize plans from existing parsed clauses/conditions
 - [ ] **Task B4:** Serialize/validate condition AST
 - [ ] **Task B5:** Emit plan at catalog build; regenerate `cards.json`
 - [ ] **Task B6:** Loader validates and preserves support-effect plan
@@ -237,19 +237,20 @@ Linked plan: `tasks/plan.md`
 
 ### Task B3: Materialize plans from descriptions
 
-**Description:** At the catalog adapter, convert recognized clauses/conditions into the B1 plan representation using existing parser logic. Keep description text for display.
+**Description:** Add a pure parser-side materializer that converts recognized clauses/conditions into the B1 plan representation. Keep description text for display.
 
 **Acceptance criteria:**
-- [ ] Compose steps preserve the current clause order and inherited-target behavior
-- [ ] Conditional plans preserve each parsed condition and consequent step
-- [ ] Unparseable text remains explicitly unresolved, never silently omitted
+- [x] Compose steps preserve the current clause order and inherited-target behavior
+- [x] Conditional plans preserve each parsed condition and consequent step
+- [x] Unparseable text remains explicitly unresolved, never silently omitted
 
 **Verification:**
-- [ ] Parser tests for compound, conditional, target inheritance, and unresolved text
-- [ ] Golden cases from `verify-resolution-order.ts`
+- [x] Parser tests for compound, conditional, target inheritance, and unresolved text
+- [x] Resolution-order golden checks G1–G3
+- [x] All 193 parser-recognized catalog candidates materialize; failed IDs: none
 
-**Dependencies:** B1 contract; can run parallel with B4 against that contract  
-**Files likely touched:** `src/lib/effectTextNormalize.ts` or a focused materializer module  
+**Dependencies:** B1 contract  
+**Files likely touched:** `src/lib/effectTextNormalize.ts`, `src/lib/effectTextNormalize.test.ts`  
 **Estimated scope:** Medium
 
 ---

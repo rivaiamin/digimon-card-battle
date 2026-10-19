@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
     inferCompoundSupportEffect,
+    materializeEffectPlan,
     inferSupportEffectFromDescription,
     parseAttackEffectFromDescription,
     splitEffectClauses,
@@ -172,5 +173,66 @@ describe("support compose effects (FC-027)", () => {
         resolveSupportPhase(active, defender, card, null, ctx);
         expect(active.active?.type).toBe("Ice");
         expect(active.hp).toBe(700);
+    });
+});
+
+describe("effect plan materialization", () => {
+    it("materializes a single primitive without display prose", () => {
+        expect(materializeEffectPlan("Boost own Attack Power by +100")).toEqual({
+            planVersion: 1,
+            op: "effect",
+            effect: { type: "atk_buff", targetAttack: "all", value: 100 },
+        });
+    });
+
+    it("preserves compose order and inherited opponent targets", () => {
+        expect(
+            materializeEffectPlan(
+                "Opponent discards 2 cards from opponent's online deck. 2 cards from hand."
+            )
+        ).toEqual({
+            planVersion: 1,
+            op: "compose",
+            steps: [
+                {
+                    planVersion: 1,
+                    op: "effect",
+                    effect: { type: "discard_enemy_deck", value: 2 },
+                },
+                {
+                    planVersion: 1,
+                    op: "effect",
+                    effect: { type: "discard_enemy_hand", value: 2 },
+                },
+            ],
+        });
+    });
+
+    it("serializes the parsed condition and ordered consequent steps", () => {
+        expect(
+            materializeEffectPlan(
+                "If own Specialty is Fire, boost own Attack Power +100 and recover HP +200"
+            )
+        ).toEqual({
+            planVersion: 1,
+            op: "conditional",
+            when: { kind: "own_specialty_is", specialty: "Fire" },
+            steps: [
+                {
+                    planVersion: 1,
+                    op: "effect",
+                    effect: { type: "atk_buff", targetAttack: "all", value: 100 },
+                },
+                {
+                    planVersion: 1,
+                    op: "effect",
+                    effect: { type: "hp_heal", value: 200 },
+                },
+            ],
+        });
+    });
+
+    it("keeps unrecognized text unresolved", () => {
+        expect(materializeEffectPlan("This effect has no recognized mechanical clause")).toBeNull();
     });
 });

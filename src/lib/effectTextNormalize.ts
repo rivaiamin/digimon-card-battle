@@ -4,6 +4,7 @@
  */
 
 import type { AttackType, EffectArgs } from "../types";
+import type { EffectPlan, EffectPlanEffect } from "./effectPlan";
 import { parseCondition, splitConditional } from "./effectCondition";
 
 
@@ -669,6 +670,48 @@ export function inferCompoundSupportEffect(
         type: "compose",
         description: text,
     };
+}
+
+function toEffectPlanLeaf(effect: InferredSupportEffect): EffectPlan {
+    const planEffect: EffectPlanEffect = { type: effect.type };
+    if (effect.targetAttack !== undefined) planEffect.targetAttack = effect.targetAttack;
+    if (effect.value !== undefined) planEffect.value = effect.value;
+    return { planVersion: 1, op: "effect", effect: planEffect };
+}
+
+function materializeClause(text: string): EffectPlan | null {
+    const conditional = splitConditional(canonicalizeEffectText(text));
+    if (conditional) {
+        const when = parseCondition(conditional.head);
+        if (!when) return null;
+        const steps: EffectPlan[] = [];
+        for (const clause of splitConsequentClauses(conditional.consequent)) {
+            const effect = inferSupportEffectFromDescription(clause);
+            if (!effect) return null;
+            steps.push(toEffectPlanLeaf(effect));
+        }
+        if (steps.length === 0) return null;
+        return { planVersion: 1, op: "conditional", when, steps };
+    }
+
+    const primitive = inferSupportEffectFromDescription(text);
+    if (primitive) return toEffectPlanLeaf(primitive);
+
+    const clauses = splitComposeClauses(text);
+    if (clauses.length < 2) return null;
+    const steps: EffectPlan[] = [];
+    for (const clause of clauses) {
+        const step = materializeClause(clause);
+        if (!step) return null;
+        steps.push(step);
+    }
+    return { planVersion: 1, op: "compose", steps };
+}
+
+/** Convert fully recognized catalog prose into an ordered executable plan. */
+export function materializeEffectPlan(description: string): EffectPlan | null {
+    if (!description.trim() || /^none\.?$/i.test(description.trim())) return null;
+    return materializeClause(description);
 }
 
 /** Map inferred support type → card-level effectId (options / digimon). */
