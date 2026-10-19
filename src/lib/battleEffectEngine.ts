@@ -3,14 +3,13 @@
  * @see docs/fidelity-rules-contract.md FC-017..FC-020, RA-006
  */
 
-import type { EffectArgs } from "../types";
+import type { AttackType, EffectArgs } from "../types";
 import { parseEffectArgsJson, readNumberArg } from "./effectArgs";
 import { applySpecialtyFoeMultiplier } from "./specialtyFoeMult";
 import {
     getAttackDamageBreakdown,
     getEffectiveAttackDamage,
     holdsFirstStrike,
-    type AttackType,
     type SupportBattleContext,
 } from "./supportResolver";
 import type { CombatStrike } from "./combatStrikePlan";

@@ -14,7 +14,7 @@
  * @see docs/fidelity-rules-contract.md FC-027, RA-002
  */
 
-import type { AttackType } from "./effectTextNormalize";
+import type { AttackType } from "../types";
 import { canonicalizeEffectText, letterToAttack, normalizeSpecialtyLabel } from "./effectTextNormalize";
 
 /** One side of a battle comparison (the effect owner or their opponent). */

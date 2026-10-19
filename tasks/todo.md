@@ -8,11 +8,11 @@ Linked plan: `tasks/plan.md`
 
 ### Phase A1: Shared type definition
 
-- [ ] **Task A1:** Centralize `AttackType` and `AttackTarget` in `src/types.ts`
+- [x] **Task A1:** Centralize `AttackType` and `AttackTarget` in `src/types.ts`
 
 ### Phase A2: Parallel import migrations (after A1)
 
-- [ ] **Task A2:** Migrate attack/effect library consumers
+- [x] **Task A2:** Migrate attack/effect library consumers
 - [ ] **Task A3:** Migrate room and scenario consumers
 - [ ] **Task A4:** Migrate UI/VFX consumers
 

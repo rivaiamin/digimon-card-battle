@@ -3,7 +3,7 @@
  * @see docs/fidelity-rules-contract.md FC-008
  */
 
-import type { EffectArgs } from "../types";
+import type { AttackType, EffectArgs } from "../types";
 import { readNumberArg } from "./effectArgs";
 import { CardSchema, PlayerSchema, SupportEffectSchema } from "../schema/BattleState";
 import { inferCompoundSupportEffect } from "./effectTextNormalize";
@@ -12,7 +12,6 @@ import {
     SUPPORT_PRIORITY,
     applySingleEffect,
     buildEffectRuntime,
-    type AttackType,
     type ResolveSupportHooks,
     type SupportBattleContext,
 } from "./supportResolver";
