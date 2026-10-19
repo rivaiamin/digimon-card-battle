@@ -1,5 +1,5 @@
 import type { CardKind, EffectArgs } from "../types";
-import type { EffectPlan } from "./effectPlan";
+import { isEffectPlan, type EffectPlan } from "./effectPlan";
 import {
     inferCompoundSupportEffect,
     letterToAttack,
@@ -15,6 +15,7 @@ type LegacySupportEffect = {
     requireType?: unknown;
     requireOpponentType?: unknown;
     priority?: unknown;
+    effectPlan?: unknown;
 };
 
 export type NormalizedSupportEffect = {
@@ -194,8 +195,28 @@ function parseLegacySupportId(supportId: string, cardId: string): LegacySupportE
     );
 }
 
-function normalizeSupportEffect(raw: LegacySupportEffect | null): NormalizedSupportEffect | null {
+function normalizeEffectPlan(rawPlan: unknown, cardId: string): EffectPlan | undefined {
+    if (rawPlan === undefined) return undefined;
+    if (isEffectPlan(rawPlan)) return rawPlan;
+
+    const version =
+        typeof rawPlan === "object" && rawPlan !== null && "planVersion" in rawPlan
+            ? rawPlan.planVersion
+            : undefined;
+    const reason =
+        version === undefined
+            ? "missing or malformed planVersion"
+            : version !== 1
+              ? `unsupported planVersion "${String(version)}"`
+              : "malformed plan structure";
+    throw new Error(`[cardCatalogLoader] Invalid effect plan on card "${cardId}": ${reason}.`);
+}
+function normalizeSupportEffect(
+    raw: LegacySupportEffect | null,
+    cardId: string
+): NormalizedSupportEffect | null {
     if (!raw || typeof raw !== "object") return null;
+    const effectPlan = normalizeEffectPlan(raw.effectPlan, cardId);
     let type = String(raw.type ?? "").trim();
     let targetAttack = String(raw.targetAttack ?? "");
     let value = Number(raw.value ?? 0);
@@ -213,6 +234,7 @@ function normalizeSupportEffect(raw: LegacySupportEffect | null): NormalizedSupp
                 requireType: String(raw.requireType ?? ""),
                 requireOpponentType: String(raw.requireOpponentType ?? ""),
                 priority: Number(raw.priority ?? 0),
+                ...(effectPlan ? { effectPlan } : {}),
             };
         }
         type = inferred.type;
@@ -228,6 +250,7 @@ function normalizeSupportEffect(raw: LegacySupportEffect | null): NormalizedSupp
         requireType: String(raw.requireType ?? ""),
         requireOpponentType: String(raw.requireOpponentType ?? ""),
         priority: Number(raw.priority ?? 0),
+        ...(effectPlan ? { effectPlan } : {}),
     };
 }
 
@@ -398,7 +421,8 @@ export function loadCardCatalog(rawCatalog: unknown): NormalizedCardCatalogEntry
         const support = normalizeSupportEffect(
             ((r.supportEffect as LegacySupportEffect | null | undefined) ??
                 (typeof r.support_id === "string" ? parseLegacySupportId(r.support_id, String(r.id)) : null)) ??
-                null
+                null,
+            String(r.id)
         );
 
         const attacks = r.attacks && typeof r.attacks === "object" ? (r.attacks as Record<string, unknown>) : {};

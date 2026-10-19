@@ -47,7 +47,7 @@ Linked plan: `tasks/plan.md`
 - [x] **Task B3:** Materialize plans from existing parsed clauses/conditions
 - [x] **Task B4:** Serialize/validate condition AST
 - [x] **Task B5:** Emit plan at catalog build; backfill `cards.json`
-- [ ] **Task B6:** Loader validates and preserves support-effect plan
+- [x] **Task B6:** Loader validates and preserves support-effect plan
 
 *B3 and B4 may run in parallel after B1 fixes the plan and condition shapes.*
 
@@ -296,12 +296,12 @@ Linked plan: `tasks/plan.md`
 **Description:** Add `effectPlan` to normalized support-effect data and validate generated plan data in `cardCatalogLoader`.
 
 **Acceptance criteria:**
-- [ ] `loadCardCatalog(cardsData)` preserves plans on option and Digimon support entries
-- [ ] Invalid plan fails with card ID and reason
+- [x] `loadCardCatalog(cardsData)` preserves plans on option and Digimon support entries
+- [x] Invalid plan fails with card ID and reason
 
 **Verification:**
-- [ ] Loader tests for a valid plan and malformed plan
-- [ ] `pnpm test`
+- [x] Loader tests for a valid plan and malformed plan
+- [x] `pnpm exec vitest run` (38 files, 348 tests)
 
 **Dependencies:** B1, B5  
 **Files likely touched:** `src/lib/cardCatalogLoader.ts`  
