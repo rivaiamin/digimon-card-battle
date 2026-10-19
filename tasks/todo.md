@@ -14,7 +14,7 @@ Linked plan: `tasks/plan.md`
 
 - [x] **Task A2:** Migrate attack/effect library consumers
 - [x] **Task A3:** Migrate room and scenario consumers
-- [ ] **Task A4:** Migrate UI/VFX consumers
+- [x] **Task A4:** Migrate UI/VFX consumers
 
 #### Checkpoint A
 - [ ] `pnpm lint` passes
@@ -145,7 +145,7 @@ Linked plan: `tasks/plan.md`
 
 ### Task A4: Migrate UI/VFX consumers
 
-**Description:** Replace inline attack unions in Arena, attack panels/overlay, and VFX hook with the shared type.
+**Description:** Replace inline attack unions in Arena, BattleHUD, attack panels/overlay, and the VFX hook with the shared type; remove the hook's duplicate public alias.
 
 **Acceptance criteria:**
 - [ ] UI attack consumers import `AttackType` from `src/types.ts`
@@ -156,8 +156,8 @@ Linked plan: `tasks/plan.md`
 - [ ] `pnpm build`
 
 **Dependencies:** A1  
-**Files likely touched:** `src/components/Arena.tsx`, `src/components/battle/AttackRevealOverlay.tsx`, `src/components/battle/AttackStrikePanel.tsx`, `src/hooks/useBattleVfx.ts`  
-**Estimated scope:** Small (4 files)
+**Files likely touched:** `src/components/Arena.tsx`, `src/components/BattleHUD.tsx`, `src/components/battle/AttackRevealOverlay.tsx`, `src/components/battle/AttackStrikePanel.tsx`, `src/hooks/useBattleVfx.ts`
+**Estimated scope:** Medium (5 files)
 
 ---
 

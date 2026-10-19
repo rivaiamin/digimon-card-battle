@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { DigimonCard } from "./Card";
 import { BattleHUD } from "./BattleHUD";
 import { DEFAULT_CARD_ATTACKS } from "../constants";
-import { GameState, DigimonCardData, PlayerState, CardKind, EffectArgs } from "../types";
+import { AttackType, GameState, DigimonCardData, PlayerState, CardKind, EffectArgs } from "../types";
 import { getAllCards } from "../services/cardService";
 import { BattleStateSchema } from "../schema/BattleState";
 import { useAudio } from "../context/AudioProvider";
@@ -546,7 +546,7 @@ export const Arena: React.FC<ArenaProps> = ({ room, onReturnToWorldMap, onRoomLe
         }
     }, [gameState.phase]);
 
-    const handleAttack = (type: 'circle' | 'triangle' | 'cross') => {
+    const handleAttack = (type: AttackType) => {
         audio.playSfx("tick");
         room.send("action", { type: "LOCK_ATTACK", attack: type });
     };

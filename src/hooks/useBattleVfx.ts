@@ -18,7 +18,7 @@ import {
   type SupportEffectNotification,
 } from "../lib/supportEffectsNotify";
 import { HEAVY_DAMAGE_THRESHOLD } from "../lib/audio/sfxPresets";
-import type { DigimonCardData, GameState } from "../types";
+import type { AttackType, DigimonCardData, GameState } from "../types";
 
 export type BattleVfxPhase =
   | "idle"
@@ -30,7 +30,6 @@ export type BattleVfxPhase =
   | "settle";
 export type CameraState = "idle" | "attack" | "damage";
 export type RevealStage = "support" | "attacks" | null;
-export type AttackType = "circle" | "triangle" | "cross";
 
 export type DamagePopup = {
   id: string;
