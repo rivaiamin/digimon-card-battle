@@ -22,10 +22,13 @@ type TestRoom = {
     clearPhaseTimer(): void;
     toSchemaCard(raw: NormalizedCardCatalogEntry, instanceId: string): CardSchema;
     finishSupportRevealAndAdvance(): void;
+    finishBattleEffectsAndAdvance(): void;
     maybeResolveBattle(): void;
     state: {
         players: { set(sessionId: string, player: PlayerSchema): void };
         activePlayerSessionId: string;
+        phase: string;
+        combatStrikesJson: string;
     };
     attackChoices: Map<string, AttackType | null>;
     revealTimer: { clear(): void } | null;
@@ -54,6 +57,20 @@ function makeRoom(players: PlayerSchema[], activePlayerSessionId: string): TestR
     for (const player of players) room.state.players.set(player.sessionId, player);
     room.state.activePlayerSessionId = activePlayerSessionId;
     return room;
+}
+function resolveSupportAndCombat(
+    room: TestRoom,
+    active: PlayerSchema,
+    defender: PlayerSchema,
+    activeAttack: AttackType,
+    defenderAttack: AttackType
+): void {
+    active.attackLocked = true;
+    defender.attackLocked = true;
+    room.attackChoices.set(active.sessionId, activeAttack);
+    room.attackChoices.set(defender.sessionId, defenderAttack);
+    room.finishSupportRevealAndAdvance();
+    if (room.state.phase === "battle_effects") room.finishBattleEffectsAndAdvance();
 }
 
 function clearRoomTimers(room: TestRoom): void {
@@ -145,6 +162,161 @@ describe("BattleRoom HP synchronization", () => {
             triangle: 300,
             cross: 300,
         });
+    });
+
+    it("resolves every clause in a catalog compose plan", () => {
+        const player = makePlayer("player", 1000);
+        const opponent = makePlayer("opponent", 1000);
+        player.active!.type = "Ice";
+        player.active!.circle.damage = 100;
+        opponent.active!.type = "Dark";
+        opponent.active!.cross.damage = 0;
+        room = makeRoom([player, opponent], player.sessionId);
+        player.supportCard = room.toSchemaCard(catalogCard("001"), "support-001");
+
+        resolveSupportAndCombat(room, player, opponent, "circle", "cross");
+
+        const strikes = JSON.parse(room.state.combatStrikesJson) as Array<{
+            attackerSessionId: string;
+            baseDamage: number;
+            bonusDamage: number;
+            totalDamage: number;
+        }>;
+        expect(player.active!.type).toBe("Fire");
+        expect(
+            strikes.find(strike => strike.attackerSessionId === player.sessionId)
+        ).toMatchObject({ baseDamage: 100, bonusDamage: 100, totalDamage: 200 });
+    });
+
+    it("applies additive and multiplier Option plans to exact strike damage", () => {
+        const run = (optionId: string) => {
+            const player = makePlayer("player", 1000);
+            const opponent = makePlayer("opponent", 1000);
+            player.active!.circle.damage = 100;
+            opponent.active!.cross.damage = 0;
+            room = makeRoom([player, opponent], player.sessionId);
+            player.supportCard = room.toSchemaCard(catalogCard(optionId), `option-${optionId}`);
+
+            resolveSupportAndCombat(room, player, opponent, "circle", "cross");
+
+            const strikes = JSON.parse(room.state.combatStrikesJson) as Array<{
+                attackerSessionId: string;
+                attack: AttackType;
+                baseDamage: number;
+                totalDamage: number;
+            }>;
+            const strike = strikes.find(s => s.attackerSessionId === player.sessionId);
+            const result = {
+                opponentHp: opponent.hp,
+                strike: strike
+                    ? {
+                          attackerSessionId: strike.attackerSessionId,
+                          attack: strike.attack,
+                          baseDamage: strike.baseDamage,
+                          totalDamage: strike.totalDamage,
+                      }
+                    : undefined,
+            };
+            clearRoomTimers(room);
+            return result;
+        };
+
+        const additive = run("264");
+        expect(additive).toEqual({
+            opponentHp: 600,
+            strike: { attackerSessionId: "player", attack: "circle", baseDamage: 100, totalDamage: 400 },
+        });
+        const multiplier = run("267");
+        expect(multiplier).toEqual({
+            opponentHp: 800,
+            strike: { attackerSessionId: "player", attack: "circle", baseDamage: 100, totalDamage: 200 },
+        });
+    });
+
+    it("zeros only the selected opponent attack slot, with an unselected-slot control", () => {
+        const run = (attack: AttackType) => {
+            const player = makePlayer("player", 1000);
+            const opponent = makePlayer("opponent", 1000);
+            player.active!.circle.damage = 0;
+            opponent.active!.circle.damage = 300;
+            opponent.active!.cross.damage = 300;
+            room = makeRoom([player, opponent], player.sessionId);
+            player.supportCard = room.toSchemaCard(catalogCard("270"), "option-270");
+
+            resolveSupportAndCombat(room, player, opponent, "circle", attack);
+            const hp = player.hp;
+            clearRoomTimers(room);
+            return hp;
+        };
+
+        expect(run("circle")).toBe(1000);
+        expect(run("cross")).toBe(700);
+    });
+
+    it("applies a conditional Option plan only at its level gate", () => {
+        const run = (opponentLevel: string) => {
+            const player = makePlayer("player", 1000);
+            const opponent = makePlayer("opponent", 1000);
+            player.active!.circle.damage = 100;
+            opponent.active!.cross.damage = 300;
+            opponent.active!.level = opponentLevel;
+            room = makeRoom([player, opponent], player.sessionId);
+            player.supportCard = room.toSchemaCard(catalogCard("234"), "option-234");
+
+            resolveSupportAndCombat(room, player, opponent, "circle", "cross");
+            const strikes = JSON.parse(room.state.combatStrikesJson) as Array<{
+                attackerSessionId: string;
+                totalDamage: number;
+            }>;
+            const result = {
+                playerHp: player.hp,
+                opponentHp: opponent.hp,
+                playerDamage: strikes.find(s => s.attackerSessionId === player.sessionId)?.totalDamage,
+                opponentStrike: strikes.some(s => s.attackerSessionId === opponent.sessionId),
+            };
+            clearRoomTimers(room);
+            return result;
+        };
+
+        expect(run("A")).toEqual({
+            playerHp: 1000,
+            opponentHp: 800,
+            playerDamage: 200,
+            opponentStrike: false,
+        });
+        expect(run("C")).toEqual({
+            playerHp: 700,
+            opponentHp: 900,
+            playerDamage: 100,
+            opponentStrike: true,
+        });
+    });
+
+    it("resolves SnowAgumon's Cross-to-zero through attack lock and strike resolution", () => {
+        const player = makePlayer("player", 1000);
+        const opponent = makePlayer("opponent", 1000);
+        room = makeRoom([player, opponent], player.sessionId);
+        player.active = room.toSchemaCard(catalogCard("067"), "snowagumon-067");
+        player.active.hp = player.hp;
+        opponent.active!.cross.damage = 200;
+
+        resolveSupportAndCombat(room, player, opponent, "cross", "cross");
+
+        const strikes = JSON.parse(room.state.combatStrikesJson) as Array<{
+            attackerSessionId: string;
+            attack: AttackType;
+            totalDamage: number;
+            canceled?: boolean;
+        }>;
+        expect(strikes.filter(strike => !strike.canceled)).toEqual([
+            expect.objectContaining({
+                attackerSessionId: player.sessionId,
+                attack: "cross",
+                totalDamage: 220,
+            }),
+        ]);
+        expect(opponent.hp).toBe(780);
+        expect(player.hp).toBe(1000);
     });
 
     it("synchronizes Eat-Up HP recovery after a landed strike", () => {

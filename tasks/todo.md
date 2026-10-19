@@ -79,7 +79,7 @@ Linked plan: `tasks/plan.md`
 
 ### Phase B5: Runtime proof and cutover
 
-- [ ] **Task B13:** BattleRoom regressions for catalog Option power effects, compound/conditional plans, and SnowAgumon Cross-to-zero
+- [x] **Task B13:** BattleRoom regressions for catalog Option power effects, compound/conditional plans, and SnowAgumon Cross-to-zero
 - [ ] **Task B14:** Remove description fallback after plan coverage and runtime tests pass
 
 #### Checkpoint B complete
@@ -422,14 +422,14 @@ Linked plan: `tasks/plan.md`
 
 **Description:** Extend `BattleRoom.test.ts` to lock down catalog-driven attack-power changes through support reveal and final strike resolution, including SnowAgumon Cross-to-zero; cover every clause in a compound/conditional plan.
 
-**Acceptance criteria:**
-- [ ] Assert exact strike damage for additive, multiplier, targeted-zero, and conditional Option examples, with a slot/gate control
-- [ ] SnowAgumon `067` Cross vs Cross yields no canceled opponent strike and preserves target HP
-- [ ] Compound tests prove every clause, not merely one state mutation
+- [x] Assert exact strike damage for additive, multiplier, targeted-zero, and conditional Option examples, with a slot/gate control
+- [x] SnowAgumon `067` Cross vs Cross yields no canceled opponent strike and preserves target HP
+- [x] Compound tests prove every clause, not merely one state mutation
 
 **Verification:**
-- [ ] `pnpm test src/rooms/BattleRoom.test.ts`
-- [ ] `pnpm exec tsx scripts/verify-option-dispatch.ts`
+- [x] `pnpm exec vitest run src/rooms/BattleRoom.test.ts`
+- [x] Typecheck (`pnpm exec tsc --noEmit`)
+- [x] `pnpm exec tsx scripts/verify-option-dispatch.ts G1`
 
 **Dependencies:** B7–B9  
 **Files likely touched:** `src/rooms/BattleRoom.test.ts`  
