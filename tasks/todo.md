@@ -350,11 +350,12 @@ Linked plan: `tasks/plan.md`
 **Description:** Map normalized `effectPlan` to `SupportEffectSchema.effectPlanJson` and preserve it through Option and Digimon support resolution.
 
 **Acceptance criteria:**
-- [ ] No plan is dropped between catalog load, schema serialization, and resolver input
-- [ ] Existing card behavior and user-visible support descriptions remain unchanged
+- [x] No plan is dropped between catalog load, schema serialization, and resolver input
+- [x] Existing card behavior and user-visible support descriptions remain unchanged
 
 **Verification:**
-- [ ] Real `BattleRoom` test resolves one catalog Option and one Digimon support plan
+- [x] Real `BattleRoom` test resolves one catalog Option and one Digimon support plan
+  with legacy descriptions deliberately made unparseable
 
 **Dependencies:** B6–B8  
 **Files likely touched:** `src/schema/BattleState.ts`, `src/rooms/BattleRoom.ts`, room tests  

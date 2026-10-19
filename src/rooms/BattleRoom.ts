@@ -4,6 +4,7 @@ import { BattleStateSchema, PlayerSchema, CardSchema, SupportEffectSchema } from
 import cardsData from "../data/cards.json";
 import { getFirebaseAdminAuth } from "../server/firebaseAdmin";
 import { loadCardCatalog, type NormalizedCardCatalogEntry } from "../lib/cardCatalogLoader";
+import { parseEffectPlanJson, serializeEffectPlanJson } from "../lib/effectPlan";
 import { BattleAuditLog, snapshotPlayer, type StateDelta } from "../lib/battleAuditLog";
 import {
     applyOpeningPenalty,
@@ -571,6 +572,9 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
                 (rawEffect as { requireOpponentType?: string }).requireOpponentType ?? ""
             );
             se.priority = Number((rawEffect as { priority?: number }).priority ?? 0);
+            se.effectPlanJson = rawEffect.effectPlan
+                ? serializeEffectPlanJson(rawEffect.effectPlan)
+                : "";
             card.supportEffect = se;
         } else {
             card.supportEffect = null;
@@ -688,6 +692,9 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
                       description: card.supportEffect.description,
                       value: card.supportEffect.value,
                       targetAttack: card.supportEffect.targetAttack,
+                      effectPlan: card.supportEffect.effectPlanJson
+                          ? parseEffectPlanJson(card.supportEffect.effectPlanJson)
+                          : undefined,
                   }
                 : null,
         };
