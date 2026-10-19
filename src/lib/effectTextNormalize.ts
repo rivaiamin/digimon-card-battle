@@ -3,10 +3,10 @@
  * Shared by card catalog load and effects.json builder.
  */
 
-import type { EffectArgs } from "../types";
+import type { AttackType, EffectArgs } from "../types";
 import { parseCondition, splitConditional } from "./effectCondition";
 
-export type AttackType = "circle" | "triangle" | "cross";
+export type { AttackType } from "../types";
 
 export function letterToAttack(letter: string | undefined): AttackType | null {
     if (!letter) return null;

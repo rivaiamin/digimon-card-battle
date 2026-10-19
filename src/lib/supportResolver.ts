@@ -4,6 +4,7 @@
  * @see docs/fidelity-rules-contract.md FC-015, GDD.md Phase 3 Step 2
  */
 
+import type { AttackType } from "../types";
 import type { CardSchema, PlayerSchema, SupportEffectSchema } from "../schema/BattleState";
 import { sortEffectsByConflictPolicy } from "./effectConflictResolver";
 import {
@@ -20,7 +21,7 @@ import {
     type ConditionSubject,
 } from "./effectCondition";
 
-export type AttackType = "circle" | "triangle" | "cross";
+export type { AttackType } from "../types";
 
 export type SupportEffectType =
     | "void_enemy_support"
