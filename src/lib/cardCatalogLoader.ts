@@ -1,4 +1,5 @@
 import type { CardKind, EffectArgs } from "../types";
+import type { EffectPlan } from "./effectPlan";
 import {
     inferCompoundSupportEffect,
     letterToAttack,
@@ -24,6 +25,7 @@ export type NormalizedSupportEffect = {
     requireType: string;
     requireOpponentType: string;
     priority: number;
+    effectPlan?: EffectPlan;
 };
 
 export type NormalizedCardCatalogEntry = {

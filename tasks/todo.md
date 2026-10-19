@@ -35,7 +35,7 @@ Linked plan: `tasks/plan.md`
 
 ### Phase B1: Contract and inventory
 
-- [ ] **Task B1:** Define separate `effectPlan` contract and schema transport
+- [x] **Task B1:** Define separate `effectPlan` contract and schema transport
 - [ ] **Task B2:** Inventory catalog effects and parser gaps
 
 #### Checkpoint B1
@@ -203,16 +203,16 @@ Linked plan: `tasks/plan.md`
 **Description:** Define a versioned plan type, separate from scalar `EffectArgs`, carried as `supportEffect.effectPlan` in normalized catalog data and `SupportEffectSchema.effectPlanJson` in room state.
 
 **Acceptance criteria:**
-- [ ] Plan discriminates leaf, ordered compose steps, and conditional (`when` + ordered steps)
-- [ ] Every plan node is JSON-serializable and has `planVersion: 1`
-- [ ] Unsupported version / malformed plan has a defined rejection path before execution
+- [x] Plan discriminates effect leaves, ordered compose steps, and conditional (`when` + ordered steps)
+- [x] Every plan node is JSON-serializable and has `planVersion: 1`
+- [x] Unsupported version / malformed plan has a defined rejection path before execution
 
 **Verification:**
-- [ ] Typecheck
-- [ ] Deterministic validation/round-trip tests for valid and invalid shapes
+- [x] Typecheck
+- [x] Deterministic validation/round-trip tests for valid and invalid shapes
 
 **Dependencies:** None  
-**Files likely touched:** `src/lib/effectPlan.ts`, `src/lib/effectPlan.test.ts`, `src/schema/BattleState.ts`  
+**Files likely touched:** `src/lib/effectPlan.ts`, `src/lib/effectPlan.test.ts`, `src/schema/BattleState.ts`, `src/lib/cardCatalogLoader.ts`  
 **Estimated scope:** Small–Medium
 
 ---

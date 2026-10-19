@@ -21,6 +21,8 @@ export class SupportEffectSchema extends Schema {
     @type("string") requireOpponentType: string = "";
     /** Override stack tier (1–5); 0 = derive from type. */
     @type("number") priority: number = 0;
+    /** JSON-encoded versioned support-effect execution plan; empty means absent. */
+    @type("string") effectPlanJson: string = "";
 }
 
 export class CardSchema extends Schema {
