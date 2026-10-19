@@ -7,7 +7,6 @@ import type { AttackType, EffectArgs } from "../types";
 import type { EffectPlan } from "./effectPlan";
 import { readNumberArg } from "./effectArgs";
 import { CardSchema, PlayerSchema, SupportEffectSchema } from "../schema/BattleState";
-import { inferCompoundSupportEffect } from "./effectTextNormalize";
 import { serializeEffectPlanJson } from "./effectPlan";
 import { evaluateEvolution, type EvolutionModifiers } from "./evolutionEligibility";
 import {
@@ -282,13 +281,10 @@ function toSupportEffect(card: OptionCardLike): SupportEffectSchema | null {
     let type = String(se?.type ?? "").trim();
     let description = String(se?.description ?? "");
 
-    // `catalog_text` is the loader's marker for "text not yet inferred"; a card
-    // built by hand (tests, fixtures) still carries it, so infer here too.
-    if (type === "catalog_text") {
-        const inferred = inferCompoundSupportEffect(description);
-        if (!inferred) return null;
-        type = inferred.type;
-        description = inferred.description ?? description;
+    if (se?.effectPlan) {
+        type = se.effectPlan.op === "effect" ? se.effectPlan.effect.type : se.effectPlan.op;
+    } else if (type === "catalog_text") {
+        return null;
     }
     if (!type) {
         const idType = String(card.effectId ?? "").trim().split(".").pop() ?? "";

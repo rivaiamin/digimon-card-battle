@@ -293,6 +293,26 @@ describe("option effect classification", () => {
         expect(verdict.reason).toBe("no_effect_text");
         expect(verdict.detail.cardId).toBe("257");
     });
+    it("does not infer a missing catalog plan from display prose", () => {
+        const verdict = classifyOptionEffect({
+            id: "legacy-option",
+            cardKind: "option",
+            effectId: "",
+            supportEffect: {
+                type: "catalog_text",
+                description: "Boost own Attack Power +300.",
+            },
+        });
+        expect(verdict).toEqual({
+            implemented: false,
+            reason: "no_effect_text",
+            detail: {
+                cardId: "legacy-option",
+                effectId: "",
+                description: "Boost own Attack Power +300.",
+            },
+        });
+    });
 
     it("classifies an evolution option by its effectId, not its prose", () => {
         // The text is catalog_text, but the runtime reads the effectId.

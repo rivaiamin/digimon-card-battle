@@ -9,6 +9,8 @@ import { describe, expect, it } from "vitest";
 
 import type { AttackType } from "../types";
 import { CardSchema, PlayerSchema, SupportEffectSchema } from "../schema/BattleState";
+import { materializeEffectPlan } from "./effectTextNormalize";
+import { serializeEffectPlanJson } from "./effectPlan";
 import { resolveFullBattle, type BattleCombatant } from "./battleEffectEngine";
 import {
     createSupportBattleContext,
@@ -61,7 +63,8 @@ function supportCard(
     value = 0,
     priority = 2,
     description = "",
-    targetAttack = ""
+    targetAttack = "",
+    effectPlanJson = ""
 ): CardSchema {
     const card = new CardSchema();
     card.id = id;
@@ -73,6 +76,7 @@ function supportCard(
     se.description = description;
     se.targetAttack = targetAttack;
     card.supportEffect = se;
+    se.effectPlanJson = effectPlanJson;
     return card;
 }
 
@@ -280,12 +284,22 @@ describe("ordering authority and the §2B fallback (D1 / FC-020)", () => {
 
 describe("shipped damage arithmetic order (FC-016 / §2B classes 3→4)", () => {
     function composeDamage(description: string): { base: number; total: number } {
+        const plan = materializeEffectPlan(description);
+        if (!plan) throw new Error(`Cannot materialize support plan from "${description}"`);
         const active = makePlayer("a");
         const ctx = createSupportBattleContext();
         resolveSupportPhase(
             active,
             makePlayer("d"),
-            supportCard("a-compose", "compose", 0, 4, description),
+            supportCard(
+                "a-compose",
+                "compose",
+                0,
+                4,
+                description,
+                "",
+                serializeEffectPlanJson(plan)
+            ),
             null,
             ctx,
             { activeSessionId: "a", sessionOrder: ["a", "d"] },

@@ -1,11 +1,6 @@
 import type { CardKind, EffectArgs } from "../types";
 import { isEffectPlan, type EffectPlan } from "./effectPlan";
-import {
-    inferCompoundSupportEffect,
-    letterToAttack,
-    parseAttackEffectFromDescription,
-    supportTypeToEffectId,
-} from "./effectTextNormalize";
+import { letterToAttack, parseAttackEffectFromDescription, supportTypeToEffectId } from "./effectTextNormalize";
 
 type LegacySupportEffect = {
     type?: unknown;
@@ -218,28 +213,23 @@ function normalizeSupportEffect(
     if (!raw || typeof raw !== "object") return null;
     const effectPlan = normalizeEffectPlan(raw.effectPlan, cardId);
     let type = String(raw.type ?? "").trim();
-    let targetAttack = String(raw.targetAttack ?? "");
-    let value = Number(raw.value ?? 0);
+    const targetAttack = String(raw.targetAttack ?? "");
+    const value = Number(raw.value ?? 0);
     const description = String(raw.description ?? "");
     if (!type) return null;
 
-    if (type === "catalog_text") {
-        const inferred = inferCompoundSupportEffect(description);
-        if (!inferred) {
-            return {
-                type: "catalog_text",
-                targetAttack: "",
-                value: 0,
-                description,
-                requireType: String(raw.requireType ?? ""),
-                requireOpponentType: String(raw.requireOpponentType ?? ""),
-                priority: Number(raw.priority ?? 0),
-                ...(effectPlan ? { effectPlan } : {}),
-            };
+    if (effectPlan) {
+        const planType = effectPlan.op === "effect" ? effectPlan.effect.type : effectPlan.op;
+        if (type !== "catalog_text" && type !== planType) {
+            throw new Error(
+                `[cardCatalogLoader] Effect plan type "${planType}" does not match "${type}" on card "${cardId}".`
+            );
         }
-        type = inferred.type;
-        targetAttack = inferred.targetAttack ?? "";
-        value = inferred.value ?? 0;
+        type = planType;
+    } else if (type === "compose" || type === "conditional") {
+        throw new Error(
+            `[cardCatalogLoader] Missing effect plan for "${type}" support effect on card "${cardId}".`
+        );
     }
 
     return {
@@ -314,22 +304,8 @@ function toNormalizedEffectDescriptor(cardId: string, raw: {
             };
         case "hp_heal":
             return { effectId: "support.hp_heal", effectArgs: { value } };
-        case "catalog_text": {
-            const inferred = inferCompoundSupportEffect(
-                String(supportEffect.description ?? "")
-            );
-            if (!inferred) return { effectId: "", effectArgs: {} };
-            const mapped = supportTypeToEffectId(inferred.type);
-            if (!mapped) return { effectId: "", effectArgs: {} };
-            return {
-                effectId: mapped.effectId,
-                effectArgs: {
-                    ...mapped.effectArgs,
-                    ...(inferred.targetAttack ? { targetAttack: inferred.targetAttack } : {}),
-                    ...(inferred.value != null ? { value: inferred.value } : {}),
-                },
-            };
-        }
+        case "catalog_text":
+            return { effectId: "", effectArgs: {} };
         default: {
             const mapped = supportTypeToEffectId(type);
             if (!mapped) {

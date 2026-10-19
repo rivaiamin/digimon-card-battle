@@ -587,10 +587,9 @@ export function inferSupportEffectFromDescription(
 }
 
 /**
- * A conditional line ("If <gate>, <consequent>") whose gate is recognized and
- * whose consequent fully parses. Stored as `type: "conditional"` with the full
- * text; the resolver re-parses and evaluates it at battle time (FC-027).
- * `&`-joined consequents (e.g. "own Attack Power +200 & HP +200") are split too.
+ * Recognize a conditional source-text line whose gate and every consequent
+ * clause can be materialized. Runtime execution consumes the resulting plan,
+ * not this prose. `&`-joined consequents are split as well.
  */
 /** Split a conditional consequent on its clause separators (`&`, `and`, `,`, `.`). */
 export function splitConsequentClauses(consequent: string): string[] {

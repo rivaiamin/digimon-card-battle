@@ -44,7 +44,7 @@ Gameplay semantics stay frozen unless explicitly called out: pre-Cross damage re
   - A separate field is semantically clearer and keeps ordinary effect arguments scalar. It adds one explicit schema field and catalog/room forwarding; accept that cost rather than silently smuggling an AST through `effectArgs`.
 - Shape: each node carries `planVersion: 1`; leaves hold one executable primitive (`type`, optional target/value), `compose` holds ordered steps, and `conditional` holds a serialized `when` condition plus ordered steps. Gates and priority remain on the enclosing support effect. `description` remains display/source text, not executable data. Validate shape and version before execution.
 - Display descriptions remain display/source text. The runtime plan, not the prose, determines executable clauses.
-- **Migration:** dual-read plans first, description fallback second; remove fallback only after generated catalog coverage and exact runtime parity are proven.
+- **Migration:** Runtime now executes only validated versioned plans for `compose` / `conditional` and plan-backed `catalog_text` effects. Missing plans are rejected or reported unresolved; parser inference remains a build/materialization concern, not a battle-time fallback.
 - **Out of scope:** general expression DSL; merging `battleEffectEngine` strike semantics into support arithmetic; converting unparseable text into a false “implemented” effect.
 
 **Current catalog baseline (measured):** 301 cards total; 102 Options; 110 `catalog_text`; 47 `compose`; 46 `conditional` support effects.
@@ -53,8 +53,8 @@ Gameplay semantics stay frozen unless explicitly called out: pre-Cross damage re
 
 **Residual scope (user-selected):** Leave `257` Partner Finder explicitly unresolved; it requires new random partner-selection behavior, while this rollout stays focused on existing effect semantics. `200` declares “None”; `293`–`299` are evolution options handled by the separate evolution-effect path; `300` has no supported effect id. Do not add plans for these entries or mislabel them as supported. Inventory still reports 193 valid plans, zero missing, zero invalid among executable candidates.
 
-- Runtime prose interpretation remains in `supportResolver.applySingleEffect` for `compose` / `conditional`, and `optionResolver.toSupportEffect` for `catalog_text`.
-- `scripts/verify-specialty-gates.ts` currently treats compose/conditional descriptions as executable input; `optionDispatch.test.ts` exercises real `PlayerSchema` options.
+- No runtime prose interpretation remains for compound/conditional support effects. `cardCatalogLoader` requires plans for those types and derives catalog-text effect types from validated plans; unsupported catalog text stays unresolved.
+- `scripts/verify-specialty-gates.ts` compares serialized plan conditions against condition text and retains explicit gate-field checks for effects without a matching plan condition.
 
 **Option-resolution probe (real room path):** A single `pnpm exec tsx -e` harness loaded catalog entries, serialized them to `CardSchema`/`SupportEffectSchema`, called `BattleRoom.finishSupportRevealAndAdvance()` and battle resolution, then asserted exact strike damage and HP for 15 cases:
 

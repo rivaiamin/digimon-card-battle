@@ -52,8 +52,8 @@ Linked plan: `tasks/plan.md`
 *B3 and B4 may run in parallel after B1 fixes the plan and condition shapes.*
 
 #### Checkpoint B2
-- [ ] `pnpm cards:build` succeeds
-- [ ] `pnpm test` passes
+- [ ] `pnpm cards:build` succeeds (blocked: `scripts/data/asyrafkz/cards.json` absent in this tree)
+- [x] `pnpm test` passes
 - [x] Inventory shows plans for all parser-recognized eligible cards
 
 ### Phase B3: Execute plan at runtime (dual-read)
@@ -75,16 +75,16 @@ Linked plan: `tasks/plan.md`
 
 #### Checkpoint B4
 - [x] Inventory contains no unsupported “implemented” effect hidden behind prose; only documented exclusions remain
-- [ ] `pnpm test:fidelity` passes or documented exclusions remain explicit
+- [x] `pnpm test:fidelity` passes or documented exclusions remain explicit
 
 ### Phase B5: Runtime proof and cutover
 
 - [x] **Task B13:** BattleRoom regressions for catalog Option power effects, compound/conditional plans, and SnowAgumon Cross-to-zero
-- [ ] **Task B14:** Remove description fallback after plan coverage and runtime tests pass
+- [x] **Task B14:** Remove description fallback after plan coverage and runtime tests pass
 
 #### Checkpoint B complete
-- [ ] All Part B acceptance criteria met
-- [ ] Ready for human review
+- [x] All Part B acceptance criteria met (except regenerating catalog from source when `asyrafkz` data is restored)
+- [x] Ready for human review
 
 ---
 
@@ -404,13 +404,13 @@ Linked plan: `tasks/plan.md`
 **Description:** Delete runtime compose/conditional prose parsing only after all executable catalog cards carry validated plans and the room regressions pass.
 
 **Acceptance criteria:**
-- [ ] No runtime prose parsing for compose/conditional in support resolution
-- [ ] Loader rejects or explicitly flags a missing plan before execution
+- [x] No runtime prose parsing for compose/conditional in support resolution
+- [x] Loader rejects or explicitly flags a missing plan before execution
 
 **Verification:**
-- [ ] `pnpm test`
-- [ ] `pnpm test:fidelity`
-- [ ] `pnpm exec tsx scripts/verify-option-dispatch.ts` and `verify-specialty-gates.ts`
+- [x] `pnpm test`
+- [x] `pnpm test:fidelity`
+- [x] `pnpm exec tsx scripts/verify-option-dispatch.ts` and `verify-specialty-gates.ts`
 
 **Dependencies:** B5, B7–B13, inventory proves every supported compose/conditional has a valid plan  
 **Files likely touched:** `src/lib/supportResolver.ts`, `src/lib/optionResolver.ts`, verifier if needed  

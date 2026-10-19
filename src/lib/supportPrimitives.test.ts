@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { AttackType } from "../types";
+import type { EffectCondition } from "./effectCondition";
 import { CardSchema, PlayerSchema, SupportEffectSchema } from "../schema/BattleState";
 import {
     createSupportBattleContext,
@@ -48,6 +49,9 @@ function sup(
     se.effectPlanJson = extras.effectPlanJson ?? "";
     card.supportEffect = se;
     return card;
+}
+function conditionalPlanJson(when: EffectCondition, ...steps: EffectPlan[]): string {
+    return serializeEffectPlanJson({ planVersion: 1, op: "conditional", when, steps });
 }
 
 /** Resolve `activeSupport` played by the active player and return the ctx. */
@@ -220,6 +224,14 @@ describe("conditional support effects (FC-027)", () => {
         const d = makePlayer("d", "Ice");
         const card = sup("conditional", {
             description: "If both attacks are different, own Attack Power is doubled",
+            effectPlanJson: conditionalPlanJson(
+                { kind: "attacks_different" },
+                {
+                    planVersion: 1,
+                    op: "effect",
+                    effect: { type: "atk_mult", targetAttack: "all", value: 2 },
+                }
+            ),
         });
         const ctx = resolveSupportPhaseWith(a, d, card, { activeAttack: "circle", defenderAttack: "cross" });
         expect(getEffectiveAttackDamage(a, "circle", ctx)).toBe(800);
@@ -230,6 +242,14 @@ describe("conditional support effects (FC-027)", () => {
         const d = makePlayer("d", "Ice");
         const card = sup("conditional", {
             description: "If both attacks are different, own Attack Power is doubled",
+            effectPlanJson: conditionalPlanJson(
+                { kind: "attacks_different" },
+                {
+                    planVersion: 1,
+                    op: "effect",
+                    effect: { type: "atk_mult", targetAttack: "all", value: 2 },
+                }
+            ),
         });
         const ctx = resolveSupportPhaseWith(a, d, card, { activeAttack: "circle", defenderAttack: "circle" });
         expect(getEffectiveAttackDamage(a, "circle", ctx)).toBe(400);
@@ -241,6 +261,19 @@ describe("conditional support effects (FC-027)", () => {
         const d = makePlayer("d", "Dark");
         const card = sup("conditional", {
             description: "If opponent's Specialty is Darkness, own Attack Power is +200 & HP +200",
+            effectPlanJson: conditionalPlanJson(
+                { kind: "opponent_specialty_is", specialty: "Darkness" },
+                {
+                    planVersion: 1,
+                    op: "effect",
+                    effect: { type: "atk_buff", targetAttack: "all", value: 200 },
+                },
+                {
+                    planVersion: 1,
+                    op: "effect",
+                    effect: { type: "hp_heal", value: 200 },
+                }
+            ),
         });
         const ctx = resolveSupportPhaseWith(a, d, card, { activeAttack: "circle", defenderAttack: "circle" });
         expect(getEffectiveAttackDamage(a, "circle", ctx)).toBe(600);
@@ -318,6 +351,14 @@ describe("DP-slot primitives (FC-027)", () => {
         addDpCards(d, 3);
         const card = sup("conditional", {
             description: "If opponent has more than 2 Cards in DP Slot, opponent's Attack Power becomes 0",
+            effectPlanJson: conditionalPlanJson(
+                { kind: "opponent_dp_slot_gt", value: 2 },
+                {
+                    planVersion: 1,
+                    op: "effect",
+                    effect: { type: "enemy_atk_zero", targetAttack: "all" },
+                }
+            ),
         });
         const ctx = createSupportBattleContext();
         resolveSupportPhase(a, d, card, null, ctx, undefined, undefined, {
@@ -544,6 +585,13 @@ describe("versioned support effect plan execution", () => {
         );
 
         expect(getEffectiveAttackDamage(d, "cross", ctx)).toBe(0);
+    });
+
+    it("rejects prose-only compose effects once plan execution is enabled", () => {
+        const card = sup("compose", { description: "Boost own Attack Power +100." });
+        expect(() => resolveActive(makePlayer("a"), makePlayer("d", "Ice"), card)).toThrow(
+            "Missing effect plan"
+        );
     });
 
     it("rejects malformed plan JSON without falling back to description parsing", () => {

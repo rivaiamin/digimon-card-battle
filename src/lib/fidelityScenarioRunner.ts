@@ -1555,6 +1555,18 @@ export const FIDELITY_SCENARIOS: FidelityScenario[] = [
                     description: "If both attacks are different, own Attack Power is doubled",
                     requireType: "",
                     requireOpponentType: "",
+                    effectPlanJson: JSON.stringify({
+                        planVersion: 1,
+                        op: "conditional",
+                        when: { kind: "attacks_different" },
+                        steps: [
+                            {
+                                planVersion: 1,
+                                op: "effect",
+                                effect: { type: "atk_mult", targetAttack: "all", value: 2 },
+                            },
+                        ],
+                    }),
                 },
             };
 

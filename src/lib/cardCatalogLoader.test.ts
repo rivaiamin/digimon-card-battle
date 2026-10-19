@@ -47,6 +47,8 @@ describe("card catalog effect plan loading", () => {
 
         expect(cards.find(card => card.id === "digimon")?.supportEffect?.effectPlan).toEqual(composePlan);
         expect(cards.find(card => card.id === "option")?.supportEffect?.effectPlan).toEqual(conditionalPlan);
+
+        expect(cards.find(card => card.id === "option")?.supportEffect?.type).toBe("conditional");
     });
 
     it("preserves all plans present in the generated catalog", () => {
@@ -76,6 +78,55 @@ describe("card catalog effect plan loading", () => {
             ])
         ).toThrow(
             '[cardCatalogLoader] Invalid effect plan on card "bad-plan-card": unsupported planVersion "2".'
+        );
+    });
+
+    it("requires plans for structured support effects and leaves unplanned catalog text unresolved", () => {
+        for (const type of ["compose", "conditional"]) {
+            expect(() =>
+                loadCardCatalog([
+                    {
+                        id: `missing-${type}`,
+                        supportEffect: { type, description: "Attack first. Boost own Attack Power +100." },
+                    },
+                ])
+            ).toThrow(
+                `[cardCatalogLoader] Missing effect plan for "${type}" support effect on card "missing-${type}".`
+            );
+        }
+
+        const [unresolved] = loadCardCatalog([
+            {
+                id: "text-only",
+                cardKind: "option",
+                supportEffect: {
+                    type: "catalog_text",
+                    description: "Boost own Attack Power +300.",
+                },
+            },
+        ]);
+        expect(unresolved?.supportEffect?.type).toBe("catalog_text");
+        expect(unresolved?.supportEffect?.effectPlan).toBeUndefined();
+    });
+
+    it("rejects a plan whose root operation disagrees with the declared effect type", () => {
+        expect(() =>
+            loadCardCatalog([
+                {
+                    id: "mismatched-plan",
+                    supportEffect: {
+                        type: "compose",
+                        description: "Attack first. Boost own Attack Power +100.",
+                        effectPlan: {
+                            planVersion: 1,
+                            op: "effect",
+                            effect: { type: "atk_buff", value: 100 },
+                        },
+                    },
+                },
+            ])
+        ).toThrow(
+            '[cardCatalogLoader] Effect plan type "atk_buff" does not match "compose" on card "mismatched-plan".'
         );
     });
 });

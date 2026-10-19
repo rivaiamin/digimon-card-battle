@@ -140,6 +140,7 @@ function toOptionLike(card: NormalizedCardCatalogEntry): OptionCardLike {
                   description: se.description,
                   value: se.value,
                   targetAttack: se.targetAttack,
+                  ...(se.effectPlan ? { effectPlan: se.effectPlan } : {}),
               }
             : null,
     };

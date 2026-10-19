@@ -9,15 +9,7 @@ import { SupportEffectSchema, type CardSchema, type PlayerSchema } from "../sche
 import { parseEffectPlanJson, type EffectPlan } from "./effectPlan";
 import { sortEffectsByConflictPolicy } from "./effectConflictResolver";
 import {
-    inferConditionalEffect,
-    inferSupportEffectFromDescription,
-    splitComposeClauses,
-    splitConsequentClauses,
-} from "./effectTextNormalize";
-import {
     evaluateCondition,
-    parseCondition,
-    splitConditional,
     type ConditionContext,
     type ConditionSubject,
 } from "./effectCondition";
@@ -540,23 +532,6 @@ function applyZeroAttacks(ctx: SupportBattleContext, sessionId: string, targetsC
     ctx.attackMultiplier.set(sessionId, mult);
 }
 
-/** Build a schema-shaped effect from an inferred clause for recursive application. */
-function inferredToEffect(step: {
-    type: string;
-    targetAttack?: string;
-    value?: number;
-    description?: string;
-}): SupportEffectSchema {
-    return {
-        type: step.type,
-        targetAttack: step.targetAttack ?? "",
-        value: step.value ?? 0,
-        description: step.description ?? "",
-        requireType: "",
-        requireOpponentType: "",
-        priority: 0,
-    } as unknown as SupportEffectSchema;
-}
 
 function pickIndex(rng: (() => number) | undefined, len: number): number {
     if (len <= 0) return -1;
@@ -713,28 +688,8 @@ export function applySingleEffect(
 
     const type = String(effect.type ?? "");
 
-    if (type === "compose") {
-        const clauses = splitComposeClauses(String(effect.description ?? ""));
-        for (const clause of clauses) {
-            const step = inferSupportEffectFromDescription(clause) ?? inferConditionalEffect(clause);
-            if (!step) continue;
-            applySingleEffect(source, target, inferredToEffect(step), ctx, hooks, runtime);
-        }
-        return;
-    }
-
-    if (type === "conditional") {
-        if (!runtime) return;
-        const split = splitConditional(String(effect.description ?? ""));
-        if (!split) return;
-        const cond = parseCondition(split.head);
-        if (!cond || !evaluateCondition(cond, runtime.condition)) return;
-        for (const clause of splitConsequentClauses(split.consequent)) {
-            const step = inferSupportEffectFromDescription(clause);
-            if (!step) continue;
-            applySingleEffect(source, target, inferredToEffect(step), ctx, hooks, runtime);
-        }
-        return;
+    if (type === "compose" || type === "conditional") {
+        throw new Error(`[supportResolver] Missing effect plan for "${type}" support effect.`);
     }
 
     switch (type as SupportEffectType) {
