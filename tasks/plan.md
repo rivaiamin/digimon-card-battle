@@ -49,6 +49,8 @@ Gameplay semantics stay frozen unless explicitly called out: pre-Cross damage re
 
 **Current catalog baseline (measured):** 301 cards total; 102 Options; 110 `catalog_text`; 47 `compose`; 46 `conditional` support effects.
 
+**Inventory run:** `pnpm exec tsx scripts/inventory-effect-plans.ts` reported 301 cards, 102 Options, 110 `catalog_text`, 47 `compose`, and 46 `conditional` effects. Of 203 candidates, 193 parse into a recognized effect and currently lack an attached plan; 10 remain parser-unresolved: `200`, `257`, and `293`–`300` (all `catalog_text`). The report lists each candidate's type/status and exact missing/invalid/unresolved IDs. Parser recognition is not proof of complete execution.
+
 - Runtime prose interpretation remains in `supportResolver.applySingleEffect` for `compose` / `conditional`, and `optionResolver.toSupportEffect` for `catalog_text`.
 - `scripts/verify-specialty-gates.ts` currently treats compose/conditional descriptions as executable input; `optionDispatch.test.ts` exercises real `PlayerSchema` options.
 

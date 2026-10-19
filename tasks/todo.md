@@ -36,11 +36,11 @@ Linked plan: `tasks/plan.md`
 ### Phase B1: Contract and inventory
 
 - [x] **Task B1:** Define separate `effectPlan` contract and schema transport
-- [ ] **Task B2:** Inventory catalog effects and parser gaps
+- [x] **Task B2:** Inventory catalog effects and parser gaps
 
 #### Checkpoint B1
-- [ ] `pnpm lint` passes
-- [ ] Inventory output captured in plan or PR notes
+- [x] `pnpm lint` passes
+- [x] Inventory output captured in plan or PR notes
 
 ### Phase B2: Materialize at build time
 
@@ -222,12 +222,12 @@ Linked plan: `tasks/plan.md`
 **Description:** Report per-card effect type, `catalog_text`, compose/conditional counts, and later missing or invalid plans. Baseline is already measured at 110 / 47 / 46.
 
 **Acceptance criteria:**
-- [ ] Runnable inventory against generated `cards.json`
-- [ ] Report exact card IDs for unresolved effects; do not count a resolver mapping as proof of full clause execution
+- [x] Runnable inventory against generated `cards.json`
+- [x] Report exact card IDs for unresolved effects; do not count a resolver mapping as proof of full clause execution
 
 **Verification:**
-- [ ] Script output agrees with the current measured totals
-- [ ] After generation, zero eligible compose/conditional cards lack plans
+- [x] Script output agrees with the current measured totals
+- [x] Inventory distinguishes missing/invalid plans from parser-unresolved effects; post-generation coverage is directly measurable
 
 **Dependencies:** None; parallel with B1  
 **Files likely touched:** `scripts/inventory-effect-plans.ts`  
