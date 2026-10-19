@@ -13,7 +13,7 @@ Linked plan: `tasks/plan.md`
 ### Phase A2: Parallel import migrations (after A1)
 
 - [x] **Task A2:** Migrate attack/effect library consumers
-- [ ] **Task A3:** Migrate room and scenario consumers
+- [x] **Task A3:** Migrate room and scenario consumers
 - [ ] **Task A4:** Migrate UI/VFX consumers
 
 #### Checkpoint A

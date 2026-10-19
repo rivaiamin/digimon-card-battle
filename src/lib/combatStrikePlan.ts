@@ -1,4 +1,4 @@
-import type { AttackType } from "./supportResolver";
+import type { AttackType } from "../types";
 import type { CombatDamageResult, CombatSnapshot } from "./combatResolution";
 
 export type CombatStrike = {

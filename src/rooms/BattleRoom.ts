@@ -1,3 +1,4 @@
+import type { AttackType } from "../types";
 import { Room, CloseCode, type Client } from "@colyseus/core";
 import { BattleStateSchema, PlayerSchema, CardSchema, SupportEffectSchema } from "../schema/BattleState";
 import cardsData from "../data/cards.json";
@@ -42,7 +43,6 @@ import { spendEvolutionDp } from "../lib/evolutionEligibility";
 import {
     createSupportBattleContext,
     resolveSupportPhase,
-    type AttackType,
     type ResolveSupportHooks,
     type SupportBattleContext,
 } from "../lib/supportResolver";
