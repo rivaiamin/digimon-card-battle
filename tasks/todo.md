@@ -59,7 +59,7 @@ Linked plan: `tasks/plan.md`
 ### Phase B3: Execute plan at runtime (dual-read)
 
 - [x] **Task B7:** Execute plan in shared dispatcher (dual-read)
-- [ ] **Task B8:** Route Options through validated plans; retain migration fallback only
+- [x] **Task B8:** Route Options through validated plans; retain migration fallback only
 - [ ] **Task B9:** Forward `effectPlanJson` through room state
 
 #### Checkpoint B3
@@ -332,13 +332,12 @@ Linked plan: `tasks/plan.md`
 
 **Description:** `optionResolver.toSupportEffect` copies a validated normalized plan into the support-effect payload; retain prose inference only for pre-migration cards.
 
-**Acceptance criteria:**
-- [ ] Catalog-backed Option plan reaches the shared dispatcher intact
-- [ ] Unsupported/unresolved text still reports unresolved, not a silent no-op
+- [x] Catalog-backed Option plan reaches the shared dispatcher intact
+- [x] Unsupported/unresolved text still reports unresolved, not a silent no-op
 
 **Verification:**
-- [ ] `src/lib/optionDispatch.test.ts`
-- [ ] `pnpm exec tsx scripts/verify-option-dispatch.ts`
+- [x] `src/lib/optionDispatch.test.ts`
+- [x] `pnpm exec tsx scripts/verify-option-dispatch.ts G1` through `G4`
 
 **Dependencies:** B7  
 **Files likely touched:** `src/lib/optionResolver.ts`  

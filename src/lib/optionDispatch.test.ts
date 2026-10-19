@@ -46,6 +46,7 @@ function optionLike(card: NormalizedCardCatalogEntry): OptionCardLike {
                   description: se.description,
                   value: se.value,
                   targetAttack: se.targetAttack,
+                  effectPlan: se.effectPlan,
               }
             : null,
     };
@@ -181,6 +182,28 @@ describe("battle option dispatch (FC-008)", () => {
         expect(applied).toBe(true);
         expect(ctx.attackMultiplier.get("a")).toEqual({ circle: 2, triangle: 2, cross: 2 });
     });
+
+    it("executes a catalog Option's effect plan without reparsing its description", () => {
+        const option = optionLike(card("245"));
+        if (!option.supportEffect) throw new Error("catalog Option has no support effect");
+        option.supportEffect = {
+            ...option.supportEffect,
+            description: "This legacy description is deliberately not parseable.",
+        };
+        const ctx = createSupportBattleContext();
+        const self = makePlayer("a", "Fire", "Champion", 400);
+        const opp = makePlayer("d", "Nature", "Champion", 400);
+        const applied = applyBattleOptionToContext(
+            option,
+            self.sessionId,
+            ctx,
+            undefined,
+            { source: self, target: opp, sourceAttack: "circle", targetAttack: "triangle" }
+        );
+        expect(applied).toBe(true);
+        expect(ctx.attackMultiplier.get("a")).toEqual({ circle: 2, triangle: 2, cross: 2 });
+    });
+
 
     it("leaves a conditional card inert when its gate is false", () => {
         // Same card, same attacks: the gate must actually gate, not always fire.

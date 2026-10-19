@@ -4,9 +4,11 @@
  */
 
 import type { AttackType, EffectArgs } from "../types";
+import type { EffectPlan } from "./effectPlan";
 import { readNumberArg } from "./effectArgs";
 import { CardSchema, PlayerSchema, SupportEffectSchema } from "../schema/BattleState";
 import { inferCompoundSupportEffect } from "./effectTextNormalize";
+import { serializeEffectPlanJson } from "./effectPlan";
 import { evaluateEvolution, type EvolutionModifiers } from "./evolutionEligibility";
 import {
     SUPPORT_PRIORITY,
@@ -31,7 +33,13 @@ export interface OptionCardLike {
     circle?: { damage: number };
     triangle?: { damage: number };
     cross?: { damage: number };
-    supportEffect?: { type?: string; description?: string; value?: number; targetAttack?: string } | null;
+    supportEffect?: {
+        type?: string;
+        description?: string;
+        value?: number;
+        targetAttack?: string;
+        effectPlan?: EffectPlan;
+    } | null;
 }
 
 export interface CatalogStatSnapshot {
@@ -294,6 +302,7 @@ function toSupportEffect(card: OptionCardLike): SupportEffectSchema | null {
     effect.targetAttack =
         String(se?.targetAttack ?? "").trim() ||
         (typeof args.targetAttack === "string" ? args.targetAttack : "");
+    effect.effectPlanJson = se?.effectPlan ? serializeEffectPlanJson(se.effectPlan) : "";
     effect.description = description;
     return effect;
 }
