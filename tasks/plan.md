@@ -51,9 +51,7 @@ Gameplay semantics stay frozen unless explicitly called out: pre-Cross damage re
 
 **Pre-migration inventory:** `pnpm exec tsx scripts/inventory-effect-plans.ts` reported 301 cards, 102 Options, 110 `catalog_text`, 47 `compose`, and 46 `conditional` effects. Of 203 candidates, 193 parse into a recognized effect; 10 remain parser-unresolved: `200`, `257`, and `293`–`300` (all `catalog_text`).
 
-**Plan materialization result:** All 193 parser-recognized candidates produced plans; a second deterministic pass matched all 193 serialized plans. Post-backfill inventory reports 193 valid, zero missing, zero invalid, and the same 10 unresolved IDs. Parser recognition is not proof of complete execution.
-
-**Catalog build limitation:** `scripts/data/asyrafkz/cards.json` is absent, so `pnpm cards:build` cannot run in this checkout. `buildCardCatalog.ts` now emits plans when sources are available; the checked-in `src/data/cards.json` artifact was backfilled from its existing descriptions without rebuilding other card fields.
+**Residual scope (user-selected):** Leave `257` Partner Finder explicitly unresolved; it requires new random partner-selection behavior, while this rollout stays focused on existing effect semantics. `200` declares “None”; `293`–`299` are evolution options handled by the separate evolution-effect path; `300` has no supported effect id. Do not add plans for these entries or mislabel them as supported. Inventory still reports 193 valid plans, zero missing, zero invalid among executable candidates.
 
 - Runtime prose interpretation remains in `supportResolver.applySingleEffect` for `compose` / `conditional`, and `optionResolver.toSupportEffect` for `catalog_text`.
 - `scripts/verify-specialty-gates.ts` currently treats compose/conditional descriptions as executable input; `optionDispatch.test.ts` exercises real `PlayerSchema` options.
@@ -92,7 +90,8 @@ Effect-plan contract (B1) + inventory (B2)
         B7 support dispatcher ─┬─ B8 Option adapter ─┐
                                └─ B9 room/schema ────┴── exact end-to-end parity
               ↓
-        parser gap tranche → runtime regression tests → remove fallback
+-        parser gap tranche → runtime regression tests → remove fallback
++        explicit residual-gap decision → runtime regression tests → remove fallback
 ```
 
 **Parallel answer:** A1 is a dependency; after it, A2/A3/A4 touch disjoint file groups and can run in parallel. #02 B1/B2 can run alongside #01 after agreeing on the plan field. After B1, B3/B4 are separate modules and can run in parallel against the fixed AST contract. Runtime/schema migration stays behind catalog generation and validation.
@@ -115,7 +114,8 @@ Implement #01 A1, then parallelize A2–A4. B1/B2 may proceed alongside those ta
 
 ## Open questions
 
-1. **Unparseable text:** Keep it explicitly catalog-only / unresolved; do not silently claim mechanical execution. Select parser expansion candidates from measured inventory.
+-1. **Unparseable text:** Keep it explicitly catalog-only / unresolved; do not silently claim mechanical execution. Select parser expansion candidates from measured inventory.
++1. **Unparseable text:** Keep Partner Finder (`257`) and non-effect/evolution-only records explicitly unresolved; do not add parser output without implementing the runtime semantics.
 2. **Specialty / level type aliases:** Defer A4 unless a consumer needs the narrower types; they do not block #02.
 
 ---

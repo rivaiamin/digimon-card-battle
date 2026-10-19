@@ -70,11 +70,11 @@ Linked plan: `tasks/plan.md`
 
 ### Phase B4: Shrink prose dependency
 
-- [ ] **Task B10:** Extend parser for highest-impact remaining `catalog_text` gaps (tracked IDs)
+- [x] **Task B10:** Classify remaining `catalog_text` gaps; keep unsupported semantics explicit
 - [x] **Task B11:** Update specialty-gate verifier to consume plan semantics
 
 #### Checkpoint B4
-- [ ] Inventory contains no unsupported “implemented” effect hidden behind prose
+- [x] Inventory contains no unsupported “implemented” effect hidden behind prose; only documented exclusions remain
 - [ ] `pnpm test:fidelity` passes or documented exclusions remain explicit
 
 ### Phase B5: Runtime proof and cutover
@@ -364,21 +364,21 @@ Linked plan: `tasks/plan.md`
 ---
 
 
-### Task B10: Parser expansion tranche
+### Task B10: Classify residual plan gaps
 
-**Description:** Pick highest-impact remaining `catalog_text` from B2 inventory; extend `inferSupportEffectFromDescription` / compound splitter; regen catalog.
+**Description:** Review all B2 unresolved IDs and decide whether they need parser/runtime work in this effect-plan rollout.
 
 **Acceptance criteria:**
-- [ ] Documented list of card ids fixed in this tranche
-- [ ] `catalog_text` count decreases measurably
+- [x] Record `200` (“None”), `257` Partner Finder, and `293`–`300` as explicit exclusions with distinct reasons
+- [x] Do not generate plans for effects whose runtime behavior is not implemented
 
 **Verification:**
-- [ ] B2 inventory
-- [ ] New parser tests per card pattern
+- [x] `pnpm exec tsx scripts/inventory-effect-plans.ts` reports 193 valid, zero missing, zero invalid, and the documented unresolved IDs
+- [x] `pnpm exec tsx scripts/verify-option-dispatch.ts G2` reports Partner Finder as unresolved with its card id
 
-**Dependencies:** B5  
-**Files likely touched:** `src/lib/effectTextNormalize.ts`, `scripts/buildCardCatalog.ts`, `cards.json`  
-**Estimated scope:** Medium (repeatable tranche — may split B10a/B10b if list is long)
+**Dependencies:** B5
+**Files likely touched:** `tasks/plan.md`, `tasks/todo.md`
+**Estimated scope:** Small
 
 ---
 
