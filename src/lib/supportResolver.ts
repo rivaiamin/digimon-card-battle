@@ -5,7 +5,8 @@
  */
 
 import type { AttackType } from "../types";
-import type { CardSchema, PlayerSchema, SupportEffectSchema } from "../schema/BattleState";
+import { SupportEffectSchema, type CardSchema, type PlayerSchema } from "../schema/BattleState";
+import { parseEffectPlanJson, type EffectPlan } from "./effectPlan";
 import { sortEffectsByConflictPolicy } from "./effectConflictResolver";
 import {
     inferConditionalEffect,
@@ -648,6 +649,45 @@ function multiplyAttack(ctx: SupportBattleContext, sessionId: string, factor: nu
     ctx.attackMultiplier.set(sessionId, mult);
 }
 
+function applyEffectPlan(
+    source: PlayerSchema,
+    target: PlayerSchema,
+    plan: EffectPlan,
+    ctx: SupportBattleContext,
+    hooks?: ResolveSupportHooks,
+    runtime?: EffectRuntime
+): void {
+    if (plan.op === "compose") {
+        for (const step of plan.steps) {
+            applyEffectPlan(source, target, step, ctx, hooks, runtime);
+        }
+        return;
+    }
+
+    if (plan.op === "conditional") {
+        if (!runtime || !evaluateCondition(plan.when, runtime.condition)) return;
+        for (const step of plan.steps) {
+            applyEffectPlan(source, target, step, ctx, hooks, runtime);
+        }
+        return;
+    }
+
+    const type = plan.effect.type;
+    if (
+        !Object.prototype.hasOwnProperty.call(SUPPORT_PRIORITY, type) ||
+        type === "compose" ||
+        type === "conditional"
+    ) {
+        throw new Error(`[supportResolver] Invalid effect plan leaf type "${type}".`);
+    }
+
+    const effect = new SupportEffectSchema();
+    effect.type = type;
+    effect.targetAttack = plan.effect.targetAttack ?? "";
+    effect.value = plan.effect.value ?? 0;
+    applySingleEffect(source, target, effect, ctx, hooks, runtime);
+}
+
 /**
  * Apply ONE support/battle primitive to the shared context. This is the single
  * dispatcher for every effect type — `resolveSupportPhase` runs the ordered
@@ -663,6 +703,14 @@ export function applySingleEffect(
     hooks?: ResolveSupportHooks,
     runtime?: EffectRuntime
 ): void {
+    const effectPlanJson = String(effect.effectPlanJson ?? "");
+    if (effectPlanJson) {
+        const plan = parseEffectPlanJson(effectPlanJson);
+        if (!plan) throw new Error("[supportResolver] Non-empty effect plan transport decoded as empty.");
+        applyEffectPlan(source, target, plan, ctx, hooks, runtime);
+        return;
+    }
+
     const type = String(effect.type ?? "");
 
     if (type === "compose") {

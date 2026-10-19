@@ -4,9 +4,6 @@ export type EffectPlanEffect = {
     type: string;
     targetAttack?: string;
     value?: number;
-    requireType?: string;
-    requireOpponentType?: string;
-    priority?: number;
 };
 
 export type EffectPlan =
@@ -31,15 +28,10 @@ function isPlanEffect(value: unknown): value is EffectPlanEffect {
     if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
     const effect = value as Record<string, unknown>;
     if (!isNonEmptyString(effect.type)) return false;
-    if (!hasOnlyKeys(effect, ["type", "targetAttack", "value", "requireType", "requireOpponentType", "priority"])) {
-        return false;
-    }
+    if (!hasOnlyKeys(effect, ["type", "targetAttack", "value"])) return false;
     return (
         (effect.targetAttack === undefined || isNonEmptyString(effect.targetAttack)) &&
-        (effect.value === undefined || isFiniteNumber(effect.value)) &&
-        (effect.requireType === undefined || isNonEmptyString(effect.requireType)) &&
-        (effect.requireOpponentType === undefined || isNonEmptyString(effect.requireOpponentType)) &&
-        (effect.priority === undefined || isFiniteNumber(effect.priority))
+        (effect.value === undefined || isFiniteNumber(effect.value))
     );
 }
 

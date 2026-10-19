@@ -58,7 +58,7 @@ Linked plan: `tasks/plan.md`
 
 ### Phase B3: Execute plan at runtime (dual-read)
 
-- [ ] **Task B7:** Execute plan in shared dispatcher (dual-read)
+- [x] **Task B7:** Execute plan in shared dispatcher (dual-read)
 - [ ] **Task B8:** Route Options through validated plans; retain migration fallback only
 - [ ] **Task B9:** Forward `effectPlanJson` through room state
 
@@ -314,12 +314,13 @@ Linked plan: `tasks/plan.md`
 **Description:** Dispatch a validated plan from `SupportEffectSchema.effectPlanJson`; keep current description parsing only as a temporary fallback for old catalog records.
 
 **Acceptance criteria:**
-- [ ] Exact state changes match existing behavior for golden compose/conditional cards
-- [ ] Plan execution preserves runtime conditions, priority, and operation order
+- [x] Exact state changes cover ordered plan effects and conditional gates; legacy prose fallback remains covered
+- [x] Plan execution preserves runtime conditions, enclosing support priority, and operation order
+- [x] Malformed plan JSON is rejected before effects and does not fall back to prose
 
 **Verification:**
-- [ ] `src/lib/supportPrimitives.test.ts`
-- [ ] `pnpm exec tsx scripts/verify-resolution-order.ts`
+- [x] `src/lib/supportPrimitives.test.ts`
+- [x] Resolution-order verifier G1, G2, and G3
 
 **Dependencies:** B6  
 **Files likely touched:** `src/lib/supportResolver.ts`, tests  

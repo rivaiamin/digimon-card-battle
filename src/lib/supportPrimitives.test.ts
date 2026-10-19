@@ -8,6 +8,7 @@ import {
 } from "./supportResolver";
 import { resolveFullBattle, type BattleCombatant } from "./battleEffectEngine";
 import { createSeededRng } from "./seededRng";
+import { serializeEffectPlanJson, type EffectPlan } from "./effectPlan";
 
 function makePlayer(sessionId: string, specialty = "Fire", hp = 1000): PlayerSchema {
     const p = new PlayerSchema();
@@ -29,7 +30,12 @@ function makePlayer(sessionId: string, specialty = "Fire", hp = 1000): PlayerSch
 
 function sup(
     type: string,
-    extras: { value?: number; targetAttack?: string; description?: string } = {}
+    extras: {
+        value?: number;
+        targetAttack?: string;
+        description?: string;
+        effectPlanJson?: string;
+    } = {}
 ): CardSchema {
     const card = new CardSchema();
     card.id = `sup-${type}`;
@@ -39,6 +45,7 @@ function sup(
     se.value = extras.value ?? 0;
     se.targetAttack = extras.targetAttack ?? "";
     se.description = extras.description ?? "";
+    se.effectPlanJson = extras.effectPlanJson ?? "";
     card.supportEffect = se;
     return card;
 }
@@ -489,3 +496,117 @@ describe("attack_second ordering (FC-027)", () => {
         expect(second.p1Hp).toBe(0);
     });
 });
+
+describe("versioned support effect plan execution", () => {
+    it("executes ordered primitives from the plan instead of reparsing the description", () => {
+        const a = makePlayer("a", "Fire", 100);
+        a.active!.maxHp = 1000;
+        const plan: EffectPlan = {
+            planVersion: 1,
+            op: "compose",
+            steps: [
+                { planVersion: 1, op: "effect", effect: { type: "hp_set", value: 500 } },
+                { planVersion: 1, op: "effect", effect: { type: "hp_heal", value: 200 } },
+            ],
+        };
+        const card = sup("compose", {
+            description: "This legacy description is deliberately not parseable.",
+            effectPlanJson: serializeEffectPlanJson(plan),
+        });
+        const ctx = resolveActive(a, makePlayer("d", "Ice"), card);
+
+        expect(a.hp).toBe(700);
+        expect(getEffectiveAttackDamage(a, "circle", ctx)).toBe(400);
+    });
+
+    it("evaluates a validated conditional plan against the battle context", () => {
+        const a = makePlayer("a", "Fire");
+        const d = makePlayer("d", "Ice");
+        const plan: EffectPlan = {
+            planVersion: 1,
+            op: "conditional",
+            when: { kind: "own_specialty_is", specialty: "Fire" },
+            steps: [
+                {
+                    planVersion: 1,
+                    op: "effect",
+                    effect: { type: "enemy_atk_zero", targetAttack: "cross" },
+                },
+            ],
+        };
+        const ctx = resolveActive(
+            a,
+            d,
+            sup("conditional", {
+                description: "This legacy description is deliberately not parseable.",
+                effectPlanJson: serializeEffectPlanJson(plan),
+            })
+        );
+
+        expect(getEffectiveAttackDamage(d, "cross", ctx)).toBe(0);
+    });
+
+    it("rejects malformed plan JSON without falling back to description parsing", () => {
+        const a = makePlayer("a", "Fire", 100);
+        const card = sup("compose", {
+            description: "Attack first. Boost own Attack Power +100.",
+            effectPlanJson: "{",
+        });
+
+        expect(() => resolveActive(a, makePlayer("d", "Ice"), card)).toThrow("Invalid effect plan JSON");
+        expect(a.hp).toBe(100);
+        expect(getEffectiveAttackDamage(a, "circle", createSupportBattleContext())).toBe(400);
+    });
+
+    it("keeps support-stack priority outside the ordered plan steps", () => {
+        const a = makePlayer("a");
+        const d = makePlayer("d", "Ice");
+        const activeSupport = sup("compose", {
+            effectPlanJson: serializeEffectPlanJson({
+                planVersion: 1,
+                op: "effect",
+                effect: { type: "enemy_hp_set", value: 500 },
+            }),
+        });
+        const defenderSupport = sup("compose", {
+            effectPlanJson: serializeEffectPlanJson({
+                planVersion: 1,
+                op: "effect",
+                effect: { type: "hp_set", value: 700 },
+            }),
+        });
+        activeSupport.supportEffect!.priority = 1;
+        defenderSupport.supportEffect!.priority = 2;
+
+        resolveSupportPhase(
+            a,
+            d,
+            activeSupport,
+            defenderSupport,
+            createSupportBattleContext(),
+            { activeSessionId: "a", sessionOrder: ["a", "d"] }
+        );
+
+        expect(d.hp).toBe(700);
+    });
+    it("skips conditional steps when the plan condition fails", () => {
+        const a = makePlayer("a", "Ice");
+        const d = makePlayer("d", "Nature");
+        const plan: EffectPlan = {
+            planVersion: 1,
+            op: "conditional",
+            when: { kind: "own_specialty_is", specialty: "Fire" },
+            steps: [
+                { planVersion: 1, op: "effect", effect: { type: "enemy_atk_zero", targetAttack: "cross" } },
+            ],
+        };
+        const ctx = resolveActive(
+            a,
+            d,
+            sup("conditional", { effectPlanJson: serializeEffectPlanJson(plan) })
+        );
+
+        expect(getEffectiveAttackDamage(d, "cross", ctx)).toBe(200);
+    });
+});
+
