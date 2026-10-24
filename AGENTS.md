@@ -57,3 +57,9 @@ battle arena.
 ### Optional / not required
 Firestore (card catalog — falls back to `src/data/cards.json`), Redis, and the Gemini
 API (`@google/genai`) are optional/unused for local gameplay.
+
+### Fidelity battle session (ongoing refactor)
+Authoritative match rules live in `src/lib/fidelityBattleSession.ts`; `BattleRoom` is the
+Colyseus adapter (timers, AFK, auth). Before editing that area, read
+`docs/handoff-fidelity-battle-session.md` and run
+`node scripts/verify-fidelity-battle-session-gates.mjs`.
