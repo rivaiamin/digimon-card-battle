@@ -18,7 +18,8 @@ function makeSession(
     players: PlayerSchema[],
     activeId: string,
     phase = "battle_attack",
-    prepSubPhase = ""
+    prepSubPhase = "",
+    getRng: () => number = Math.random
 ): FidelityBattleSession {
     const state = new BattleStateSchema();
     state.phase = phase;
@@ -31,7 +32,7 @@ function makeSession(
             ruleProfile: resolveRuleProfile("fidelity_ps1"),
             arenaVariant: resolveArenaVariant("standard"),
             catalogById,
-            getRng: () => Math.random,
+            getRng: () => getRng,
         },
         {
             emitAudit: () => {},
@@ -177,6 +178,93 @@ describe("FidelityBattleSession", () => {
         });
         expect(audits).toEqual(["auto_accept_hand"]);
         expect(session.legalityContext("p1").prepSubPhase).toBe("deploy");
+    });
+
+    it("skips timeout auto-commit when PhaseTimeoutPort applies a strike", () => {
+        const player = new PlayerSchema();
+        player.sessionId = "p1";
+        const session = makeSession([player], "p1", "preparation", "mulligan");
+        const audits: string[] = [];
+        session.handlePhaseTimeout("prep_mulligan", {
+            auditTimeout: (_ids, autoCommit) => {
+                audits.push(autoCommit);
+            },
+            applyStrike: () => true,
+        });
+        expect(audits).toEqual(["auto_accept_hand"]);
+        expect(session.legalityContext("p1").prepSubPhase).toBe("mulligan");
+    });
+
+    it("auto-draws on draw phase timeout", () => {
+        const player = new PlayerSchema();
+        player.sessionId = "p1";
+        for (let i = 0; i < 4; i++) {
+            const c = new CardSchema();
+            c.id = `h${i}`;
+            c.cardKind = "digimon";
+            player.hand.push(c);
+        }
+        const session = makeSession([player], "p1", "draw");
+        const audits: string[] = [];
+        session.handlePhaseTimeout("draw", {
+            auditTimeout: (_ids, autoCommit) => {
+                audits.push(autoCommit);
+            },
+            applyStrike: () => false,
+        });
+        expect(audits).toEqual(["auto_draw"]);
+        expect(session.legalityContext("p1").phase).toBe("preparation");
+    });
+
+    it("auto-locks random attacks on battle_attack timeout", () => {
+        const player = new PlayerSchema();
+        player.sessionId = "p1";
+        player.active = new CardSchema();
+        const opponent = new PlayerSchema();
+        opponent.sessionId = "p2";
+        opponent.active = new CardSchema();
+        const session = makeSession([player, opponent], "p1", "battle_attack", "", () => 0);
+        const audits: string[] = [];
+        session.handlePhaseTimeout("battle_attack", {
+            auditTimeout: (_ids, autoCommit) => {
+                audits.push(autoCommit);
+            },
+            applyStrike: () => false,
+        });
+        expect(audits).toEqual(["auto_random_attack", "auto_random_attack"]);
+        expect(player.attackLocked).toBe(true);
+        expect(opponent.attackLocked).toBe(true);
+        expect(session.attackChoices.get("p1")).toBe("circle");
+        expect(session.attackChoices.get("p2")).toBe("circle");
+        expect(session.legalityContext("p1").phase).toBe("battle_support");
+    });
+
+    it("auto-locks empty support on battle_support timeout (defender-first pick)", () => {
+        const player = new PlayerSchema();
+        player.sessionId = "p1";
+        player.active = new CardSchema();
+        const opponent = new PlayerSchema();
+        opponent.sessionId = "p2";
+        opponent.active = new CardSchema();
+        const session = makeSession([player, opponent], "p1", "battle_support");
+        session.beginSupportPlacement();
+        const audits: string[] = [];
+        const port = {
+            auditTimeout: (_ids: string[], autoCommit: string) => {
+                audits.push(autoCommit);
+            },
+            applyStrike: () => false,
+        };
+        const first = session.handlePhaseTimeout("battle_support", port);
+        expect(audits).toEqual(["auto_no_support"]);
+        expect(opponent.supportLocked).toBe(true);
+        expect(player.supportLocked).toBe(false);
+        expect(first.presentation).toEqual({ kind: "idle" });
+
+        const second = session.handlePhaseTimeout("battle_support", port);
+        expect(audits).toEqual(["auto_no_support", "auto_no_support"]);
+        expect(player.supportLocked).toBe(true);
+        expect(second.presentation).toEqual({ kind: "schedule_reveal", ms: 2200 });
     });
 
     it("syncs active HP after support reveal", () => {
