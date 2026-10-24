@@ -138,7 +138,7 @@ function makeSession(
             prepMessageFor: () => "deploy",
             shuffleInPlace: () => {},
             endGame: () => {},
-            endPrepOrPassTurn: () => {},
+            clearBattlePresentationTimers: () => {},
         }
     );
 }
@@ -207,7 +207,7 @@ describe("FidelityBattleSession", () => {
                 prepMessageFor: () => "",
                 shuffleInPlace: () => {},
                 endGame: () => {},
-                endPrepOrPassTurn: () => {},
+                clearBattlePresentationTimers: () => {},
             }
         );
         expect(session.evolve(player, target.id)).toBe(true);
@@ -491,6 +491,83 @@ describe("FidelityBattleSession presentation invariants", () => {
     });
 });
 
+describe("finishPrepOrPassTurn", () => {
+    it("enters battle and clears presentation timers when opponent has active", () => {
+        let clearedPresentation = false;
+        const player = battleReadyPlayer("p1");
+        const opponent = battleReadyPlayer("p2");
+        const state = new BattleStateSchema();
+        state.phase = "prep";
+        state.prepSubPhase = "";
+        state.turn = 2;
+        state.activePlayerSessionId = "p1";
+        state.players.set(player.sessionId, player);
+        state.players.set(opponent.sessionId, opponent);
+        const session = new FidelityBattleSession(
+            {
+                state,
+                ruleProfile: resolveRuleProfile("fidelity_ps1"),
+                arenaVariant: resolveArenaVariant("standard"),
+                catalogById,
+                getRng: () => Math.random,
+            },
+            {
+                emitAudit: () => {},
+                auditPlayer: () => {},
+                syncPhaseTimer: () => {},
+                clearPhaseTimer: () => {},
+                prepMessageFor: () => "",
+                shuffleInPlace: () => {},
+                endGame: () => {},
+                clearBattlePresentationTimers: () => {
+                    clearedPresentation = true;
+                },
+            }
+        );
+
+        session.finishPrepOrPassTurn(player);
+        expect(clearedPresentation).toBe(true);
+        expect(state.phase).toBe("battle_attack");
+    });
+
+    it("passes turn when opponent has no active Digimon", () => {
+        const player = battleReadyPlayer("p1");
+        const opponent = battleReadyPlayer("p2");
+        opponent.active = null;
+        const state = new BattleStateSchema();
+        state.phase = "prep";
+        state.prepSubPhase = "";
+        state.turn = 1;
+        state.activePlayerSessionId = "p1";
+        state.players.set(player.sessionId, player);
+        state.players.set(opponent.sessionId, opponent);
+        const session = new FidelityBattleSession(
+            {
+                state,
+                ruleProfile: resolveRuleProfile("fidelity_ps1"),
+                arenaVariant: resolveArenaVariant("standard"),
+                catalogById,
+                getRng: () => Math.random,
+            },
+            {
+                emitAudit: () => {},
+                auditPlayer: () => {},
+                syncPhaseTimer: () => {},
+                clearPhaseTimer: () => {},
+                prepMessageFor: () => "",
+                shuffleInPlace: () => {},
+                endGame: () => {},
+                clearBattlePresentationTimers: () => {},
+            }
+        );
+
+        session.finishPrepOrPassTurn(player);
+        expect(state.phase).toBe("draw");
+        expect(state.turn).toBe(2);
+        expect(state.activePlayerSessionId).toBe("p2");
+    });
+});
+
 describe("FidelityBattleSession match lifecycle", () => {
     it("startMatch shuffles decks and enters draw with coin-flip active player", () => {
         const player = battleReadyPlayer("p1");
@@ -511,7 +588,7 @@ describe("FidelityBattleSession match lifecycle", () => {
                 }
             },
             endGame: () => {},
-            endPrepOrPassTurn: () => {},
+            clearBattlePresentationTimers: () => {},
         };
         const state = new BattleStateSchema();
         state.phase = "waiting";
@@ -585,7 +662,7 @@ describe("FidelityBattleSession match lifecycle", () => {
                 prepMessageFor: () => "",
                 shuffleInPlace: () => {},
                 endGame: () => {},
-                endPrepOrPassTurn: () => {},
+                clearBattlePresentationTimers: () => {},
             }
         );
         endSession.applyMatchEnd("p2", "disconnect");

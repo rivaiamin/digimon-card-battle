@@ -1,7 +1,7 @@
 # Handoff: Fidelity battle session (BattleRoom deepening)
 
 **Branch:** `fix/card-effect-resolution`  
-**Status:** Slices 1–7 (slice 7: match lifecycle — join/start/end on session seam).  
+**Status:** Slices 1–8 (slice 8: BattleRoom hygiene — prep handoff on session, room deletion gate).  
 **Verify before any follow-up:** `node scripts/verify-fidelity-battle-session-gates.mjs`
 
 ## What changed (reader’s map)
@@ -20,12 +20,14 @@
 2. **Prep evolution / deploy** — `evolve`, `deployDigimon`, deck recovery helpers; option-dispatch G3 uses session hooks.
 3. **Draw + dispatch** — `executeDrawPhase`, prep sub-phases, full `dispatch()` over `PlayerActionType`; room routes `onMessage("action")` through session.
 4. **Timeouts + presentation + turn handoff** — `handlePhaseTimeout(phaseKey, port)`, `afterLockSupport` / `afterLockAttack`, `handoffTurnAfterBattle` / `passActiveTurn` / `enterDrawPhase`; dispatch may return `{ presentation }`.
+5. **Match lifecycle** — `fidelityMatchLifecycle.ts`, `startMatch`, `applyMatchEnd`, coin-flip first player.
+6. **BattleRoom hygiene** — `finishPrepOrPassTurn`, `verify-battle-room-hygiene.mjs`, adapter-only room (no stray rule imports).
 
 ## Key seams (for the next session)
 
 ### `FidelityBattleSessionHooks`
 
-Room implements: `emitAudit`, `auditPlayer`, `syncPhaseTimer`, `clearPhaseTimer`, `prepMessageFor`, `shuffleInPlace`, `endGame`, `endPrepOrPassTurn`.  
+Room implements: `emitAudit`, `auditPlayer`, `syncPhaseTimer`, `clearPhaseTimer`, `prepMessageFor`, `shuffleInPlace`, `endGame`, `clearBattlePresentationTimers`.  
 **Rule:** No `clock` or `Date.now()` inside the session module; wall time stays in the room.
 
 ### `PhaseTimeoutPort`
@@ -62,7 +64,7 @@ Pick one vertical; extend `GATES.md` and `fidelityBattleSession.test.ts` when yo
 1. ~~**Match lifecycle**~~ — done in slice 7 (`fidelityMatchLifecycle.ts`, `startMatch`, `applyMatchEnd`, coin-flip active player; room keeps auth/reconnect).
 2. ~~**AFK / timeout tests without Colyseus**~~ — done in slice 5 (`handlePhaseTimeout` + fake `PhaseTimeoutPort`).
 3. ~~**Presentation invariants**~~ — done in slice 6 (session tests + `RevealCommitResult.presentation` forward to room).
-4. **Room deletion test** — after each slice, grep `BattleRoom.ts` for duplicated rule logic (`lockSupport`, `pickRandomAttack`, prep helpers) and move stragglers into session.
+4. ~~**Room deletion test**~~ — done in slice 8 (`verify-battle-room-hygiene.mjs`, `finishPrepOrPassTurn` on session, stale imports/helpers removed from room).
 5. **Client / FC coverage** — map new session paths to `docs/8.0 Fidelity Checklist & Epic Backlog.md` items; add FC-tagged audits where gaps remain.
 
 ## Files to open first

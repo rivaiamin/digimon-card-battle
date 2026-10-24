@@ -4,38 +4,12 @@ import { BattleStateSchema, PlayerSchema, CardSchema, SupportEffectSchema } from
 import cardsData from "../data/cards.json";
 import { getFirebaseAdminAuth } from "../server/firebaseAdmin";
 import { loadCardCatalog, type NormalizedCardCatalogEntry } from "../lib/cardCatalogLoader";
-import { parseEffectPlanJson, serializeEffectPlanJson } from "../lib/effectPlan";
+import { serializeEffectPlanJson } from "../lib/effectPlan";
 import { BattleAuditLog, snapshotPlayer, type StateDelta } from "../lib/battleAuditLog";
-import {
-    applyOpeningPenalty,
-    digForDeployableFromDeck,
-} from "../lib/openingFlow";
-import {
-    applyPostEvolutionRecovery,
-    parseStatusAilmentsJson,
-    serializeStatusAilments,
-} from "../lib/postEvolutionRecovery";
 import { getPrepServerMessage } from "../lib/prepPhaseCopy";
 import { resolveRuleProfile, type RuleProfile } from "../lib/ruleProfile";
-import { parseEffectArgsJson } from "../lib/effectArgs";
-import {
-    canPlayEvolutionOption,
-    canPlayPrepOption,
-    canUseAsBattleSupport,
-} from "../lib/optionEligibility";
-import {
-    applyFullStatsFromCatalog,
-    canEvolveWithOption,
-    classifyOptionEffect,
-    parseEvolutionModifiers,
-    resolvePrepOption,
-    shouldRestoreFullStatsAfterEvolve,
-    type OptionCardLike,
-} from "../lib/optionResolver";
-import { spendEvolutionDp } from "../lib/evolutionEligibility";
 import {
     FidelityBattleSession,
-    toOptionCardView,
     type BattleBandOutcome,
     type DispatchResult,
     type PresentationAdvanceResult,
@@ -62,7 +36,6 @@ import {
     type TimedPhaseKey,
 } from "../lib/phaseTimer";
 import { SUPPORT_EFFECTS_MS, type PlayerActionType } from "../lib/battleTurnFlow";
-import { loserSessionIdIfPointVictory } from "../lib/matchOutcome";
 
 /** Set `DEBUG_BATTLE_ROOM=0` when starting the server to silence draw/deck-out traces. */
 const DEBUG_BATTLE_ROOM = process.env.DEBUG_BATTLE_ROOM !== "0";
@@ -475,64 +448,9 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         });
     }
 
-    private toOptionCardView(card: CardSchema): OptionCardLike {
-        return toOptionCardView(card);
-    }
-
-    private catalogBaseId(instanceId: string): string {
-        const parts = instanceId.split("_");
-        return parts.length >= 2 ? parts[1] : instanceId;
-    }
-
-
     /** @internal Verify scripts may call through the Colyseus adapter. */
     evolve(player: PlayerSchema, cardId: string, evolutionOptionCardId?: string): boolean {
         return this.fidelitySession.evolve(player, cardId, evolutionOptionCardId);
-    }
-
-    private getActive(player: PlayerSchema): CardSchema | null {
-        return player.active ?? null;
-    }
-
-    private getOpponent(player: PlayerSchema): PlayerSchema | null {
-        const opponentSessionId = Array.from(this.state.players.keys()).find(id => id !== player.sessionId);
-        return opponentSessionId ? this.state.players.get(opponentSessionId) ?? null : null;
-    }
-
-    private endPrepOrPassTurn(player: PlayerSchema) {
-        const opponent = this.getOpponent(player);
-        if (!opponent?.active) {
-            this.endTurn();
-            return;
-        }
-        this.beginBattlePhaseAfterPrep();
-    }
-
-    /**
-     * No active Digimon and no legal card in hand: dig deck until a deployable
-     * Digimon is found. Existing hand is kept (GDD KO / DIG_FOR_DEPLOY).
-     */
-    private tryRecoverDigimonFromDeck(player: PlayerSchema): boolean {
-        const handBefore = player.hand.length;
-        const deckStart = player.deck.length;
-        const found = this.fidelitySession.tryRecoverDigimonFromDeckPublic(player);
-        if (found) {
-            const foundCard = player.hand[player.hand.length - 1];
-            this.debugDraw("tryRecoverDigimonFromDeck: success", {
-                sessionId: player.sessionId.slice(0, 8),
-                handBefore,
-                handAfter: player.hand.length,
-                deckStart,
-                found: foundCard ? `${foundCard.name} (${foundCard.id})` : null,
-            });
-            return true;
-        }
-        this.debugDraw("tryRecoverDigimonFromDeck: failed (deck empty)", {
-            sessionId: player.sessionId.slice(0, 8),
-            handBefore,
-            deckStart,
-        });
-        return false;
     }
 
     private initFidelitySession() {
@@ -553,7 +471,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
                 prepMessageFor: (player, extras) => this.prepMessageFor(player, extras),
                 shuffleInPlace: arr => this.shuffle(arr),
                 endGame: (loserSessionId, reason) => this.endGame(loserSessionId, reason),
-                endPrepOrPassTurn: player => this.endPrepOrPassTurn(player),
+                clearBattlePresentationTimers: () => this.clearBattlePresentationTimers(),
             }
         );
     }
@@ -580,11 +498,6 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             case "ko_redeploy":
                 break;
         }
-    }
-
-    private beginBattlePhaseAfterPrep() {
-        this.clearBattlePresentationTimers();
-        this.fidelitySession.enterBattlePhase();
     }
 
     /** @internal Tests and timers call through the Colyseus adapter. */
@@ -615,16 +528,6 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         this.applyPresentationAdvance(this.fidelitySession.maybeResolveBattle());
     }
 
-    private beginAttackSelection() {
-        this.fidelitySession.beginAttackSelection();
-        this.clearBattlePresentationTimers();
-    }
-
-    private beginSupportPlacement() {
-        this.fidelitySession.beginSupportPlacement();
-        this.clearBattlePresentationTimers();
-    }
-
     private clearBattlePresentationTimers() {
         if (this.revealTimer) {
             this.revealTimer.clear();
@@ -640,24 +543,12 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         }
     }
 
-    private syncActiveHp(player: PlayerSchema): void {
-        if (player.active) player.active.hp = player.hp;
-    }
-
-    private isKoRedeployFor(sessionId: string): boolean {
-        return this.fidelitySession.isKoRedeployFor(sessionId);
-    }
-
     private applyKoRedeployOutcome(outcome: BattleBandOutcome) {
         if (outcome.kind === "turn_complete") {
             this.fidelitySession.handoffTurnAfterBattle();
         } else if (outcome.kind === "deck_out") {
             this.endGame(outcome.loserSessionId, "deck_out");
         }
-    }
-
-    private endTurn() {
-        this.fidelitySession.passActiveTurn();
     }
 
     private endGame(loserSessionId: string, reason: "points" | "deck_out" | "disconnect" | "afk") {

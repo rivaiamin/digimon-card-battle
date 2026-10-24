@@ -120,7 +120,7 @@ export type FidelityBattleSessionHooks = {
     prepMessageFor: (player: PlayerSchema, extras?: PrepMessageExtras) => string;
     shuffleInPlace: <T>(arr: T[]) => void;
     endGame: (loserSessionId: string, reason: "points" | "deck_out" | "disconnect" | "afk") => void;
-    endPrepOrPassTurn: (player: PlayerSchema) => void;
+    clearBattlePresentationTimers: () => void;
 };
 
 export type DispatchPayload = {
@@ -498,7 +498,7 @@ export class FidelityBattleSession {
             return;
         }
         this.hooks.auditPlayer("END_PREP", player, "ok", undefined, { auto: true });
-        this.hooks.endPrepOrPassTurn(player);
+        this.finishPrepOrPassTurn(player);
     }
 
     private mulligan(player: PlayerSchema): DispatchResult {
@@ -584,11 +584,22 @@ export class FidelityBattleSession {
             return { ok: false, reason: "illegal_timing" };
         }
         this.hooks.auditPlayer("END_PREP", player, "ok");
-        this.hooks.endPrepOrPassTurn(player);
+        this.finishPrepOrPassTurn(player);
         return { ok: true };
     }
 
+    /** After prep: battle if opponent has an active Digimon, otherwise pass turn (GDD empty board). */
+    finishPrepOrPassTurn(player: PlayerSchema): void {
+        const opponent = this.getOpponent(player);
+        if (!opponent?.active) {
+            this.passActiveTurn();
+            return;
+        }
+        this.enterBattlePhase();
+    }
+
     enterBattlePhase(): void {
+        this.hooks.clearBattlePresentationTimers();
         this.state.combatStrikesJson = "";
         this.state.lastBattleAttackerSessionId = "";
         this.state.supportEffectsJson = "";
@@ -1592,7 +1603,7 @@ const noopHooks: FidelityBattleSessionHooks = {
     prepMessageFor: () => "",
     shuffleInPlace: () => {},
     endGame: () => {},
-    endPrepOrPassTurn: () => {},
+    clearBattlePresentationTimers: () => {},
 };
 
 /** Test / verify harness: session over schema state with catalog lookup. */

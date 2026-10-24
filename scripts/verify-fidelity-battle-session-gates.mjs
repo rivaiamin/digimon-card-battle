@@ -12,6 +12,7 @@ function run(cmd, args) {
     }
 }
 
+run("node", ["scripts/verify-battle-room-hygiene.mjs"]);
 run("pnpm", ["run", "lint"]);
 run("pnpm", ["exec", "vitest", "run", "src/lib/fidelityMatchLifecycle.test.ts"]);
 run("pnpm", ["exec", "vitest", "run", "src/lib/fidelityBattleSession.test.ts"]);

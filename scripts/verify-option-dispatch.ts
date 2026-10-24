@@ -735,7 +735,7 @@ function modeG2(): void {
             prepMessageFor: () => "",
             shuffleInPlace: () => {},
             endGame: () => {},
-            endPrepOrPassTurn: () => {},
+            clearBattlePresentationTimers: () => {},
         });
         const outcome = driveEvolve({ state, fidelity: hooked }, {
             dp: 500,

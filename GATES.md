@@ -1,13 +1,13 @@
-# Gates: Fidelity battle session slice 7 (match lifecycle)
+# Gates: Fidelity battle session slice 8 (BattleRoom hygiene)
 
-OWNS: src/lib/fidelityMatchLifecycle.ts, src/lib/fidelityMatchLifecycle.test.ts, src/lib/fidelityBattleSession.ts, src/lib/fidelityBattleSession.test.ts, src/rooms/BattleRoom.ts, scripts/verify-fidelity-battle-session-gates.mjs, GATES.md
+OWNS: src/rooms/BattleRoom.ts, scripts/verify-battle-room-hygiene.mjs, src/lib/fidelityBattleSession.ts, src/lib/fidelityBattleSession.test.ts, scripts/verify-fidelity-battle-session-gates.mjs, GATES.md
 
-Scope: Join validation, deck id resolution, first-player coin flip, `startMatch`, `applyMatchEnd`, and permanent-leave forfeit decisions live on the session / lifecycle modules; `BattleRoom` keeps Colyseus auth, reconnection, and timer teardown.
+Scope: Prep handoff (`finishPrepOrPassTurn`) and battle entry timer clears live on `FidelityBattleSession`; `BattleRoom` stays adapter-only (no stray rule imports / lock helpers). Hygiene script guards the room file.
 
-- [x] G1: Typecheck and session tests pass with timeout/presentation on the session seam
+- [x] G1: Hygiene script, typecheck, and session tests pass
   CHECK: node scripts/verify-fidelity-battle-session-gates.mjs
   EXPECT: fidelity battle session gates passed
-  EVIDENCE: lint + vitest (fidelityBattleSession + BattleRoom) + option-dispatch G3
+  EVIDENCE: battle room hygiene + lint + vitest (lifecycle, session, BattleRoom) + option-dispatch G3
 
 ## Slice history
 
@@ -15,3 +15,4 @@ Scope: Join validation, deck id resolution, first-player coin flip, `startMatch`
 - Slice 5: `PhaseTimeoutPort` tests — strike short-circuit, draw, battle_attack random lock, battle_support no-support reveal.
 - Slice 6: presentation invariants — reveal → effects? → resolution → `completeResolutionPresentation`; PS1 vs legacy profiles; reveal commits forward nested presentation.
 - Slice 7: match lifecycle — `validateClientJoin`, `startMatch`, `applyMatchEnd`, coin-flip first player; room delegates `startGame` / `endGame` / leave forfeit.
+- Slice 8: room hygiene — `finishPrepOrPassTurn` on session, `clearBattlePresentationTimers` hook, dead room rule helpers removed, `verify-battle-room-hygiene.mjs`.
