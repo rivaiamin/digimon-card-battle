@@ -490,3 +490,108 @@ describe("FidelityBattleSession presentation invariants", () => {
         expect(outcome).toEqual({ kind: "turn_complete" });
     });
 });
+
+describe("FidelityBattleSession match lifecycle", () => {
+    it("startMatch shuffles decks and enters draw with coin-flip active player", () => {
+        const player = battleReadyPlayer("p1");
+        const opponent = battleReadyPlayer("p2");
+        const session = makeSession([player, opponent], "p1", "waiting");
+        const shuffled: string[] = [];
+        const hooks = {
+            emitAudit: () => {},
+            auditPlayer: () => {},
+            syncPhaseTimer: () => {},
+            clearPhaseTimer: () => {},
+            prepMessageFor: () => "",
+            shuffleInPlace: <T>(deck: T[]) => {
+                for (const card of deck) {
+                    if (card && typeof card === "object" && "id" in card && typeof card.id === "string") {
+                        shuffled.push(card.id);
+                    }
+                }
+            },
+            endGame: () => {},
+            endPrepOrPassTurn: () => {},
+        };
+        const state = new BattleStateSchema();
+        state.phase = "waiting";
+        state.activePlayerSessionId = "p1";
+        state.players.set(player.sessionId, player);
+        state.players.set(opponent.sessionId, opponent);
+        const seeded = new FidelityBattleSession(
+            {
+                state,
+                ruleProfile: resolveRuleProfile("fidelity_ps1"),
+                arenaVariant: resolveArenaVariant("standard"),
+                catalogById,
+                getRng: () => () => 0,
+            },
+            hooks
+        );
+
+        seeded.startMatch({
+            sessionIds: ["p1", "p2"],
+            deckCardIdsBySession: new Map([
+                ["p1", ["027"]],
+                ["p2", ["028"]],
+            ]),
+            fallbackDeckCardIds: () => ["027"],
+            materializeDeck: (_index, ids) =>
+                ids.map((id, i) => {
+                    const c = new CardSchema();
+                    c.id = `deck-${id}-${i}`;
+                    c.cardKind = "digimon";
+                    return c;
+                }),
+        });
+
+        expect(seeded.legalityContext("p1").phase).toBe("draw");
+        expect(state.turn).toBe(1);
+        expect(state.activePlayerSessionId).toBe("p1");
+        expect(player.deck.length).toBe(1);
+        expect(shuffled.length).toBe(2);
+        expect(player.mulligansRemaining).toBeGreaterThanOrEqual(0);
+    });
+
+    it("applyMatchEnd records victory and shouldForfeitOnPermanentLeave respects phase", () => {
+        const player = battleReadyPlayer("p1");
+        const opponent = battleReadyPlayer("p2");
+        const session = makeSession([player, opponent], "p1", "draw");
+        expect(session.shouldForfeitOnPermanentLeave()).toBe(true);
+
+        const waiting = makeSession([player], "p1", "waiting");
+        expect(waiting.shouldForfeitOnPermanentLeave()).toBe(false);
+
+        let cleared = false;
+        const state = new BattleStateSchema();
+        state.phase = "draw";
+        state.players.set(player.sessionId, player);
+        state.players.set(opponent.sessionId, opponent);
+        const endSession = new FidelityBattleSession(
+            {
+                state,
+                ruleProfile: resolveRuleProfile("fidelity_ps1"),
+                arenaVariant: resolveArenaVariant("standard"),
+                catalogById,
+                getRng: () => Math.random,
+            },
+            {
+                emitAudit: () => {},
+                auditPlayer: () => {},
+                syncPhaseTimer: () => {},
+                clearPhaseTimer: () => {
+                    cleared = true;
+                },
+                prepMessageFor: () => "",
+                shuffleInPlace: () => {},
+                endGame: () => {},
+                endPrepOrPassTurn: () => {},
+            }
+        );
+        endSession.applyMatchEnd("p2", "disconnect");
+        expect(cleared).toBe(true);
+        expect(state.phase).toBe("victory");
+        expect(state.winnerSessionId).toBe("p1");
+        expect(state.loserReason).toBe("disconnect");
+    });
+});

@@ -40,13 +40,9 @@ import {
     type DispatchResult,
     type PresentationAdvanceResult,
 } from "../lib/fidelityBattleSession";
-import {
-    arenaVariantMatchesRuleProfile,
-    resolveArenaVariant,
-    type ArenaVariant,
-} from "../lib/arenaVariant";
+import { resolveArenaVariant, type ArenaVariant } from "../lib/arenaVariant";
 import { buildDefaultDeckCardIds } from "../lib/defaultDeckBuilder";
-import { migrateDeckCardIds } from "../lib/legacyCardIds";
+import { resolveJoinDeckCardIds, validateClientJoin } from "../lib/fidelityMatchLifecycle";
 import { validateDeck, formatDeckValidationError } from "../lib/deckValidator";
 import { createSeededRng, shuffleInPlace, type Rng } from "../lib/seededRng";
 import {
@@ -58,7 +54,6 @@ import {
 import {
     RECONNECT_GRACE_SECONDS,
     isConsentedLeave,
-    shouldForfeitOnPermanentLeave,
     shouldOfferReconnectGrace,
 } from "../lib/reconnectPolicy";
 import {
@@ -250,17 +245,14 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
     onJoin(client: Client, options: any) {
         console.log(`[SERVER] Client joined: ${client.sessionId}`, options);
 
-        const joinProfile = resolveRuleProfile(options?.ruleProfile);
-        if (joinProfile.id !== this.ruleProfile.id) {
-            throw new Error("rule_profile_mismatch");
-        }
-
-        const joinArena = resolveArenaVariant(options?.arenaVariant, joinProfile.id);
-        if (joinArena.id !== this.arenaVariant.id) {
-            throw new Error("arena_variant_mismatch");
-        }
-        if (!arenaVariantMatchesRuleProfile(joinArena, joinProfile.id)) {
-            throw new Error("arena_variant_invalid");
+        const joinCheck = validateClientJoin(
+            this.ruleProfile,
+            this.arenaVariant,
+            options?.ruleProfile,
+            options?.arenaVariant
+        );
+        if (joinCheck.ok === false) {
+            throw new Error(joinCheck.code);
         }
 
         const deckCardIds = this.parseDeckCardIds(options?.deckCardIds);
@@ -348,9 +340,8 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         this.pendingDecks.delete(client.sessionId);
 
         const phase = this.state.phase;
-        const playerCount = this.state.players.size;
 
-        if (shouldForfeitOnPermanentLeave(phase, playerCount)) {
+        if (this.fidelitySession.shouldForfeitOnPermanentLeave()) {
             this.endGame(client.sessionId, "disconnect");
         } else if (phase === "waiting") {
             this.state.message = "Waiting for players...";
@@ -365,43 +356,12 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
 
     startGame() {
         const sessions = Array.from(this.state.players.keys());
-        this.state.activePlayerSessionId = sessions[0];
-        this.state.turn = 1;
-
-        // Build and shuffle 30-card decks. Rookies are deployed manually after the first draw.
-        sessions.forEach((sessionId, playerIndex) => {
-            const p = this.state.players.get(sessionId)!;
-            p.deck.clear();
-            p.hand.clear();
-            p.trash.clear();
-            p.dpSlot.clear();
-            p.dp = 0;
-            p.score = 0;
-            p.supportCard = null;
-            p.supportLocked = false;
-            p.selectedAttack = null;
-            p.attackLocked = false;
-            p.evolutionStack.clear();
-            p.active = null;
-            p.hp = 0;
-            p.needsOpeningDeploy = true;
-            p.mulligansRemaining = this.ruleProfile.mulligan.maxRedraws;
-            p.openingPenaltyActive = false;
-            p.statusAilmentsJson = "[]";
-            p.afkStrikes = 0;
-            p.connected = true;
-
-            const deckIds =
-                this.pendingDecks.get(sessionId) ??
-                buildDefaultDeckCardIds(CARD_CATALOG, playerIndex);
-            const deck = this.buildDeckFromCardIds(playerIndex, deckIds);
-            this.shuffle(deck);
-            deck.forEach(c => p.deck.push(c));
+        this.fidelitySession.startMatch({
+            sessionIds: sessions,
+            deckCardIdsBySession: this.pendingDecks,
+            fallbackDeckCardIds: playerIndex => buildDefaultDeckCardIds(CARD_CATALOG, playerIndex),
+            materializeDeck: (playerIndex, cardIds) => this.buildDeckFromCardIds(playerIndex, cardIds),
         });
-
-        if (this.state.phase !== "victory") {
-            this.fidelitySession.enterDrawPhase();
-        }
     }
 
     // ----------------------------
@@ -475,11 +435,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
     }
 
     private parseDeckCardIds(raw: unknown): string[] {
-        if (!Array.isArray(raw) || !raw.every(id => typeof id === "string")) {
-            const playerIndex = this.state.players.size;
-            return buildDefaultDeckCardIds(CARD_CATALOG, playerIndex);
-        }
-        return migrateDeckCardIds(raw as string[]);
+        return resolveJoinDeckCardIds(raw, this.state.players.size, CARD_CATALOG);
     }
 
     private buildDeckFromCardIds(playerIndex: number, cardIds: string[]): CardSchema[] {
@@ -718,7 +674,6 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
             this.resolutionTimer.clear();
             this.resolutionTimer = null;
         }
-        this.state.phaseEndsAtMs = 0;
         if (reason === "deck_out" && DEBUG_BATTLE_ROOM) {
             const loser = this.state.players.get(loserSessionId);
             console.log("[BattleRoom:draw] endGame deck_out", {
@@ -730,19 +685,7 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
                 phaseBefore: this.state.phase,
             });
         }
-        const winnerSessionId = Array.from(this.state.players.keys()).find(id => id !== loserSessionId) ?? "";
-        this.state.phase = "victory";
-        this.state.winnerSessionId = winnerSessionId;
-        this.state.loserReason = reason;
-        if (reason === "deck_out") {
-            this.state.message = "Deck Out!";
-        } else if (reason === "afk") {
-            this.state.message = "Match forfeited (AFK)";
-        } else if (reason === "disconnect") {
-            this.state.message = "A player disconnected.";
-        } else {
-            this.state.message = "Match Over";
-        }
+        this.fidelitySession.applyMatchEnd(loserSessionId, reason);
 
         if (this.replaySeed != null && DEBUG_BATTLE_ROOM) {
             console.log("[BattleRoom:replay]", this.auditLog.exportJson());

@@ -1,14 +1,15 @@
 # Handoff: Fidelity battle session (BattleRoom deepening)
 
 **Branch:** `fix/card-effect-resolution`  
-**Status:** Slices 1–6 (slice 6: presentation invariants + reveal→resolution presentation forward).  
+**Status:** Slices 1–7 (slice 7: match lifecycle — join/start/end on session seam).  
 **Verify before any follow-up:** `node scripts/verify-fidelity-battle-session-gates.mjs`
 
 ## What changed (reader’s map)
 
 | Layer | Module | Responsibility |
 |--------|--------|----------------|
-| **Deep rules** | `src/lib/fidelityBattleSession.ts` | All authoritative mutations on `BattleStateSchema`: prep, `dispatch(PlayerActionType)`, battle band, phase timeouts, presentation *steps*, turn handoff, KO redeploy queue. |
+| **Deep rules** | `src/lib/fidelityBattleSession.ts` | All authoritative mutations on `BattleStateSchema`: prep, `dispatch(PlayerActionType)`, battle band, phase timeouts, presentation *steps*, turn handoff, KO redeploy queue, `startMatch` / `applyMatchEnd`. |
+| **Lifecycle (pure)** | `src/lib/fidelityMatchLifecycle.ts` | Join option validation, join deck id resolution, first-player coin flip, victory copy. |
 | **Adapter** | `src/rooms/BattleRoom.ts` | Colyseus lifecycle, `clock` timers, AFK strikes/forfeit, Firebase `onAuth`, audit wiring, `applyPresentationAdvance` (maps `PresentationAdvanceResult` → `setTimeout`). |
 | **Vocabulary** | `GLOSSARY.md` | **Fidelity battle session** vs **Battle room** (network adapter); **battle band**; **player action**. |
 | **Gate** | `GATES.md` | Slice 4 scope + G1 check (lint, vitest, option-dispatch G3). |
@@ -54,11 +55,11 @@ eb7ea11 test(fidelity): add session tests and gate verifier
 8a75f02 feat(fidelity): add FidelityBattleSession module
 ```
 
-## Suggested slice 7+ (not started)
+## Suggested slice 8+ (not started)
 
 Pick one vertical; extend `GATES.md` and `fidelityBattleSession.test.ts` when you deepen the seam.
 
-1. **Match lifecycle** — `onJoin` / `onLeave` / disconnect → `endGame`; deck validation; first-player coin flip; keep Firebase and Colyseus types out of the session (inject ports if rules need them).
+1. ~~**Match lifecycle**~~ — done in slice 7 (`fidelityMatchLifecycle.ts`, `startMatch`, `applyMatchEnd`, coin-flip active player; room keeps auth/reconnect).
 2. ~~**AFK / timeout tests without Colyseus**~~ — done in slice 5 (`handlePhaseTimeout` + fake `PhaseTimeoutPort`).
 3. ~~**Presentation invariants**~~ — done in slice 6 (session tests + `RevealCommitResult.presentation` forward to room).
 4. **Room deletion test** — after each slice, grep `BattleRoom.ts` for duplicated rule logic (`lockSupport`, `pickRandomAttack`, prep helpers) and move stragglers into session.

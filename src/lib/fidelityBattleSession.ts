@@ -75,6 +75,12 @@ import {
 } from "./battleEffectEngine";
 import { pickRandomAttack, type TimedPhaseKey } from "./phaseTimer";
 import {
+    matchEndVictoryMessage,
+    pickFirstActiveSessionId,
+    forfeitOnPermanentLeave,
+} from "./fidelityMatchLifecycle";
+import type { MatchEndReason } from "./matchOutcome";
+import {
     digForDeployableFromDeck,
     drawToTarget,
     hasDigimonInHand,
@@ -142,6 +148,13 @@ export type PresentationAdvanceResult =
     | { kind: "schedule_resolution"; ms: number }
     | { kind: "sync_timer" }
     | { kind: "outcome"; outcome: BattleBandOutcome };
+
+export type MatchStartInput = {
+    sessionIds: string[];
+    deckCardIdsBySession: ReadonlyMap<string, string[]>;
+    fallbackDeckCardIds: (playerIndex: number) => string[];
+    materializeDeck: (playerIndex: number, cardIds: string[]) => CardSchema[];
+};
 
 export type PhaseTimeoutPort = {
     auditTimeout: (sessionIds: string[], autoCommit: string) => void;
@@ -1055,6 +1068,67 @@ export class FidelityBattleSession {
         this.state.prepSubPhase = "";
         this.state.message = "Draw Phase";
         this.hooks.syncPhaseTimer();
+    }
+
+    /** Reset both players and enter turn 1 draw after join (room supplies deck materialization). */
+    startMatch(input: MatchStartInput): void {
+        const sessions = input.sessionIds;
+        if (sessions.length !== 2) return;
+
+        this.state.activePlayerSessionId = pickFirstActiveSessionId(sessions, this.rng());
+        this.state.turn = 1;
+
+        sessions.forEach((sessionId, playerIndex) => {
+            const p = this.state.players.get(sessionId);
+            if (!p) return;
+
+            p.deck.clear();
+            p.hand.clear();
+            p.trash.clear();
+            p.dpSlot.clear();
+            p.dp = 0;
+            p.score = 0;
+            p.supportCard = null;
+            p.supportLocked = false;
+            p.selectedAttack = null;
+            p.attackLocked = false;
+            p.evolutionStack.clear();
+            p.active = null;
+            p.hp = 0;
+            p.needsOpeningDeploy = true;
+            p.mulligansRemaining = this.ruleProfile.mulligan.maxRedraws;
+            p.openingPenaltyActive = false;
+            p.statusAilmentsJson = "[]";
+            p.afkStrikes = 0;
+            p.connected = true;
+
+            const deckIds =
+                input.deckCardIdsBySession.get(sessionId) ??
+                input.fallbackDeckCardIds(playerIndex);
+            const deck = input.materializeDeck(playerIndex, deckIds);
+            this.hooks.shuffleInPlace(deck);
+            deck.forEach(c => p.deck.push(c));
+        });
+
+        if (this.state.phase !== "victory") {
+            this.enterDrawPhase();
+        }
+    }
+
+    shouldForfeitOnPermanentLeave(): boolean {
+        return forfeitOnPermanentLeave(this.state.phase, this.state.players.size);
+    }
+
+    applyMatchEnd(loserSessionId: string, reason: MatchEndReason): void {
+        this.hooks.clearPhaseTimer();
+        this.state.phaseEndsAtMs = 0;
+
+        const winnerSessionId =
+            Array.from(this.state.players.keys()).find(id => id !== loserSessionId) ?? "";
+        this.state.phase = "victory";
+        this.state.winnerSessionId = winnerSessionId;
+        this.state.loserReason = reason;
+        this.state.message = matchEndVictoryMessage(reason);
     }
 
     private emitBattleEvent(event: BattleEvent, p1SessionId: string, p1Hp: number, p2Hp: number): void {
