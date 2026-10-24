@@ -7,19 +7,115 @@ import {
     SupportEffectSchema,
     CardSchema,
 } from "../schema/BattleState";
-import { FidelityBattleSession } from "./fidelityBattleSession";
-import { resolveRuleProfile } from "./ruleProfile";
+import {
+    FidelityBattleSession,
+    type BattleBandOutcome,
+    type PresentationAdvanceResult,
+    type RevealCommitResult,
+} from "./fidelityBattleSession";
+import { SUPPORT_EFFECTS_MS, SUPPORT_REVEAL_MS } from "./battleTurnFlow";
+import { resolveRuleProfile, type RuleProfileId } from "./ruleProfile";
 import { resolveArenaVariant } from "./arenaVariant";
+import { getDefenderSessionId } from "./supportPhase";
 
 const catalog = loadCardCatalog(cardsData);
 const catalogById = new Map(catalog.map(c => [c.id, c]));
+
+function battleReadyPlayer(sessionId: string, hp = 1000): PlayerSchema {
+    const player = new PlayerSchema();
+    player.sessionId = sessionId;
+    player.hp = hp;
+    const active = new CardSchema();
+    active.cardKind = "digimon";
+    active.hp = hp;
+    active.maxHp = hp;
+    active.circle.damage = 100;
+    active.triangle.damage = 100;
+    active.cross.damage = 100;
+    player.active = active;
+    return player;
+}
+
+function isBattleBandOutcome(value: unknown): value is BattleBandOutcome {
+    if (!value || typeof value !== "object" || !("kind" in value)) return false;
+    const kind = (value as BattleBandOutcome).kind;
+    return kind === "turn_complete" || kind === "match_end" || kind === "deck_out" || kind === "ko_redeploy";
+}
+
+/** Mirrors {@link BattleRoom.applyPresentationAdvance} without Colyseus clocks. */
+function drainPresentation(
+    session: FidelityBattleSession,
+    step: PresentationAdvanceResult
+): BattleBandOutcome | undefined {
+    let current: PresentationAdvanceResult | undefined = step;
+    while (current) {
+        switch (current.kind) {
+            case "idle":
+                return undefined;
+            case "sync_timer":
+                return undefined;
+            case "schedule_reveal":
+                expect(current.ms).toBe(SUPPORT_REVEAL_MS);
+                current = continueFromReveal(session, session.finishSupportRevealAndAdvance());
+                break;
+            case "schedule_effects":
+                expect(current.ms).toBe(SUPPORT_EFFECTS_MS);
+                current = session.finishBattleEffectsAndAdvance();
+                break;
+            case "schedule_resolution":
+                expect(session.legalityContext("p1").phase).toBe("resolution");
+                expect(current.ms).toBe(0);
+                return session.completeResolutionPresentation();
+            case "outcome":
+                return current.outcome;
+            default:
+                return undefined;
+        }
+        if (current && isBattleBandOutcome(current)) {
+            return current;
+        }
+    }
+    return undefined;
+}
+
+function continueFromReveal(
+    session: FidelityBattleSession,
+    result: RevealCommitResult
+): PresentationAdvanceResult | undefined {
+    if (result.kind === "schedule_effects") {
+        return { kind: "schedule_effects", ms: result.ms };
+    }
+    return result.presentation;
+}
+
+function lockEmptySupports(
+    session: FidelityBattleSession,
+    activeId: string,
+    players: PlayerSchema[],
+    defenderFirst: boolean
+): PresentationAdvanceResult | undefined {
+    const sessionIds = players.map(p => p.sessionId);
+    if (defenderFirst) {
+        const defender = getDefenderSessionId(activeId, sessionIds);
+        session.dispatch(defender, "LOCK_SUPPORT", { cardId: null });
+        const activeLock = session.dispatch(activeId, "LOCK_SUPPORT", { cardId: null });
+        return activeLock.ok ? activeLock.presentation : undefined;
+    }
+    let presentation: PresentationAdvanceResult | undefined;
+    for (const id of sessionIds) {
+        const locked = session.dispatch(id, "LOCK_SUPPORT", { cardId: null });
+        if (locked.ok && locked.presentation) presentation = locked.presentation;
+    }
+    return presentation;
+}
 
 function makeSession(
     players: PlayerSchema[],
     activeId: string,
     phase = "battle_attack",
     prepSubPhase = "",
-    getRng: () => number = Math.random
+    getRng: () => number = Math.random,
+    profileId: RuleProfileId = "fidelity_ps1"
 ): FidelityBattleSession {
     const state = new BattleStateSchema();
     state.phase = phase;
@@ -29,7 +125,7 @@ function makeSession(
     return new FidelityBattleSession(
         {
             state,
-            ruleProfile: resolveRuleProfile("fidelity_ps1"),
+            ruleProfile: resolveRuleProfile(profileId),
             arenaVariant: resolveArenaVariant("standard"),
             catalogById,
             getRng: () => getRng,
@@ -292,5 +388,105 @@ describe("FidelityBattleSession", () => {
         session.finishSupportRevealAndAdvance();
         expect(player.hp).toBe(870);
         expect(player.active?.hp).toBe(870);
+    });
+});
+
+describe("FidelityBattleSession presentation invariants", () => {
+    it("attack-first (PS1): reveal → resolution → turn_complete when supports are empty", () => {
+        const player = battleReadyPlayer("p1");
+        const opponent = battleReadyPlayer("p2");
+        const session = makeSession([player, opponent], "p1", "draw", "", Math.random, "fidelity_ps1");
+        session.enterBattlePhase();
+        expect(session.legalityContext("p1").phase).toBe("battle_attack");
+
+        session.dispatch("p1", "LOCK_ATTACK", { attack: "circle" });
+        session.dispatch("p2", "LOCK_ATTACK", { attack: "circle" });
+        expect(session.legalityContext("p1").phase).toBe("battle_support");
+
+        const revealStep = lockEmptySupports(session, "p1", [player, opponent], true);
+        expect(revealStep).toEqual({ kind: "schedule_reveal", ms: SUPPORT_REVEAL_MS });
+        expect(session.legalityContext("p1").phase).toBe("battle_reveal");
+
+        const reveal = session.finishSupportRevealAndAdvance();
+        expect(reveal).toEqual({
+            kind: "immediate_effects_done",
+            presentation: { kind: "schedule_resolution", ms: 0 },
+        });
+
+        expect(reveal.kind).toBe("immediate_effects_done");
+        if (reveal.kind !== "immediate_effects_done" || !reveal.presentation) {
+            throw new Error("expected reveal to forward resolution presentation");
+        }
+        const outcome = drainPresentation(session, reveal.presentation);
+        expect(outcome).toEqual({ kind: "turn_complete" });
+        expect(session.legalityContext("p1").phase).toBe("resolution");
+    });
+
+    it("support-first (legacy): reveal → attack lock → resolution → turn_complete", () => {
+        const player = battleReadyPlayer("p1");
+        const opponent = battleReadyPlayer("p2");
+        const session = makeSession([player, opponent], "p1", "draw", "", Math.random, "legacy_online");
+        session.enterBattlePhase();
+        expect(session.legalityContext("p1").phase).toBe("battle_support");
+
+        const revealStep = lockEmptySupports(session, "p1", [player, opponent], false);
+        expect(revealStep).toEqual({ kind: "schedule_reveal", ms: SUPPORT_REVEAL_MS });
+
+        const afterReveal = session.finishSupportRevealAndAdvance();
+        expect(afterReveal).toEqual({
+            kind: "immediate_effects_done",
+            presentation: { kind: "sync_timer" },
+        });
+        expect(session.legalityContext("p1").phase).toBe("battle_attack");
+
+        session.dispatch("p1", "LOCK_ATTACK", { attack: "circle" });
+        const finish = session.dispatch("p2", "LOCK_ATTACK", { attack: "circle" });
+        expect(finish).toMatchObject({
+            ok: true,
+            presentation: { kind: "schedule_resolution", ms: 0 },
+        });
+
+        if (!finish.ok || !finish.presentation) {
+            throw new Error("expected attack locks to schedule resolution");
+        }
+        const outcome = drainPresentation(session, finish.presentation);
+        expect(outcome).toEqual({ kind: "turn_complete" });
+    });
+
+    it("attack-first: schedule_effects step advances to resolution after finishBattleEffectsAndAdvance", () => {
+        const player = battleReadyPlayer("p1");
+        const opponent = battleReadyPlayer("p2");
+        const session = makeSession(
+            [player, opponent],
+            "p1",
+            "battle_effects",
+            "",
+            Math.random,
+            "fidelity_ps1"
+        );
+        player.attackLocked = true;
+        opponent.attackLocked = true;
+        session.attackChoices.set("p1", "circle");
+        session.attackChoices.set("p2", "circle");
+
+        const afterEffects = session.finishBattleEffectsAndAdvance();
+        expect(afterEffects).toEqual({ kind: "schedule_resolution", ms: 0 });
+
+        const outcome = drainPresentation(session, { kind: "schedule_effects", ms: SUPPORT_EFFECTS_MS });
+        expect(outcome).toEqual({ kind: "turn_complete" });
+    });
+
+    it("drainPresentation walks schedule_reveal through immediate resolution (attack-first)", () => {
+        const player = battleReadyPlayer("p1");
+        const opponent = battleReadyPlayer("p2");
+        const session = makeSession([player, opponent], "p1", "draw", "", Math.random, "fidelity_ps1");
+        session.enterBattlePhase();
+        session.dispatch("p1", "LOCK_ATTACK", { attack: "circle" });
+        session.dispatch("p2", "LOCK_ATTACK", { attack: "circle" });
+        const revealStep = lockEmptySupports(session, "p1", [player, opponent], true);
+        expect(revealStep?.kind).toBe("schedule_reveal");
+
+        const outcome = drainPresentation(session, revealStep!);
+        expect(outcome).toEqual({ kind: "turn_complete" });
     });
 });

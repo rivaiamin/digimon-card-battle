@@ -640,6 +640,10 @@ export class BattleRoom extends Room<{ state: BattleStateSchema }> {
         const result = this.fidelitySession.finishSupportRevealAndAdvance();
         if (result.kind === "schedule_effects") {
             this.applyPresentationAdvance({ kind: "schedule_effects", ms: result.ms });
+            return;
+        }
+        if (result.presentation) {
+            this.applyPresentationAdvance(result.presentation);
         }
     }
 

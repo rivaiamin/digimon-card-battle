@@ -1,7 +1,7 @@
 # Handoff: Fidelity battle session (BattleRoom deepening)
 
 **Branch:** `fix/card-effect-resolution`  
-**Status:** Slices 1–5 (slice 5: `PhaseTimeoutPort` vitest coverage without Colyseus).  
+**Status:** Slices 1–6 (slice 6: presentation invariants + reveal→resolution presentation forward).  
 **Verify before any follow-up:** `node scripts/verify-fidelity-battle-session-gates.mjs`
 
 ## What changed (reader’s map)
@@ -54,13 +54,13 @@ eb7ea11 test(fidelity): add session tests and gate verifier
 8a75f02 feat(fidelity): add FidelityBattleSession module
 ```
 
-## Suggested slice 6+ (not started)
+## Suggested slice 7+ (not started)
 
 Pick one vertical; extend `GATES.md` and `fidelityBattleSession.test.ts` when you deepen the seam.
 
 1. **Match lifecycle** — `onJoin` / `onLeave` / disconnect → `endGame`; deck validation; first-player coin flip; keep Firebase and Colyseus types out of the session (inject ports if rules need them).
 2. ~~**AFK / timeout tests without Colyseus**~~ — done in slice 5 (`handlePhaseTimeout` + fake `PhaseTimeoutPort`).
-3. **Presentation invariants** — document or test ordering: reveal → effects → resolution → `completeResolutionPresentation` → `applyBattleBandOutcome`; attack-before-support vs support-first profiles (`ruleProfile.battle.attackLockBeforeSupport`).
+3. ~~**Presentation invariants**~~ — done in slice 6 (session tests + `RevealCommitResult.presentation` forward to room).
 4. **Room deletion test** — after each slice, grep `BattleRoom.ts` for duplicated rule logic (`lockSupport`, `pickRandomAttack`, prep helpers) and move stragglers into session.
 5. **Client / FC coverage** — map new session paths to `docs/8.0 Fidelity Checklist & Epic Backlog.md` items; add FC-tagged audits where gaps remain.
 

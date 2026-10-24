@@ -130,6 +130,11 @@ export type DispatchResult =
     | { ok: true; koOutcome?: BattleBandOutcome; presentation?: PresentationAdvanceResult }
     | { ok: false; reason: string };
 
+/**
+ * Room-driven presentation steps after rule mutations.
+ * Attack-first: schedule_reveal → (schedule_effects?) → schedule_resolution → {@link completeResolutionPresentation}.
+ * Support-first: schedule_reveal → (schedule_effects?) → sync_timer (attack lock) → schedule_resolution → outcome.
+ */
 export type PresentationAdvanceResult =
     | { kind: "idle" }
     | { kind: "schedule_reveal"; ms: number }
@@ -162,7 +167,7 @@ export type DeployDigimonResult =
 export type DiscardForDpResult = ReturnType<typeof applyDiscardForDp>;
 
 export type RevealCommitResult =
-    | { kind: "immediate_effects_done" }
+    | { kind: "immediate_effects_done"; presentation?: PresentationAdvanceResult }
     | { kind: "schedule_effects"; ms: number };
 
 function catalogBaseId(instanceId: string): string {
@@ -846,8 +851,11 @@ export class FidelityBattleSession {
             this.state.message = "Support Effect";
             return { kind: "schedule_effects", ms: SUPPORT_EFFECTS_MS };
         }
-        this.finishBattleEffectsAndAdvance();
-        return { kind: "immediate_effects_done" };
+        const presentation = this.finishBattleEffectsAndAdvance();
+        return {
+            kind: "immediate_effects_done",
+            presentation: presentation.kind === "idle" ? undefined : presentation,
+        };
     }
 
     finishBattleEffectsAndAdvance(): PresentationAdvanceResult {
