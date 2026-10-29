@@ -54,8 +54,20 @@ import {
     SUPPORT_PRIORITY,
     type SupportBattleContext,
 } from "../src/lib/supportResolver";
+import { createFidelityBattleSession } from "../src/lib/fidelityBattleSession";
 import { BattleRoom } from "../src/rooms/BattleRoom";
-import { CardSchema, PlayerSchema } from "../src/schema/BattleState";
+import { BattleStateSchema, CardSchema, PlayerSchema } from "../src/schema/BattleState";
+
+const EVOLVE_CATALOG_BY_ID = new Map(loadCardCatalog(cardsData).map(card => [card.id, card]));
+
+function createEvolveTestSession() {
+    const state = new BattleStateSchema();
+    state.phase = "preparation";
+    state.prepSubPhase = "evolve";
+    state.ruleProfileId = "fidelity_ps1";
+    const fidelity = createFidelityBattleSession(state, EVOLVE_CATALOG_BY_ID);
+    return { state, fidelity };
+}
 
 type Mode = "G1" | "G2" | "G3" | "G4";
 
@@ -140,6 +152,7 @@ function toOptionLike(card: NormalizedCardCatalogEntry): OptionCardLike {
                   description: se.description,
                   value: se.value,
                   targetAttack: se.targetAttack,
+                  ...(se.effectPlan ? { effectPlan: se.effectPlan } : {}),
               }
             : null,
     };
@@ -710,13 +723,26 @@ function modeG2(): void {
     // entry, not accepted with a silently ignored option.
     const evolutionSilent: string[] = [];
     for (const card of unresolvable.filter(c => c.cardKind === "evolution_option")) {
-        const room = makeRoom();
-        const outcome = driveEvolve(room, {
+        const { state, fidelity } = createEvolveTestSession();
+        const auditTrail: Array<{ action: string; validation: string; reason?: string }> = [];
+        const hooked = createFidelityBattleSession(state, EVOLVE_CATALOG_BY_ID, {
+            emitAudit: () => {},
+            auditPlayer: (action, _player, validation, reason) => {
+                auditTrail.push({ action, validation, reason });
+            },
+            syncPhaseTimer: () => {},
+            clearPhaseTimer: () => {},
+            prepMessageFor: () => "",
+            shuffleInPlace: () => {},
+            endGame: () => {},
+            clearBattlePresentationTimers: () => {},
+        });
+        const outcome = driveEvolve({ state, fidelity: hooked }, {
             dp: 500,
             evoCost: 200,
             option: { id: card.id, effectId: card.effectId, effectArgs: card.effectArgs },
         });
-        const audit = lastAudit(room, "EVOLVE");
+        const audit = [...auditTrail].reverse().find(e => e.action === "EVOLVE");
         if (outcome.ok) {
             evolutionSilent.push(
                 `${card.id} ${card.name}: accepted the evolution despite no runtime implementing it`
@@ -737,7 +763,7 @@ function modeG2(): void {
         c => c.effectId && classifyOptionEffect(toOptionLike(c)).implemented
     );
     assert(implementedEvo, "no implemented evolution option found for the symmetric control");
-    const accepted = driveEvolve(makeRoom(), {
+    const accepted = driveEvolve(createEvolveTestSession(), {
         dp: 500,
         evoCost: 200,
         option: {
@@ -807,17 +833,14 @@ function lastAudit(room: BattleRoom, action: string): AuditEntry | undefined {
  * handler does, without a socket.
  */
 function driveEvolve(
-    room: BattleRoom,
+    session: ReturnType<typeof createEvolveTestSession>,
     input: {
         dp: number;
         evoCost: number;
         option?: { id: string; effectId: string; effectArgs?: Record<string, unknown> };
     }
 ): { ok: boolean; dpAfter: number } {
-    const internal = room as unknown as {
-        evolve(player: PlayerSchema, cardId: string, optionCardId?: string): boolean;
-        state: { players: Map<string, PlayerSchema> };
-    };
+    const { state, fidelity } = session;
 
     const player = new PlayerSchema();
     player.sessionId = "s1";
@@ -855,8 +878,8 @@ function driveEvolve(
         optionCardId = option.id;
     }
 
-    internal.state.players.set(player.sessionId, player);
-    const ok = internal.evolve(player, target.id, optionCardId);
+    state.players.set(player.sessionId, player);
+    const ok = fidelity.evolve(player, target.id, optionCardId);
     return { ok, dpAfter: player.dp };
 }
 
@@ -867,7 +890,7 @@ function driveEvolve(
 function modeG3(): void {
     // Positive control: the drive path must be able to succeed and deduct, else
     // "no negative DP" is trivially true because nothing ever runs.
-    const control = driveEvolve(makeRoom(), { dp: 500, evoCost: 200 });
+    const control = driveEvolve(createEvolveTestSession(), { dp: 500, evoCost: 200 });
     assert(
         control.ok && control.dpAfter === 300,
         `positive control failed: a 200-cost evolution at 500 DP must succeed and leave 300, ` +
@@ -875,7 +898,7 @@ function modeG3(): void {
     );
 
     // The gate must still refuse an evolution the player cannot pay for.
-    const unaffordable = driveEvolve(makeRoom(), { dp: 100, evoCost: 200 });
+    const unaffordable = driveEvolve(createEvolveTestSession(), { dp: 100, evoCost: 200 });
     assert(
         !unaffordable.ok && unaffordable.dpAfter === 100,
         `an unaffordable evolution must be refused without spending, got ` +
@@ -884,7 +907,7 @@ function modeG3(): void {
 
     // The reproduced defect: Download Digivolve sets ignoreDp, so the DP gate
     // passes at 0 DP and the deduction used to drive the gauge negative.
-    const download = driveEvolve(makeRoom(), {
+    const download = driveEvolve(createEvolveTestSession(), {
         dp: 0,
         evoCost: 200,
         option: { id: "x_293", effectId: "evolution_option.download" },
@@ -944,7 +967,7 @@ function modeG3(): void {
                 },
             ];
             for (const c of cases) {
-                const outcome = driveEvolve(makeRoom(), { dp, evoCost, option: c.option });
+                const outcome = driveEvolve(createEvolveTestSession(), { dp, evoCost, option: c.option });
                 if (outcome.dpAfter < 0) {
                     negative.push(
                         `${c.label}: dp=${dp} evoCost=${evoCost} -> ${outcome.dpAfter}`

@@ -3,14 +3,13 @@
  * @see docs/fidelity-rules-contract.md FC-017..FC-020, RA-006
  */
 
-import type { EffectArgs } from "../types";
+import type { AttackType, EffectArgs } from "../types";
 import { parseEffectArgsJson, readNumberArg } from "./effectArgs";
 import { applySpecialtyFoeMultiplier } from "./specialtyFoeMult";
 import {
     getAttackDamageBreakdown,
     getEffectiveAttackDamage,
     holdsFirstStrike,
-    type AttackType,
     type SupportBattleContext,
 } from "./supportResolver";
 import type { CombatStrike } from "./combatStrikePlan";
@@ -219,39 +218,7 @@ function applyCrossEffects(
         });
     }
 
-    // Crash must not re-apply damage that Counter already zeroed on that direction.
-    const defenderCounteredIncoming = events.some(
-        (e) => e.type === "cross_counter" && e.sessionId === defender.sessionId
-    );
-    const attackerCounteredIncoming = events.some(
-        (e) => e.type === "cross_counter" && e.sessionId === attacker.sessionId
-    );
-
-    if (
-        attackerCross?.effectId === "cross.crash" &&
-        attackerAttack === "cross" &&
-        !defenderCounteredIncoming
-    ) {
-        toDefender = Math.max(0, attacker.hp);
-        events.push({
-            type: "cross_crash",
-            sessionId: attacker.sessionId,
-            detail: { damage: toDefender },
-        });
-    }
-    if (
-        defenderCross?.effectId === "cross.crash" &&
-        defenderAttack === "cross" &&
-        !attackerCounteredIncoming
-    ) {
-        toAttacker = Math.max(0, defender.hp);
-        events.push({
-            type: "cross_crash",
-            sessionId: defender.sessionId,
-            detail: { damage: toAttacker },
-        });
-    }
-
+    // Crash damage is calculated when the attack actually resolves, after strike priority.
     return { toDefender, toAttacker };
 }
 
@@ -378,30 +345,44 @@ export function resolveBattleExchange(input: BattleExchangeInput): BattleExchang
         from: BattleCombatant,
         to: BattleCombatant,
         fromSessionId: string,
+        sourceHp: number,
         targetHp: number,
         damage: number,
         attack: AttackType,
         label: "toDefender" | "toAttacker"
-    ): { nextHp: number; hpLost: number } => {
-        if (damage <= 0 || targetHp <= 0) return { nextHp: targetHp, hpLost: 0 };
-        const hpLost = Math.min(damage, targetHp);
+    ): { nextHp: number; hpLost: number; crashSelfKo: boolean } => {
+        const crashSelfKo =
+            hasCrash(from.active, attack) &&
+            !events.some((e) => e.type === "cross_counter" && e.sessionId === to.sessionId);
+        if (crashSelfKo && sourceHp <= 0) {
+            return { nextHp: targetHp, hpLost: 0, crashSelfKo: false };
+        }
+        const resolvedDamage = crashSelfKo ? sourceHp : damage;
+        if (resolvedDamage <= 0 || targetHp <= 0) {
+            return { nextHp: targetHp, hpLost: 0, crashSelfKo: false };
+        }
+        if (crashSelfKo) {
+            events.push({
+                type: "cross_crash",
+                sessionId: fromSessionId,
+                detail: { damage: resolvedDamage },
+            });
+        }
+        const hpLost = Math.min(resolvedDamage, targetHp);
         const next = targetHp - hpLost;
         events.push({
             type: "damage_dealt",
             sessionId: fromSessionId,
-            detail: { damage, hpLost, [label]: true },
+            detail: { damage: resolvedDamage, hpLost, [label]: true },
         });
         const isCounterEffect = events.some(
             (e) => e.type === "cross_counter" && e.sessionId === fromSessionId
         );
         strikes.push(
-            buildStrike(from, to, attack, damage, next, input.supportCtx, isCounterEffect)
+            buildStrike(from, to, attack, resolvedDamage, next, input.supportCtx, isCounterEffect)
         );
-        return { nextHp: next, hpLost };
+        return { nextHp: next, hpLost, crashSelfKo };
     };
-
-    let attackerEatUpHeal = 0;
-    let defenderEatUpHeal = 0;
 
     const noteEatUp = (
         healer: BattleCombatant,
@@ -409,14 +390,14 @@ export function resolveBattleExchange(input: BattleExchangeInput): BattleExchang
         hpLost: number,
         side: "attacker" | "defender"
     ) => {
-        if (
-            hpLost <= 0 ||
-            !hasEatUp(healer.active, attack, healer.sessionId, input.supportCtx)
-        ) {
+        if (hpLost <= 0 || !hasEatUp(healer.active, attack, healer.sessionId, input.supportCtx)) {
             return;
         }
-        if (side === "attacker") attackerEatUpHeal += hpLost;
-        else defenderEatUpHeal += hpLost;
+        if (side === "attacker") {
+            attackerHp = applyEatUpHp({ ...input.attacker, hp: attackerHp }, hpLost, events);
+        } else {
+            defenderHp = applyEatUpHp({ ...input.defender, hp: defenderHp }, hpLost, events);
+        }
     };
 
     const strikeAttackerFirst = () => {
@@ -424,6 +405,7 @@ export function resolveBattleExchange(input: BattleExchangeInput): BattleExchang
             input.attacker,
             input.defender,
             input.attacker.sessionId,
+            attackerHp,
             defenderHp,
             toDefender,
             input.attackerAttack,
@@ -431,11 +413,13 @@ export function resolveBattleExchange(input: BattleExchangeInput): BattleExchang
         );
         defenderHp = hit.nextHp;
         noteEatUp(input.attacker, input.attackerAttack, hit.hpLost, "attacker");
-        if (defenderHp > 0) {
+        if (hit.crashSelfKo) attackerHp = 0;
+        if (defenderHp > 0 && attackerHp > 0) {
             const ret = applyHit(
                 input.defender,
                 input.attacker,
                 input.defender.sessionId,
+                defenderHp,
                 attackerHp,
                 toAttacker,
                 input.defenderAttack,
@@ -443,6 +427,7 @@ export function resolveBattleExchange(input: BattleExchangeInput): BattleExchang
             );
             attackerHp = ret.nextHp;
             noteEatUp(input.defender, input.defenderAttack, ret.hpLost, "defender");
+            if (ret.crashSelfKo) defenderHp = 0;
         } else if (toAttacker > 0) {
             emitAttackCanceled(events, input.defender.sessionId, toAttacker);
         }
@@ -453,6 +438,7 @@ export function resolveBattleExchange(input: BattleExchangeInput): BattleExchang
             input.defender,
             input.attacker,
             input.defender.sessionId,
+            defenderHp,
             attackerHp,
             toAttacker,
             input.defenderAttack,
@@ -460,11 +446,13 @@ export function resolveBattleExchange(input: BattleExchangeInput): BattleExchang
         );
         attackerHp = hit.nextHp;
         noteEatUp(input.defender, input.defenderAttack, hit.hpLost, "defender");
-        if (attackerHp > 0) {
+        if (hit.crashSelfKo) defenderHp = 0;
+        if (attackerHp > 0 && defenderHp > 0) {
             const ret = applyHit(
                 input.attacker,
                 input.defender,
                 input.attacker.sessionId,
+                attackerHp,
                 defenderHp,
                 toDefender,
                 input.attackerAttack,
@@ -472,6 +460,7 @@ export function resolveBattleExchange(input: BattleExchangeInput): BattleExchang
             );
             defenderHp = ret.nextHp;
             noteEatUp(input.attacker, input.attackerAttack, ret.hpLost, "attacker");
+            if (ret.crashSelfKo) attackerHp = 0;
         } else if (toDefender > 0) {
             emitAttackCanceled(events, input.attacker.sessionId, toDefender);
         }
@@ -482,36 +471,6 @@ export function resolveBattleExchange(input: BattleExchangeInput): BattleExchang
     } else {
         // Attacker first: default take-turn, attacker-only First Strike, or both First Strike
         strikeAttackerFirst();
-    }
-
-    if (attackerEatUpHeal > 0) {
-        attackerHp = applyEatUpHp(
-            { ...input.attacker, hp: attackerHp },
-            attackerEatUpHeal,
-            events
-        );
-    }
-    if (defenderEatUpHeal > 0) {
-        defenderHp = applyEatUpHp(
-            { ...input.defender, hp: defenderHp },
-            defenderEatUpHeal,
-            events
-        );
-    }
-
-    if (
-        hasCrash(input.attacker.active, input.attackerAttack) &&
-        input.attackerAttack === "cross" &&
-        !events.some((e) => e.type === "cross_counter" && e.sessionId === input.defender.sessionId)
-    ) {
-        attackerHp = 0;
-    }
-    if (
-        hasCrash(input.defender.active, input.defenderAttack) &&
-        input.defenderAttack === "cross" &&
-        !events.some((e) => e.type === "cross_counter" && e.sessionId === input.attacker.sessionId)
-    ) {
-        defenderHp = 0;
     }
 
     if (attackerHp <= 0 && defenderHp <= 0) {

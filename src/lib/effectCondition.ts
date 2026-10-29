@@ -14,7 +14,7 @@
  * @see docs/fidelity-rules-contract.md FC-027, RA-002
  */
 
-import type { AttackType } from "./effectTextNormalize";
+import type { AttackType } from "../types";
 import { canonicalizeEffectText, letterToAttack, normalizeSpecialtyLabel } from "./effectTextNormalize";
 
 /** One side of a battle comparison (the effect owner or their opponent). */
@@ -58,6 +58,85 @@ export type EffectCondition =
     | { kind: "own_hand_gte"; value: number }
     | { kind: "own_hand_lte"; value: number }
     | { kind: "opponent_dp_slot_gt"; value: number };
+
+function hasOnlyKeys(value: Record<string, unknown>, allowed: readonly string[]): boolean {
+    return Object.keys(value).every(key => allowed.includes(key));
+}
+
+function isFiniteNumber(value: unknown): value is number {
+    return typeof value === "number" && Number.isFinite(value);
+}
+
+function isNonEmptyString(value: unknown): value is string {
+    return typeof value === "string" && value.trim().length > 0;
+}
+
+/** Runtime shape guard for the JSON-safe condition union. */
+export function isEffectCondition(value: unknown): value is EffectCondition {
+    if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+    const condition = value as Record<string, unknown>;
+    if (typeof condition.kind !== "string") return false;
+
+    const exact = (...keys: string[]) => hasOnlyKeys(condition, ["kind", ...keys]);
+    const attack = condition.attack;
+    const validAttack = attack === "circle" || attack === "triangle" || attack === "cross";
+
+    switch (condition.kind) {
+        case "attacks_same":
+        case "attacks_different":
+        case "own_hp_lt_opponent":
+        case "own_hp_gt_opponent":
+        case "opponent_hp_lt_own":
+        case "own_level_lower":
+        case "specialties_same":
+            return exact();
+        case "own_attack_is":
+        case "own_attack_not":
+        case "opponent_used":
+            return exact("attack") && validAttack;
+        case "own_hp_lt":
+        case "opponent_hp_gt":
+        case "own_hand_gte":
+        case "own_hand_lte":
+        case "opponent_dp_slot_gt":
+            return exact("value") && isFiniteNumber(condition.value);
+        case "own_level_is":
+        case "opponent_level_is":
+        case "both_levels_are":
+            return exact("level") && isNonEmptyString(condition.level);
+        case "own_specialty_is":
+        case "opponent_specialty_is":
+        case "opponent_specialty_not":
+            return exact("specialty") && isNonEmptyString(condition.specialty);
+        case "opponent_specialty_in":
+            return (
+                exact("specialties") &&
+                Array.isArray(condition.specialties) &&
+                condition.specialties.length > 0 &&
+                condition.specialties.every(isNonEmptyString)
+            );
+        default:
+            return false;
+    }
+}
+
+export function serializeEffectConditionJson(condition: EffectCondition): string {
+    if (!isEffectCondition(condition)) {
+        throw new TypeError("Cannot serialize an invalid effect condition");
+    }
+    return JSON.stringify(condition);
+}
+
+export function parseEffectConditionJson(json: string): EffectCondition {
+    let value: unknown;
+    try {
+        value = JSON.parse(json);
+    } catch {
+        throw new TypeError("Invalid effect condition JSON");
+    }
+    if (!isEffectCondition(value)) throw new TypeError("Invalid effect condition structure");
+    return value;
+}
 
 /** Rank levels for lower/higher comparisons. Armor sits at Champion tier (DCB). */
 const LEVEL_RANK: Record<string, number> = {

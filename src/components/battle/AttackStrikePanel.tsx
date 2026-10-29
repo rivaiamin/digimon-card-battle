@@ -3,8 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Circle, Triangle, X as CrossIcon } from "lucide-react";
 import type { CombatStrike } from "../../lib/combatStrikePlan";
 
-type AttackType = "circle" | "triangle" | "cross";
-
+import type { AttackType } from "../../types";
 const ATTACK_META: Record<
     AttackType,
     { icon: React.ReactNode; color: string; border: string }

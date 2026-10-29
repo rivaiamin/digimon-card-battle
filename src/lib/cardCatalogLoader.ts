@@ -1,10 +1,6 @@
 import type { CardKind, EffectArgs } from "../types";
-import {
-    inferCompoundSupportEffect,
-    letterToAttack,
-    parseAttackEffectFromDescription,
-    supportTypeToEffectId,
-} from "./effectTextNormalize";
+import { isEffectPlan, type EffectPlan } from "./effectPlan";
+import { letterToAttack, parseAttackEffectFromDescription, supportTypeToEffectId } from "./effectTextNormalize";
 
 type LegacySupportEffect = {
     type?: unknown;
@@ -14,6 +10,7 @@ type LegacySupportEffect = {
     requireType?: unknown;
     requireOpponentType?: unknown;
     priority?: unknown;
+    effectPlan?: unknown;
 };
 
 export type NormalizedSupportEffect = {
@@ -24,6 +21,7 @@ export type NormalizedSupportEffect = {
     requireType: string;
     requireOpponentType: string;
     priority: number;
+    effectPlan?: EffectPlan;
 };
 
 export type NormalizedCardCatalogEntry = {
@@ -192,30 +190,46 @@ function parseLegacySupportId(supportId: string, cardId: string): LegacySupportE
     );
 }
 
-function normalizeSupportEffect(raw: LegacySupportEffect | null): NormalizedSupportEffect | null {
+function normalizeEffectPlan(rawPlan: unknown, cardId: string): EffectPlan | undefined {
+    if (rawPlan === undefined) return undefined;
+    if (isEffectPlan(rawPlan)) return rawPlan;
+
+    const version =
+        typeof rawPlan === "object" && rawPlan !== null && "planVersion" in rawPlan
+            ? rawPlan.planVersion
+            : undefined;
+    const reason =
+        version === undefined
+            ? "missing or malformed planVersion"
+            : version !== 1
+              ? `unsupported planVersion "${String(version)}"`
+              : "malformed plan structure";
+    throw new Error(`[cardCatalogLoader] Invalid effect plan on card "${cardId}": ${reason}.`);
+}
+function normalizeSupportEffect(
+    raw: LegacySupportEffect | null,
+    cardId: string
+): NormalizedSupportEffect | null {
     if (!raw || typeof raw !== "object") return null;
+    const effectPlan = normalizeEffectPlan(raw.effectPlan, cardId);
     let type = String(raw.type ?? "").trim();
-    let targetAttack = String(raw.targetAttack ?? "");
-    let value = Number(raw.value ?? 0);
+    const targetAttack = String(raw.targetAttack ?? "");
+    const value = Number(raw.value ?? 0);
     const description = String(raw.description ?? "");
     if (!type) return null;
 
-    if (type === "catalog_text") {
-        const inferred = inferCompoundSupportEffect(description);
-        if (!inferred) {
-            return {
-                type: "catalog_text",
-                targetAttack: "",
-                value: 0,
-                description,
-                requireType: String(raw.requireType ?? ""),
-                requireOpponentType: String(raw.requireOpponentType ?? ""),
-                priority: Number(raw.priority ?? 0),
-            };
+    if (effectPlan) {
+        const planType = effectPlan.op === "effect" ? effectPlan.effect.type : effectPlan.op;
+        if (type !== "catalog_text" && type !== planType) {
+            throw new Error(
+                `[cardCatalogLoader] Effect plan type "${planType}" does not match "${type}" on card "${cardId}".`
+            );
         }
-        type = inferred.type;
-        targetAttack = inferred.targetAttack ?? "";
-        value = inferred.value ?? 0;
+        type = planType;
+    } else if (type === "compose" || type === "conditional") {
+        throw new Error(
+            `[cardCatalogLoader] Missing effect plan for "${type}" support effect on card "${cardId}".`
+        );
     }
 
     return {
@@ -226,6 +240,7 @@ function normalizeSupportEffect(raw: LegacySupportEffect | null): NormalizedSupp
         requireType: String(raw.requireType ?? ""),
         requireOpponentType: String(raw.requireOpponentType ?? ""),
         priority: Number(raw.priority ?? 0),
+        ...(effectPlan ? { effectPlan } : {}),
     };
 }
 
@@ -289,22 +304,8 @@ function toNormalizedEffectDescriptor(cardId: string, raw: {
             };
         case "hp_heal":
             return { effectId: "support.hp_heal", effectArgs: { value } };
-        case "catalog_text": {
-            const inferred = inferCompoundSupportEffect(
-                String(supportEffect.description ?? "")
-            );
-            if (!inferred) return { effectId: "", effectArgs: {} };
-            const mapped = supportTypeToEffectId(inferred.type);
-            if (!mapped) return { effectId: "", effectArgs: {} };
-            return {
-                effectId: mapped.effectId,
-                effectArgs: {
-                    ...mapped.effectArgs,
-                    ...(inferred.targetAttack ? { targetAttack: inferred.targetAttack } : {}),
-                    ...(inferred.value != null ? { value: inferred.value } : {}),
-                },
-            };
-        }
+        case "catalog_text":
+            return { effectId: "", effectArgs: {} };
         default: {
             const mapped = supportTypeToEffectId(type);
             if (!mapped) {
@@ -396,7 +397,8 @@ export function loadCardCatalog(rawCatalog: unknown): NormalizedCardCatalogEntry
         const support = normalizeSupportEffect(
             ((r.supportEffect as LegacySupportEffect | null | undefined) ??
                 (typeof r.support_id === "string" ? parseLegacySupportId(r.support_id, String(r.id)) : null)) ??
-                null
+                null,
+            String(r.id)
         );
 
         const attacks = r.attacks && typeof r.attacks === "object" ? (r.attacks as Record<string, unknown>) : {};

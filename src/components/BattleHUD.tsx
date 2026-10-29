@@ -1,7 +1,7 @@
 import React from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Circle, Triangle, X, Swords, Shield } from "lucide-react";
-import { DigimonCardData, GameState } from "../types";
+import { AttackType, DigimonCardData, GameState } from "../types";
 import {
   getBattleRole,
   getOpponentBattleRole,
@@ -14,7 +14,7 @@ interface HUDProps {
     hp: number;
     maxHp: number;
   };
-  onAttack: (type: "circle" | "triangle" | "cross") => void;
+  onAttack: (type: AttackType) => void;
   disabled?: boolean;
   state: GameState;
   yourSessionId: string;
@@ -153,7 +153,7 @@ function SeatPlaque({
 }
 
 type AttackBtn = {
-  type: "circle" | "triangle" | "cross";
+  type: AttackType;
   icon: typeof Circle;
   name: string;
   damage: number;
@@ -170,7 +170,7 @@ function AttackRow({
   disabled,
 }: {
   attacks: AttackBtn[];
-  onAttack: (type: "circle" | "triangle" | "cross") => void;
+  onAttack: (type: AttackType) => void;
   disabled?: boolean;
 }) {
   return (

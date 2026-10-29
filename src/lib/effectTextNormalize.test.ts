@@ -1,17 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
     inferCompoundSupportEffect,
+    materializeEffectPlan,
     inferSupportEffectFromDescription,
     parseAttackEffectFromDescription,
     splitEffectClauses,
 } from "./effectTextNormalize";
 import { loadCardCatalog } from "./cardCatalogLoader";
-import {
-    createSupportBattleContext,
-    getEffectiveAttackDamage,
-    resolveSupportPhase,
-} from "./supportResolver";
-import { CardSchema, PlayerSchema, SupportEffectSchema } from "../schema/BattleState";
 import cardsData from "../data/cards.json";
 
 describe("effectTextNormalize (FC-026 / FC-027)", () => {
@@ -121,56 +116,64 @@ describe("parser hardening (FC-027 Phase 2 Layer A)", () => {
     });
 });
 
-describe("support compose effects (FC-027)", () => {
-    function makePlayer(sessionId: string, specialty = "Fire", hp = 1000): PlayerSchema {
-        const p = new PlayerSchema();
-        p.sessionId = sessionId;
-        p.hp = hp;
-        const active = new CardSchema();
-        active.id = `${sessionId}-active`;
-        active.cardKind = "digimon";
-        active.type = specialty;
-        active.maxHp = hp;
-        active.hp = hp;
-        active.circle.damage = 400;
-        active.triangle.damage = 300;
-        active.cross.damage = 200;
-        p.active = active;
-        return p;
-    }
 
-    it("applies Attack first + ATK buff from compose description", () => {
-        const active = makePlayer("a");
-        const defender = makePlayer("d", "Ice");
-        const card = new CardSchema();
-        card.id = "compose";
-        card.cardKind = "digimon";
-        const se = new SupportEffectSchema();
-        se.type = "compose";
-        se.description = "Attack first. Boost own Attack Power +100.";
-        card.supportEffect = se;
-
-        const ctx = createSupportBattleContext();
-        resolveSupportPhase(active, defender, card, null, ctx);
-        expect(ctx.firstStrikePlayers.has("a")).toBe(true);
-        expect(getEffectiveAttackDamage(active, "circle", ctx)).toBe(500);
+describe("effect plan materialization", () => {
+    it("materializes a single primitive without display prose", () => {
+        expect(materializeEffectPlan("Boost own Attack Power by +100")).toEqual({
+            planVersion: 1,
+            op: "effect",
+            effect: { type: "atk_buff", targetAttack: "all", value: 100 },
+        });
     });
 
-    it("changes specialty and heals from compose description", () => {
-        const active = makePlayer("a", "Fire", 500);
-        active.active!.maxHp = 1000;
-        const defender = makePlayer("d");
-        const card = new CardSchema();
-        card.id = "ice";
-        card.cardKind = "digimon";
-        const se = new SupportEffectSchema();
-        se.type = "compose";
-        se.description = "Change own Specialty to Ice. Recover own HP by +200.";
-        card.supportEffect = se;
+    it("preserves compose order and inherited opponent targets", () => {
+        expect(
+            materializeEffectPlan(
+                "Opponent discards 2 cards from opponent's online deck. 2 cards from hand."
+            )
+        ).toEqual({
+            planVersion: 1,
+            op: "compose",
+            steps: [
+                {
+                    planVersion: 1,
+                    op: "effect",
+                    effect: { type: "discard_enemy_deck", value: 2 },
+                },
+                {
+                    planVersion: 1,
+                    op: "effect",
+                    effect: { type: "discard_enemy_hand", value: 2 },
+                },
+            ],
+        });
+    });
 
-        const ctx = createSupportBattleContext();
-        resolveSupportPhase(active, defender, card, null, ctx);
-        expect(active.active?.type).toBe("Ice");
-        expect(active.hp).toBe(700);
+    it("serializes the parsed condition and ordered consequent steps", () => {
+        expect(
+            materializeEffectPlan(
+                "If own Specialty is Fire, boost own Attack Power +100 and recover HP +200"
+            )
+        ).toEqual({
+            planVersion: 1,
+            op: "conditional",
+            when: { kind: "own_specialty_is", specialty: "Fire" },
+            steps: [
+                {
+                    planVersion: 1,
+                    op: "effect",
+                    effect: { type: "atk_buff", targetAttack: "all", value: 100 },
+                },
+                {
+                    planVersion: 1,
+                    op: "effect",
+                    effect: { type: "hp_heal", value: 200 },
+                },
+            ],
+        });
+    });
+
+    it("keeps unrecognized text unresolved", () => {
+        expect(materializeEffectPlan("This effect has no recognized mechanical clause")).toBeNull();
     });
 });

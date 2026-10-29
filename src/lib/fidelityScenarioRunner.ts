@@ -2,6 +2,7 @@
  * Fidelity scenario registry and runner (E8 / T8-3, FC-030).
  */
 
+import type { AttackType } from "../types";
 import { shouldForfeitAfk, strikesAfterTimeout, strikesAfterVoluntaryAction } from "./afkPolicy";
 import {
     isConsentedLeave,
@@ -64,7 +65,6 @@ import {
     getEffectiveAttackDamage,
     holdsFirstStrike,
     resolveSupportPhase,
-    type AttackType,
     type SupportBattleContext,
 } from "./supportResolver";
 import { compareOrderedEffects, type OrderedEffect } from "./effectConflictResolver";
@@ -1555,6 +1555,18 @@ export const FIDELITY_SCENARIOS: FidelityScenario[] = [
                     description: "If both attacks are different, own Attack Power is doubled",
                     requireType: "",
                     requireOpponentType: "",
+                    effectPlanJson: JSON.stringify({
+                        planVersion: 1,
+                        op: "conditional",
+                        when: { kind: "attacks_different" },
+                        steps: [
+                            {
+                                planVersion: 1,
+                                op: "effect",
+                                effect: { type: "atk_mult", targetAttack: "all", value: 2 },
+                            },
+                        ],
+                    }),
                 },
             };
 
@@ -1887,8 +1899,8 @@ export function listCoveredFidelityIds(): string[] {
 export function simulateBattleAuditTrace(
     p1: BattleCombatant,
     p2: BattleCombatant,
-    a1: "circle" | "triangle" | "cross",
-    a2: "circle" | "triangle" | "cross",
+    a1: AttackType,
+    a2: AttackType,
     activeSessionId: string
 ): BattleAuditEntry[] {
     const battle = resolveFullBattle(p1, p2, a1, a2, activeSessionId, createSupportBattleContext());

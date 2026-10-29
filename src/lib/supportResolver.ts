@@ -4,23 +4,16 @@
  * @see docs/fidelity-rules-contract.md FC-015, GDD.md Phase 3 Step 2
  */
 
-import type { CardSchema, PlayerSchema, SupportEffectSchema } from "../schema/BattleState";
+import type { AttackType } from "../types";
+import { SupportEffectSchema, type CardSchema, type PlayerSchema } from "../schema/BattleState";
+import { parseEffectPlanJson, type EffectPlan } from "./effectPlan";
 import { sortEffectsByConflictPolicy } from "./effectConflictResolver";
 import {
-    inferConditionalEffect,
-    inferSupportEffectFromDescription,
-    splitComposeClauses,
-    splitConsequentClauses,
-} from "./effectTextNormalize";
-import {
     evaluateCondition,
-    parseCondition,
-    splitConditional,
     type ConditionContext,
     type ConditionSubject,
 } from "./effectCondition";
 
-export type AttackType = "circle" | "triangle" | "cross";
 
 export type SupportEffectType =
     | "void_enemy_support"
@@ -539,23 +532,6 @@ function applyZeroAttacks(ctx: SupportBattleContext, sessionId: string, targetsC
     ctx.attackMultiplier.set(sessionId, mult);
 }
 
-/** Build a schema-shaped effect from an inferred clause for recursive application. */
-function inferredToEffect(step: {
-    type: string;
-    targetAttack?: string;
-    value?: number;
-    description?: string;
-}): SupportEffectSchema {
-    return {
-        type: step.type,
-        targetAttack: step.targetAttack ?? "",
-        value: step.value ?? 0,
-        description: step.description ?? "",
-        requireType: "",
-        requireOpponentType: "",
-        priority: 0,
-    } as unknown as SupportEffectSchema;
-}
 
 function pickIndex(rng: (() => number) | undefined, len: number): number {
     if (len <= 0) return -1;
@@ -648,6 +624,45 @@ function multiplyAttack(ctx: SupportBattleContext, sessionId: string, factor: nu
     ctx.attackMultiplier.set(sessionId, mult);
 }
 
+function applyEffectPlan(
+    source: PlayerSchema,
+    target: PlayerSchema,
+    plan: EffectPlan,
+    ctx: SupportBattleContext,
+    hooks?: ResolveSupportHooks,
+    runtime?: EffectRuntime
+): void {
+    if (plan.op === "compose") {
+        for (const step of plan.steps) {
+            applyEffectPlan(source, target, step, ctx, hooks, runtime);
+        }
+        return;
+    }
+
+    if (plan.op === "conditional") {
+        if (!runtime || !evaluateCondition(plan.when, runtime.condition)) return;
+        for (const step of plan.steps) {
+            applyEffectPlan(source, target, step, ctx, hooks, runtime);
+        }
+        return;
+    }
+
+    const type = plan.effect.type;
+    if (
+        !Object.prototype.hasOwnProperty.call(SUPPORT_PRIORITY, type) ||
+        type === "compose" ||
+        type === "conditional"
+    ) {
+        throw new Error(`[supportResolver] Invalid effect plan leaf type "${type}".`);
+    }
+
+    const effect = new SupportEffectSchema();
+    effect.type = type;
+    effect.targetAttack = plan.effect.targetAttack ?? "";
+    effect.value = plan.effect.value ?? 0;
+    applySingleEffect(source, target, effect, ctx, hooks, runtime);
+}
+
 /**
  * Apply ONE support/battle primitive to the shared context. This is the single
  * dispatcher for every effect type — `resolveSupportPhase` runs the ordered
@@ -663,30 +678,18 @@ export function applySingleEffect(
     hooks?: ResolveSupportHooks,
     runtime?: EffectRuntime
 ): void {
-    const type = String(effect.type ?? "");
-
-    if (type === "compose") {
-        const clauses = splitComposeClauses(String(effect.description ?? ""));
-        for (const clause of clauses) {
-            const step = inferSupportEffectFromDescription(clause) ?? inferConditionalEffect(clause);
-            if (!step) continue;
-            applySingleEffect(source, target, inferredToEffect(step), ctx, hooks, runtime);
-        }
+    const effectPlanJson = String(effect.effectPlanJson ?? "");
+    if (effectPlanJson) {
+        const plan = parseEffectPlanJson(effectPlanJson);
+        if (!plan) throw new Error("[supportResolver] Non-empty effect plan transport decoded as empty.");
+        applyEffectPlan(source, target, plan, ctx, hooks, runtime);
         return;
     }
 
-    if (type === "conditional") {
-        if (!runtime) return;
-        const split = splitConditional(String(effect.description ?? ""));
-        if (!split) return;
-        const cond = parseCondition(split.head);
-        if (!cond || !evaluateCondition(cond, runtime.condition)) return;
-        for (const clause of splitConsequentClauses(split.consequent)) {
-            const step = inferSupportEffectFromDescription(clause);
-            if (!step) continue;
-            applySingleEffect(source, target, inferredToEffect(step), ctx, hooks, runtime);
-        }
-        return;
+    const type = String(effect.type ?? "");
+
+    if (type === "compose" || type === "conditional") {
+        throw new Error(`[supportResolver] Missing effect plan for "${type}" support effect.`);
     }
 
     switch (type as SupportEffectType) {

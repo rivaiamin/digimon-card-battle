@@ -240,7 +240,7 @@ describe("battle options", () => {
         expect(hpTarget.hp).toBe(700);
     });
 
-    it("applies compose grant_eat_up and atk buff from support text", () => {
+    it("applies a compound battle-option plan", () => {
         const ctx = {
             attackBonus: new Map<string, { circle: number; triangle: number; cross: number }>(),
             firstStrikePlayers: new Set<string>(),
@@ -254,6 +254,18 @@ describe("battle options", () => {
                 supportEffect: {
                     type: "catalog_text",
                     description: "Own Attack becomes Eat-up HP. Boost own Attack Power +100.",
+                    effectPlan: {
+                        planVersion: 1,
+                        op: "compose",
+                        steps: [
+                            { planVersion: 1, op: "effect", effect: { type: "grant_eat_up_hp" } },
+                            {
+                                planVersion: 1,
+                                op: "effect",
+                                effect: { type: "atk_buff", targetAttack: "all", value: 100 },
+                            },
+                        ],
+                    },
                 },
             },
             "p1",

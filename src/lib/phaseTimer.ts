@@ -1,3 +1,5 @@
+import type { AttackType } from "../types";
+
 /**
  * Server-authoritative phase timer config (FC-021 / TIMER_SPEC).
  * Durations are tiered by cognitive load per phase type.
@@ -23,7 +25,7 @@ export const PHASE_TIMER_MS: Record<TimedPhaseKey, number> = {
     battle_attack: 15_000,
 };
 
-export const ATTACK_TYPES = ["circle", "triangle", "cross"] as const;
+export const ATTACK_TYPES = ["circle", "triangle", "cross"] as const satisfies readonly AttackType[];
 export type RandomAttackType = (typeof ATTACK_TYPES)[number];
 
 export function resolveTimedPhaseKey(phase: string, prepSubPhase: string): TimedPhaseKey | null {

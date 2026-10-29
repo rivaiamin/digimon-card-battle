@@ -3,10 +3,10 @@
  * Shared by card catalog load and effects.json builder.
  */
 
-import type { EffectArgs } from "../types";
+import type { AttackType, EffectArgs } from "../types";
+import type { EffectPlan, EffectPlanEffect } from "./effectPlan";
 import { parseCondition, splitConditional } from "./effectCondition";
 
-export type AttackType = "circle" | "triangle" | "cross";
 
 export function letterToAttack(letter: string | undefined): AttackType | null {
     if (!letter) return null;
@@ -537,6 +537,12 @@ export function inferSupportEffectFromDescription(
     if (enemyDiscAtRandom) {
         return { type: "discard_enemy_hand_random", value: Number(enemyDiscAtRandom[1]), description: text };
     }
+    const enemyHandN = text.match(/^discard (\d+) cards? from opponent'?s hand$/i);
+    if (enemyHandN) return { type: "discard_enemy_hand", value: Number(enemyHandN[1]), description: text };
+    if (/^opponent discards (?:opponent'?s )?hand$/i.test(text)) {
+        return { type: "discard_enemy_hand", value: 0, description: text };
+    }
+
     if (/^discard all cards? in opponent'?s hand$/i.test(text) || /^opponent discards all cards?$/i.test(text)) {
         return { type: "discard_enemy_hand", value: 0, description: text };
     }
@@ -581,10 +587,9 @@ export function inferSupportEffectFromDescription(
 }
 
 /**
- * A conditional line ("If <gate>, <consequent>") whose gate is recognized and
- * whose consequent fully parses. Stored as `type: "conditional"` with the full
- * text; the resolver re-parses and evaluates it at battle time (FC-027).
- * `&`-joined consequents (e.g. "own Attack Power +200 & HP +200") are split too.
+ * Recognize a conditional source-text line whose gate and every consequent
+ * clause can be materialized. Runtime execution consumes the resulting plan,
+ * not this prose. `&`-joined consequents are split as well.
  */
 /** Split a conditional consequent on its clause separators (`&`, `and`, `,`, `.`). */
 export function splitConsequentClauses(consequent: string): string[] {
@@ -614,9 +619,29 @@ function clauseParses(clause: string): boolean {
  * fully parse.
  */
 export function splitComposeClauses(text: string): string[] {
-    const byPeriod = splitEffectClauses(text);
+    const byPeriod = inheritOpponentSubject(splitEffectClauses(text));
     if (byPeriod.length >= 2 && byPeriod.every(clauseParses)) return byPeriod;
-    return splitConsequentClauses(text);
+    return inheritOpponentSubject(splitConsequentClauses(text));
+}
+
+function inheritOpponentSubject(clauses: string[]): string[] {
+    if (clauses.length < 2) return clauses;
+    const first = canonicalizeEffectText(clauses[0]!).replace(/\.\s*$/, "");
+    if (/^opponent discards \d+ cards? from opponent'?s online deck$/i.test(first)) {
+        return clauses.map((clause, index) => {
+            if (index === 0) return clause;
+            const hand = canonicalizeEffectText(clause).match(/^(\d+) cards? from hand$/i);
+            return hand ? `discard ${hand[1]} cards from opponent's hand` : clause;
+        });
+    }
+    if (/^opponent discards (?:opponent'?s )?hand$/i.test(first)) {
+        return clauses.map((clause, index) => {
+            if (index === 0) return clause;
+            const dp = canonicalizeEffectText(clause).match(/^(all|\d+) cards? in opponent'?s dp slot$/i);
+            return dp ? `discard ${dp[1]} opponent's cards in opponent's dp slot` : clause;
+        });
+    }
+    return clauses;
 }
 
 /**
@@ -644,6 +669,48 @@ export function inferCompoundSupportEffect(
         type: "compose",
         description: text,
     };
+}
+
+function toEffectPlanLeaf(effect: InferredSupportEffect): EffectPlan {
+    const planEffect: EffectPlanEffect = { type: effect.type };
+    if (effect.targetAttack !== undefined) planEffect.targetAttack = effect.targetAttack;
+    if (effect.value !== undefined) planEffect.value = effect.value;
+    return { planVersion: 1, op: "effect", effect: planEffect };
+}
+
+function materializeClause(text: string): EffectPlan | null {
+    const conditional = splitConditional(canonicalizeEffectText(text));
+    if (conditional) {
+        const when = parseCondition(conditional.head);
+        if (!when) return null;
+        const steps: EffectPlan[] = [];
+        for (const clause of splitConsequentClauses(conditional.consequent)) {
+            const effect = inferSupportEffectFromDescription(clause);
+            if (!effect) return null;
+            steps.push(toEffectPlanLeaf(effect));
+        }
+        if (steps.length === 0) return null;
+        return { planVersion: 1, op: "conditional", when, steps };
+    }
+
+    const primitive = inferSupportEffectFromDescription(text);
+    if (primitive) return toEffectPlanLeaf(primitive);
+
+    const clauses = splitComposeClauses(text);
+    if (clauses.length < 2) return null;
+    const steps: EffectPlan[] = [];
+    for (const clause of clauses) {
+        const step = materializeClause(clause);
+        if (!step) return null;
+        steps.push(step);
+    }
+    return { planVersion: 1, op: "compose", steps };
+}
+
+/** Convert fully recognized catalog prose into an ordered executable plan. */
+export function materializeEffectPlan(description: string): EffectPlan | null {
+    if (!description.trim() || /^none\.?$/i.test(description.trim())) return null;
+    return materializeClause(description);
 }
 
 /** Map inferred support type → card-level effectId (options / digimon). */

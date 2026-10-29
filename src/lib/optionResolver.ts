@@ -3,16 +3,16 @@
  * @see docs/fidelity-rules-contract.md FC-008
  */
 
-import type { EffectArgs } from "../types";
+import type { AttackType, EffectArgs } from "../types";
+import type { EffectPlan } from "./effectPlan";
 import { readNumberArg } from "./effectArgs";
 import { CardSchema, PlayerSchema, SupportEffectSchema } from "../schema/BattleState";
-import { inferCompoundSupportEffect } from "./effectTextNormalize";
+import { serializeEffectPlanJson } from "./effectPlan";
 import { evaluateEvolution, type EvolutionModifiers } from "./evolutionEligibility";
 import {
     SUPPORT_PRIORITY,
     applySingleEffect,
     buildEffectRuntime,
-    type AttackType,
     type ResolveSupportHooks,
     type SupportBattleContext,
 } from "./supportResolver";
@@ -32,7 +32,13 @@ export interface OptionCardLike {
     circle?: { damage: number };
     triangle?: { damage: number };
     cross?: { damage: number };
-    supportEffect?: { type?: string; description?: string; value?: number; targetAttack?: string } | null;
+    supportEffect?: {
+        type?: string;
+        description?: string;
+        value?: number;
+        targetAttack?: string;
+        effectPlan?: EffectPlan;
+    } | null;
 }
 
 export interface CatalogStatSnapshot {
@@ -275,13 +281,10 @@ function toSupportEffect(card: OptionCardLike): SupportEffectSchema | null {
     let type = String(se?.type ?? "").trim();
     let description = String(se?.description ?? "");
 
-    // `catalog_text` is the loader's marker for "text not yet inferred"; a card
-    // built by hand (tests, fixtures) still carries it, so infer here too.
-    if (type === "catalog_text") {
-        const inferred = inferCompoundSupportEffect(description);
-        if (!inferred) return null;
-        type = inferred.type;
-        description = inferred.description ?? description;
+    if (se?.effectPlan) {
+        type = se.effectPlan.op === "effect" ? se.effectPlan.effect.type : se.effectPlan.op;
+    } else if (type === "catalog_text") {
+        return null;
     }
     if (!type) {
         const idType = String(card.effectId ?? "").trim().split(".").pop() ?? "";
@@ -295,6 +298,7 @@ function toSupportEffect(card: OptionCardLike): SupportEffectSchema | null {
     effect.targetAttack =
         String(se?.targetAttack ?? "").trim() ||
         (typeof args.targetAttack === "string" ? args.targetAttack : "");
+    effect.effectPlanJson = se?.effectPlan ? serializeEffectPlanJson(se.effectPlan) : "";
     effect.description = description;
     return effect;
 }

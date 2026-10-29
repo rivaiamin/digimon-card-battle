@@ -1,20 +1,20 @@
 {
   "source": "https://github.com/AsyrafKZ/digital-card-battle-clone-data-collection",
   "sourceFile": "scripts/data/asyrafkz/effectList2.txt",
-  "generatedAt": "2026-07-15T16:06:37.777Z",
+  "generatedAt": "2026-10-18T10:49:47.425Z",
   "counts": {
     "total": 257,
     "byStatus": {
-      "implemented": 252,
+      "implemented": 254,
       "partial": 1,
-      "catalog_only": 4
+      "catalog_only": 2
     },
     "byKind": {
       "cross": 17,
-      "support": 152,
+      "support": 154,
       "mixed": 77,
       "evolution": 8,
-      "unknown": 3
+      "unknown": 1
     }
   },
   "effects": [
@@ -1842,8 +1842,10 @@
       "id": "fx_opponent_discards_2_cards_from_his_online_deck_and_1_card_from_hand",
       "text": "Opponent discards 2 Cards from his Online Deck and 1 Card from Hand.",
       "sourceText": "Opponent discards 2 Cards from his Online Deck and 1 Card from Hand.",
-      "kind": "unknown",
-      "status": "catalog_only"
+      "kind": "support",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_opponent_discards_4_top_cards_from_online_deck",
@@ -1860,8 +1862,10 @@
       "id": "fx_opponent_discards_his_hand_and_all_cards_in_his_dp_slot",
       "text": "Opponent discards his Hand and all Cards in his DP Slot.",
       "sourceText": "Opponent discards his Hand and all Cards in his DP Slot.",
-      "kind": "unknown",
-      "status": "catalog_only"
+      "kind": "support",
+      "implementedEffectId": "support.compose",
+      "implementedArgs": {},
+      "status": "implemented"
     },
     {
       "id": "fx_opponent_uses_circle",

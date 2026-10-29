@@ -1,11 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
     evaluateCondition,
+    isEffectCondition,
     normalizeLevelLetter,
     parseCondition,
+    parseEffectConditionJson,
+    serializeEffectConditionJson,
     splitConditional,
     type ConditionContext,
     type ConditionSubject,
+    type EffectCondition,
 } from "./effectCondition";
 
 function subject(overrides: Partial<ConditionSubject> = {}): ConditionSubject {
@@ -140,5 +144,83 @@ describe("normalizeLevelLetter", () => {
         expect(normalizeLevelLetter("champion")).toBe("C");
         expect(normalizeLevelLetter("U")).toBe("U");
         expect(normalizeLevelLetter("Armor")).toBe("A");
+    });
+});
+
+describe("condition JSON codec", () => {
+    it("round-trips every condition kind produced by parseCondition", () => {
+        const conditionTexts = [
+            "both attacks are same",
+            "both attacks are different",
+            "own Attack is Circle",
+            "own Attack is not Circle",
+            "opponent used Circle",
+            "own HP is less than 500",
+            "own HP is less than opponent's HP",
+            "own HP is more than opponent's HP",
+            "opponent's HP is more than 1000",
+            "opponent's HP is lower than own",
+            "own Level is C",
+            "opponent is Level A",
+            "both Levels are C",
+            "own Level is below opponent's",
+            "own Specialty is Fire",
+            "opponent's Specialty is Darkness",
+            "opponent's Specialty is not Nature",
+            "foe's Specialty is Fire or Ice",
+            "Specialties are same",
+            "own Cards in Hand 3 or more",
+            "1 or less Cards left in own Hand",
+            "opponent has more than 2 cards in DP Slot",
+        ];
+        const conditions = conditionTexts.map(text => parseCondition(text));
+        expect(conditions.every((condition): condition is EffectCondition => condition !== null)).toBe(true);
+        const parsed = conditions as EffectCondition[];
+        expect([...new Set(parsed.map(condition => condition.kind))].sort()).toEqual([
+            "attacks_different",
+            "attacks_same",
+            "both_levels_are",
+            "opponent_dp_slot_gt",
+            "opponent_hp_gt",
+            "opponent_hp_lt_own",
+            "opponent_level_is",
+            "opponent_specialty_in",
+            "opponent_specialty_is",
+            "opponent_specialty_not",
+            "opponent_used",
+            "own_attack_is",
+            "own_attack_not",
+            "own_hand_gte",
+            "own_hand_lte",
+            "own_hp_gt_opponent",
+            "own_hp_lt",
+            "own_hp_lt_opponent",
+            "own_level_is",
+            "own_level_lower",
+            "own_specialty_is",
+            "specialties_same",
+        ]);
+
+        for (const condition of parsed) {
+            expect(parseEffectConditionJson(serializeEffectConditionJson(condition))).toEqual(condition);
+        }
+    });
+
+    it("rejects malformed condition JSON and values", () => {
+        expect(() => parseEffectConditionJson("{")).toThrow("Invalid effect condition JSON");
+        expect(() => parseEffectConditionJson(JSON.stringify({ kind: "own_attack_is", attack: "square" }))).toThrow(
+            "Invalid effect condition structure"
+        );
+        expect(isEffectCondition({ kind: "own_hp_lt", value: Number.NaN })).toBe(false);
+        expect(isEffectCondition({ kind: "attacks_same", extra: true })).toBe(false);
+    });
+
+    it("rejects invalid typed conditions during serialization", () => {
+        expect(() =>
+            serializeEffectConditionJson({
+                kind: "own_attack_is",
+                attack: "square",
+            } as unknown as EffectCondition)
+        ).toThrow("Cannot serialize an invalid effect condition");
     });
 });
